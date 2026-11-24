@@ -122,16 +122,16 @@ function drawWarrior(p, o) {
   // ── 머리 (작게, 날렵하게) ──
   p.rect(15, 12, 3, 2, skinShade); // 목
   p.ellipse(15.5, 7.5, 5.5, 5.8, o.hair);
-  p.ellipse(17, 8.5, 4.2, 4.5, skin);
+  // 얼굴: 턱이 앞으로 튀어나오지 않게 줄 단위로 직접 그림 (아래로 갈수록 좁아지는 갸름한 턱)
+  const FACE = [[4, 14, 19], [5, 13, 20], [6, 13, 20], [7, 13, 20], [8, 13, 20], [9, 13, 20], [10, 13, 20], [11, 14, 19], [12, 15, 18]];
+  for (const [y, x0, x1] of FACE) p.rect(x0, y, x1 - x0 + 1, 1, skin);
   p.rect(13, 7, 1, 4, skinShade); // 뒤쪽 볼 그림자
-  p.set(21, 11, skinShade); // 턱선
-  p.set(20, 12, skinShade);
   // 앞머리
   p.rect(11, 2, 10, 3, o.hair);
   p.rect(12, 5, 2, 6, o.hair); // 구레나룻
   p.set(16, 5, o.hair);
   p.set(19, 5, o.hair);
-  p.set(21, 5, o.hair);
+  p.set(20, 5, o.hair);
   p.rect(14, 2, 3, 1, o.hairHi);
   p.set(13, 3, o.hairHi);
 
@@ -142,27 +142,30 @@ function drawWarrior(p, o) {
     p.rect(13, 1, 4, 1, '#9aa3ad');
     p.set(15, 0, '#c9d0d6');
   } else if (o.headgear === 'headband') {
-    p.rect(11, 4, 11, 1, o.accent);
-    p.set(21, 5, o.accent);
+    p.rect(11, 4, 10, 1, o.accent);
+    p.set(20, 5, o.accent);
   } else if (o.headgear === 'ribbon') {
     p.rect(11, 3, 2, 2, o.accent);
   }
 
-  // ── 얼굴: 날카로운 눈썹 + 가는 눈 ──
-  p.line(14, 6, 16, 7, ink); // 앞쪽 눈썹 (안쪽으로 내려감)
-  p.line(19, 7, 21, 6, ink); // 먼 쪽 눈썹
-  p.rect(15, 8, 2, 1, ink); // 눈
-  p.rect(19, 8, 2, 1, ink);
-  p.set(16, 8, o.eyeGlint); // 눈동자 (앞쪽을 노려봄)
-  p.set(20, 8, o.eyeGlint);
-  p.set(15, 9, skinShade); // 눈 아래 음영
-  p.set(19, 9, skinShade);
-  p.set(19, 11, skinShade); // 입
-  p.set(20, 11, skinShade);
+  // ── 얼굴: 매서운 눈 (눈썹이 미간 쪽으로 내려와 눈에 붙음) + 한 점 입 ──
+  // 두 눈 모두 오른쪽(상대)을 노려봄: [검은 눈꺼풀][눈동자]
+  // 앞쪽 눈 (미간 = 오른쪽): 눈썹 끝이 눈동자에 꽂히는 "ㄱ" 모양
+  p.rect(14, 6, 2, 1, ink);
+  p.set(16, 7, ink);
+  p.set(15, 8, ink);
+  p.set(16, 8, o.eyeGlint);
+  // 먼 쪽 눈 (미간 = 왼쪽)
+  p.rect(19, 6, 2, 1, ink);
+  p.set(18, 7, ink);
+  p.set(18, 8, ink);
+  p.set(19, 8, o.eyeGlint);
+  // 입: 짧은 한 줄
+  p.set(18, 11, '#7a5040');
   if (o.scar) {
-    p.set(21, 8, '#8e3b3b');
-    p.set(21, 9, '#8e3b3b');
-    p.set(20, 10, '#8e3b3b');
+    p.set(14, 9, '#8e3b3b');
+    p.set(14, 10, '#8e3b3b');
+    p.set(15, 11, '#8e3b3b');
   }
 
   // ── 앞쪽 팔 + 손 ──
