@@ -1,9 +1,11 @@
 // 32x32 SD 무협 도트 캐릭터를 코드로 그림
 // 모든 캐릭터는 오른쪽(쿼터뷰 기준 오른쪽 위)을 보도록 그리고, 적은 좌우 반전해서 씀.
 // 나중에 사용자가 그린 PNG로 교체할 수 있도록 캔버스(이미지) 형태로 내보냄.
+//
+// 스타일 v2: 2.5~3등신, 가늘고 날카로운 눈, 홍조 없음, 채도 낮은 먹색 계열, 휘날리는 끈/머리
 
 export const SPRITE_SIZE = 32;
-const OUTLINE = '#1b1424';
+const OUTLINE = '#0e0a10';
 
 function createGrid(w, h) {
   return Array.from({ length: h }, () => Array(w).fill(null));
@@ -51,129 +53,170 @@ function addOutline(grid) {
   }
 }
 
-// 공통 SD 몸체. opt 로 옷 색, 머리 모양, 무기를 바꿈.
-function drawChibi(p, o) {
-  const skin = '#f7cfa6';
-  const skinShade = '#e3a77f';
-  const eye = '#1b1424';
+// 공통 무인 몸체. o 로 옷 색, 머리 모양, 무기를 바꿈.
+function drawWarrior(p, o) {
+  const skin = '#dcb08c';
+  const skinShade = '#a97a5e';
+  const ink = '#120c14';
 
-  // 무기(뒤쪽에 있는 창은 몸보다 먼저)
+  // ── 몸 뒤쪽 요소 (휘날리는 것들, 창) ──
+  if (o.ponytail) {
+    p.line(11, 4, 4, 12, o.hair);
+    p.line(11, 5, 4, 13, o.hair);
+    p.line(10, 6, 3, 15, o.hairShade);
+    p.line(4, 13, 2, 17, o.hairShade);
+  }
+  if (o.tails) {
+    // 머리띠/목도리 끈이 뒤로 길게 날림
+    p.line(11, o.tailsY, 3, o.tailsY + 3, o.tails);
+    p.line(11, o.tailsY + 1, 4, o.tailsY + 5, o.tailsShade);
+    p.line(3, o.tailsY + 3, 1, o.tailsY + 6, o.tails);
+  }
   if (o.weapon === 'spear') {
-    p.line(19, 30, 30, 3, '#8a5a32');
-    p.line(20, 30, 31, 3, '#6b4426');
-    p.rect(29, 1, 2, 3, '#e8eef5');
-    p.set(30, 0, '#e8eef5');
-    p.rect(28, 4, 3, 1, '#c8323c'); // 창술 붉은 술
-    p.set(27, 5, '#c8323c');
+    p.line(18, 31, 27, 1, '#4a3424');
+    p.line(19, 31, 28, 1, '#6b4c34');
+    p.rect(26, 0, 3, 3, '#b8c0c8'); // 창날
+    p.set(27, 0, '#e2e6ea');
+    p.rect(25, 3, 4, 2, o.accent); // 붉은 술
+    p.set(24, 5, o.accent);
+    p.set(26, 5, o.accent);
   }
 
-  // 다리, 신발
-  p.rect(12, 26, 3, 3, o.pants);
-  p.rect(18, 26, 3, 3, o.pants);
-  p.rect(11, 29, 4, 2, '#231d2b');
-  p.rect(18, 29, 5, 2, '#231d2b');
+  // ── 다리 (넓게 벌린 자세) ──
+  p.rect(10, 25, 3, 5, o.pants);
+  p.rect(20, 25, 3, 5, o.pants);
+  p.rect(9, 29, 4, 2, o.boot);
+  p.rect(20, 29, 5, 2, o.boot);
+  p.set(12, 25, o.boot); // 각반
+  p.set(20, 25, o.boot);
 
-  // 도포 (아래로 갈수록 넓어짐)
-  for (let y = 17; y <= 27; y++) {
-    const half = 5 + Math.floor((y - 17) / 3);
-    p.rect(16 - half, y, half * 2, 1, o.robe);
-    p.rect(16 - half, y, 2, 1, o.robeShade); // 뒤쪽 그림자
+  // ── 도포: 몸통은 곧게, 아래는 갈라지며 넓어짐 ──
+  for (let y = 14; y <= 27; y++) {
+    const half = y < 21 ? 5 : 5 + Math.floor((y - 21) / 2);
+    const x0 = 16 - half;
+    p.rect(x0, y, half * 2, 1, o.robe);
+    p.rect(x0, y, 2, 1, o.robeShade);
+    p.set(x0 + half * 2 - 1, y, o.robeHi);
   }
-  // 옷깃(교령) + 허리띠
-  p.line(15, 17, 18, 20, o.trim);
-  p.line(16, 17, 19, 20, o.trim);
-  p.rect(10, 21, 13, 2, o.belt);
-  p.rect(18, 23, 2, 3, o.belt); // 허리띠 늘어진 끈
-  // 도포 아래 단
-  p.rect(8, 27, 16, 1, o.trim);
+  // 앞트임 (다리 사이로 갈라진 자락)
+  p.line(16, 22, 16, 27, o.robeShade);
+  p.line(17, 23, 17, 27, OUTLINE);
+  // 교령(겹친 옷깃) + 안감
+  p.line(14, 14, 18, 18, o.inner);
+  p.line(15, 14, 18, 17, o.inner);
+  p.line(16, 14, 19, 17, o.robeHi);
+  // 허리띠 + 매듭
+  p.rect(11, 19, 10, 2, o.belt);
+  p.set(17, 19, o.buckle);
+  p.rect(13, 21, 1, 3, o.belt);
+  if (o.shoulder) {
+    // 어깨 보호대 (철검문)
+    p.rect(19, 14, 4, 2, o.shoulder);
+    p.set(22, 15, OUTLINE);
+  }
 
-  // 뒤쪽 팔
-  p.rect(9, 18, 2, 4, o.robeShade);
-  p.rect(9, 22, 2, 1, skinShade);
+  // ── 뒤쪽 팔 ──
+  p.rect(9, 15, 2, 5, o.robeShade);
+  p.rect(9, 20, 2, 1, skinShade);
 
-  // 머리 (뒷머리 → 얼굴 → 앞머리)
-  p.ellipse(15.5, 9.5, 8, 7.5, o.hair);
-  p.ellipse(17.5, 11, 6, 5.5, skin);
+  // ── 머리 (작게, 날렵하게) ──
+  p.rect(15, 12, 3, 2, skinShade); // 목
+  p.ellipse(15.5, 7.5, 5.5, 5.8, o.hair);
+  p.ellipse(17, 8.5, 4.2, 4.5, skin);
+  p.rect(13, 7, 1, 4, skinShade); // 뒤쪽 볼 그림자
+  p.set(21, 11, skinShade); // 턱선
+  p.set(20, 12, skinShade);
   // 앞머리
-  p.rect(10, 3, 13, 4, o.hair);
-  p.rect(12, 7, 2, 1, o.hair);
-  p.rect(16, 7, 3, 1, o.hair);
-  p.rect(21, 7, 2, 2, o.hair);
-  p.rect(10, 7, 3, 7, o.hair); // 옆머리(뒤쪽)
-  p.set(13, 4, o.hairHi);
-  p.set(14, 4, o.hairHi);
-  p.set(15, 3, o.hairHi);
+  p.rect(11, 2, 10, 3, o.hair);
+  p.rect(12, 5, 2, 6, o.hair); // 구레나룻
+  p.set(16, 5, o.hair);
+  p.set(19, 5, o.hair);
+  p.set(21, 5, o.hair);
+  p.rect(14, 2, 3, 1, o.hairHi);
+  p.set(13, 3, o.hairHi);
 
-  // 머리 장식
-  if (o.hairStyle === 'topknot') {
-    p.ellipse(14, 1.5, 2.5, 1.8, o.hair);
-    p.rect(12, 3, 5, 1, o.trim); // 상투 끈
-  } else if (o.hairStyle === 'headband') {
-    p.rect(10, 5, 14, 2, o.trim);
-    p.rect(7, 6, 3, 1, o.trim); // 뒤로 날리는 끈
-    p.rect(5, 7, 3, 1, o.trim);
-  } else if (o.hairStyle === 'buns') {
-    p.ellipse(10, 3, 2.5, 2.5, o.hair);
-    p.ellipse(21, 2, 2.5, 2.5, o.hair);
-    p.set(10, 1, o.trim);
-    p.set(21, 0, o.trim);
-    p.rect(8, 8, 2, 7, o.hair); // 땋은 머리
+  // ── 머리 장식 ──
+  if (o.headgear === 'crown') {
+    // 상투 + 은빛 관
+    p.rect(13, 0, 4, 2, o.hair);
+    p.rect(13, 1, 4, 1, '#9aa3ad');
+    p.set(15, 0, '#c9d0d6');
+  } else if (o.headgear === 'headband') {
+    p.rect(11, 4, 11, 1, o.accent);
+    p.set(21, 5, o.accent);
+  } else if (o.headgear === 'ribbon') {
+    p.rect(11, 3, 2, 2, o.accent);
   }
 
-  // 눈, 볼
-  p.rect(18, 10, 1, 2, eye);
-  p.rect(22, 10, 1, 2, eye);
-  p.set(18, 10, '#ffffff');
-  p.set(22, 10, '#ffffff');
-  p.rect(18, 11, 1, 1, eye);
-  p.set(17, 13, o.blush);
-  p.set(23, 13, o.blush);
-  if (o.brow) {
-    p.line(17, 8, 19, 9, eye);
-    p.line(21, 9, 23, 8, eye);
+  // ── 얼굴: 날카로운 눈썹 + 가는 눈 ──
+  p.line(14, 6, 16, 7, ink); // 앞쪽 눈썹 (안쪽으로 내려감)
+  p.line(19, 7, 21, 6, ink); // 먼 쪽 눈썹
+  p.rect(15, 8, 2, 1, ink); // 눈
+  p.rect(19, 8, 2, 1, ink);
+  p.set(16, 8, o.eyeGlint); // 눈동자 (앞쪽을 노려봄)
+  p.set(20, 8, o.eyeGlint);
+  p.set(15, 9, skinShade); // 눈 아래 음영
+  p.set(19, 9, skinShade);
+  p.set(19, 11, skinShade); // 입
+  p.set(20, 11, skinShade);
+  if (o.scar) {
+    p.set(21, 8, '#8e3b3b');
+    p.set(21, 9, '#8e3b3b');
+    p.set(20, 10, '#8e3b3b');
   }
 
-  // 앞쪽 팔 + 손
-  p.rect(20, 18, 3, 4, o.robe);
-  p.rect(20, 18, 3, 1, o.trim);
-  p.ellipse(22.5, 22.5, 1.5, 1.5, skin);
+  // ── 앞쪽 팔 + 손 ──
+  p.rect(19, 15, 3, 4, o.robe);
+  p.rect(19, 15, 3, 1, o.robeHi);
+  p.rect(20, 18, 2, 1, o.inner); // 소매 끝
+  p.ellipse(21.5, 20, 1.3, 1.3, skin);
 
-  // 무기 (앞쪽)
+  // ── 무기 (앞쪽) ──
   if (o.weapon === 'sword') {
-    p.line(23, 21, 30, 11, '#e8eef5');
-    p.line(24, 21, 30, 12, '#9eb0c4');
-    p.rect(21, 21, 3, 1, '#c99a3e'); // 코등이
-    p.set(22, 24, '#6b4426');
-    p.set(21, 25, '#c8323c'); // 검수술
+    // 검끝을 앞으로 낮게 겨눈 자세
+    p.line(23, 21, 31, 27, '#c9d1d9');
+    p.line(23, 22, 30, 27, '#7c8794');
+    p.rect(22, 19, 1, 4, o.buckle); // 코등이
+    p.set(20, 19, '#3a2a22'); // 손잡이
+    p.set(19, 18, o.accent); // 검수술
+    p.set(18, 19, o.accent);
   } else if (o.weapon === 'broadsword') {
-    p.line(23, 21, 29, 12, '#d6dde6');
-    p.line(24, 21, 30, 12, '#d6dde6');
-    p.line(25, 21, 31, 13, '#8c98a8');
-    p.rect(21, 21, 4, 1, '#5a5f6b');
-    p.set(22, 24, '#4a3a2a');
+    // 두꺼운 도를 아래로 늘어뜨림
+    p.line(23, 21, 30, 29, '#b3bac2');
+    p.line(24, 21, 31, 28, '#b3bac2');
+    p.line(23, 22, 29, 29, '#6e7680');
+    p.line(25, 21, 31, 27, '#dde2e6');
+    p.rect(22, 19, 2, 3, '#4a4d55');
+    p.set(20, 19, '#2a2020');
   } else if (o.weapon === 'spear') {
-    p.rect(21, 20, 3, 2, skin); // 창대를 쥔 손
+    p.rect(20, 19, 3, 2, skin); // 창대를 쥔 손
   }
 }
 
 const DESIGNS = {
-  // 주인공: 정파 검객 (흰 도포, 푸른 장식, 상투)
+  // 주인공: 정파 검객 (빛바랜 백의, 쪽빛 안감과 목도리, 은관)
   swordsman: {
-    robe: '#eef2f8', robeShade: '#b7c3d8', trim: '#3d6bb3', belt: '#2a4a82',
-    pants: '#3b3652', hair: '#2a2233', hairHi: '#4d405f', blush: '#f19a9a',
-    hairStyle: 'topknot', weapon: 'sword',
+    robe: '#cfcbbf', robeShade: '#8a877e', robeHi: '#e6e3da', inner: '#26304a',
+    belt: '#26304a', buckle: '#a88a4a', pants: '#2a2e3a', boot: '#151218',
+    hair: '#16121a', hairShade: '#0e0b10', hairHi: '#3a3340', eyeGlint: '#4a5a7a',
+    accent: '#7a2a2e', headgear: 'crown', weapon: 'sword',
+    tails: '#26304a', tailsShade: '#1a2034', tailsY: 14,
   },
-  // 철검문 후기지수 (회색 도포, 머리띠, 넓은 검)
+  // 철검문 후기지수 곽진 (먹회색 무복, 어깨 보호대, 검붉은 머리띠, 흉터, 넓은 도)
   ironDisciple: {
-    robe: '#8f96a3', robeShade: '#646b78', trim: '#b83a3a', belt: '#3a3f4a',
-    pants: '#2e3038', hair: '#3a2a22', hairHi: '#5c463a', blush: '#e88c7a',
-    hairStyle: 'headband', weapon: 'broadsword', brow: true,
+    robe: '#585b62', robeShade: '#36383e', robeHi: '#757980', inner: '#6e2626',
+    belt: '#1e1f24', buckle: '#7a7f88', pants: '#23242a', boot: '#121114',
+    hair: '#1c1614', hairShade: '#120e0c', hairHi: '#3a2e2a', eyeGlint: '#6e2626',
+    accent: '#6e2626', headgear: 'headband', weapon: 'broadsword',
+    shoulder: '#3a3c44', scar: true,
+    tails: '#6e2626', tailsShade: '#4a1a1a', tailsY: 4,
   },
-  // 홍창방 후기지수 (붉은 도포, 쌍상투, 창)
+  // 홍창방 후기지수 연화 (검붉은 무복, 긴 말총머리, 창)
   spearMaiden: {
-    robe: '#d9534f', robeShade: '#a8343a', trim: '#f2c14e', belt: '#7a2430',
-    pants: '#4a2a34', hair: '#2b1c26', hairHi: '#4a3242', blush: '#f7a0a8',
-    hairStyle: 'buns', weapon: 'spear',
+    robe: '#7e2a30', robeShade: '#521a20', robeHi: '#a3434a', inner: '#1c1216',
+    belt: '#1c1216', buckle: '#b8923e', pants: '#2a1a1e', boot: '#120d10',
+    hair: '#110d12', hairShade: '#08060a', hairHi: '#2e2632', eyeGlint: '#7e2a30',
+    accent: '#b3323a', headgear: 'ribbon', weapon: 'spear', ponytail: true,
   },
 };
 
@@ -197,7 +240,7 @@ function gridToCanvas(grid, { flip = false, tint = null } = {}) {
 
 export function buildGrid(name) {
   const grid = createGrid(SPRITE_SIZE, SPRITE_SIZE);
-  drawChibi(painter(grid), DESIGNS[name]);
+  drawWarrior(painter(grid), DESIGNS[name]);
   addOutline(grid);
   return grid;
 }
