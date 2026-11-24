@@ -6,9 +6,11 @@ import { CARDS } from './core/cards.js';
 import { ENEMY_IDS } from './core/enemies.js';
 import { createScene, FEET, SCALE, SPRITE_TOP } from './ui/scene.js';
 
+const PLAYER_SPRITE = 'orthodox-sword';
+
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
-const scene = createScene($('scene'));
+const scene = createScene($('scene'), PLAYER_SPRITE);
 
 const TYPE_LABEL = { attack: '초식', defense: '호신강기', skill: '심법' };
 const POS = {

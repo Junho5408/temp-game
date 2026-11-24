@@ -7,7 +7,7 @@ import {
 import { STARTER_DECK } from '../src/core/cards.js';
 import { ENEMIES } from '../src/core/enemies.js';
 
-function setup(enemyId = 'ironDisciple', opts = {}) {
+function setup(enemyId = 'ironFist', opts = {}) {
   const s = createBattle({ enemyId, seed: 42, ...opts });
   startPlayerTurn(s);
   return s;
@@ -64,7 +64,7 @@ test('유수검은 피해 9 + 호신강기 4', () => {
 });
 
 test('호신강기가 적의 공격을 먼저 막음', () => {
-  const s = setup('ironDisciple'); // 첫 행동: 피해 7
+  const s = setup('ironFist'); // 첫 행동: 피해 7
   forceHand(s, ['guard']);
   playCard(s, 1000);
   endPlayerTurn(s);
@@ -73,7 +73,7 @@ test('호신강기가 적의 공격을 먼저 막음', () => {
 });
 
 test('호신강기는 내 다음 턴 시작 시 사라짐', () => {
-  const s = setup('spearMaiden');
+  const s = setup('ronin');
   forceHand(s, ['guard', 'guard', 'guard']);
   playCard(s, 1000); playCard(s, 1001); playCard(s, 1002); // 15
   endPlayerTurn(s);
@@ -83,7 +83,7 @@ test('호신강기는 내 다음 턴 시작 시 사라짐', () => {
 });
 
 test('적 방어도가 피해를 줄이고, 적 차례가 시작되면 사라짐', () => {
-  const s = setup('ironDisciple');
+  const s = setup('ironFist');
   endPlayerTurn(s); runEnemyTurn(s); // 철검 내려치기
   endPlayerTurn(s); runEnemyTurn(s); // 철벽세: 방어 8
   assert.equal(s.enemy.block, 8);
@@ -97,8 +97,8 @@ test('적 방어도가 피해를 줄이고, 적 차례가 시작되면 사라짐
 });
 
 test('적 행동 패턴이 순서대로 반복되고 다음 행동이 예고됨', () => {
-  const s = setup('ironDisciple');
-  const pattern = ENEMIES.ironDisciple.pattern;
+  const s = setup('ironFist');
+  const pattern = ENEMIES.ironFist.pattern;
   for (let i = 0; i < pattern.length * 2; i++) {
     assert.equal(s.enemy.intent, pattern[i % pattern.length]);
     endPlayerTurn(s);
@@ -118,7 +118,7 @@ test('턴 종료 시 손패는 버린 패로, 뽑을 패가 없으면 버린 패
 });
 
 test('다단 공격은 타수만큼 피해', () => {
-  const s = setup('spearMaiden'); // 연환창 4 x 2
+  const s = setup('ronin'); // 연환창 4 x 2
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, PLAYER_MAX_HP - 8);
@@ -135,7 +135,7 @@ test('적 체력이 0이 되면 승리, 이후 카드 사용 불가', () => {
 });
 
 test('내 체력이 0이 되면 패배', () => {
-  const s = setup('ironDisciple', { playerHp: 3 });
+  const s = setup('ironFist', { playerHp: 3 });
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, 0);
@@ -150,7 +150,7 @@ test('플레이어 차례가 아닐 때는 카드 사용/턴 종료 불가', () 
 });
 
 test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', () => {
-  const s = setup('ironDisciple');
+  const s = setup('ironFist');
   let guard = 0;
   while (s.phase !== 'lost' && guard++ < 100) {
     endPlayerTurn(s);

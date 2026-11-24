@@ -8,6 +8,10 @@ npm start        # http://localhost:8000
 npm test         # 전투 규칙 테스트
 ```
 
+캐릭터 도감: characters.html (세력 3 × 계열 3)
+```
+```
+
 ## 조작
 - 카드 클릭/터치 또는 숫자키 1~9: 카드 사용
 - 턴 종료 버튼 또는 E / Enter: 턴 종료

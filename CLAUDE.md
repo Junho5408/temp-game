@@ -17,5 +17,6 @@
 
 ## 개발 메모
 - 실행: `npm start` 후 http://localhost:8000 (빌드 없음, 정적 파일)
+- 캐릭터 도감: http://localhost:8000/characters.html (디자인은 src/ui/characters.js, 그리기는 src/ui/sprites.js)
 - 테스트: `npm test` (src/core 규칙 테스트, Node 기본 테스트 러너)
 - 게임 규칙은 src/core 에만 두고 화면 코드(src/ui, src/main.js)와 섞지 않기
