@@ -11,7 +11,17 @@
 </head>
 <body>
   <div id="stage">
-    <canvas id="scene" width="960" height="540"></canvas>
+    <canvas id="bg" width="960" height="540"></canvas>
+
+    <div class="fighter player" id="player-panel">
+      <div class="frame"><img alt="" draggable="false"><div class="hitflash"></div></div>
+      <div class="nameplate"></div>
+    </div>
+    <div class="fighter enemy" id="enemy-panel">
+      <div class="frame"><img alt="" draggable="false"><div class="hitflash"></div></div>
+      <div class="nameplate"></div>
+    </div>
+    <div class="versus">對</div>
 
     <div id="topbar">
       <span class="zone">제1구역 · 후기지수 비무대회</span>

@@ -8,65 +8,42 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 24px 16px 40px; background: #1a1520; color: #f4ead8;
+    body { margin: 0; padding: 24px 16px 40px; background: #141a22; color: #f4ead8;
       font-family: system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
     h1 { margin: 0 0 4px; font-family: 'Noto Serif KR', serif; font-weight: 900; font-size: 28px; }
     .sub { margin: 0 0 24px; opacity: .7; font-size: 14px; }
-    .grid { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 980px; }
+    .grid { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 1100px; }
     .head { font-family: 'Noto Serif KR', serif; font-weight: 900; font-size: 18px; align-self: end; text-align: center; }
     .row-label { font-family: 'Noto Serif KR', serif; font-weight: 900; font-size: 20px; writing-mode: vertical-rl;
       display: grid; place-items: center; padding: 0 4px; border-radius: 6px; }
-    .cell { background: #2a2330; border: 2px solid #0e0a10; border-radius: 6px; padding: 10px; text-align: center; }
-    .cell canvas { width: 100%; max-width: 256px; aspect-ratio: 1; image-rendering: pixelated; background: #4a4252; border-radius: 4px; }
-    .cell .t { font-weight: 800; margin: 6px 0 2px; }
+    .cell { background: #1e2530; border: 2px solid #050507; border-radius: 6px; padding: 10px; text-align: center; }
+    .cell img { width: 100%; display: block; border: 2px solid #050507; box-shadow: 0 0 0 1px #7a705e; }
+    .cell .t { font-family: 'Noto Serif KR', serif; font-weight: 900; margin: 8px 0 2px; }
     .cell .n { font-size: 12px; opacity: .75; line-height: 1.45; }
-    .toggle { margin-bottom: 16px; }
-    .toggle label { margin-right: 14px; font-size: 14px; }
   </style>
 </head>
 <body>
   <h1>캐릭터 도감</h1>
-  <p class="sub">세력 3 × 계열 3 · 64×64 도트 (확대 표시)</p>
-  <div class="toggle">
-    <label><input type="radio" name="zoom" value="4" checked> 크게 보기</label>
-    <label><input type="radio" name="zoom" value="2"> 게임 크기</label>
-  </div>
+  <p class="sub">세력 3 × 계열 3</p>
   <div class="grid" id="grid"></div>
   <script type="module">
-    import { buildSprite } from './src/ui/sprites.js';
     import { DESIGNS, FACTIONS, CLASSES } from './src/ui/characters.js';
     const grid = document.getElementById('grid');
     grid.append(document.createElement('div'));
     for (const c of Object.values(CLASSES)) {
       const h = document.createElement('div'); h.className = 'head'; h.textContent = c.name; grid.append(h);
     }
-    const canvases = [];
     for (const [fid, f] of Object.entries(FACTIONS)) {
       const label = document.createElement('div');
       label.className = 'row-label'; label.textContent = f.name; label.style.background = f.color + '55';
       grid.append(label);
       for (const cid of Object.keys(CLASSES)) {
-        const key = `${fid}-${cid}`;
-        const d = DESIGNS[key];
+        const d = DESIGNS[`${fid}-${cid}`];
         const cell = document.createElement('div'); cell.className = 'cell';
-        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
-        canvases.push([cv, buildSprite(key).normal]);
-        cell.append(cv);
-        cell.insertAdjacentHTML('beforeend', `<div class="t">${d.title}</div><div class="n">${d.note}</div>`);
+        cell.innerHTML = `<img src="${d.portrait}" alt="${d.title}"><div class="t">${d.title}</div><div class="n">${d.note}</div>`;
         grid.append(cell);
       }
     }
-    function draw(zoom) {
-      for (const [cv, img] of canvases) {
-        const s = 64 * zoom;
-        cv.width = s; cv.height = s;
-        const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, 0, 0, s, s);
-        cv.style.maxWidth = `${s}px`;
-      }
-    }
-    document.querySelectorAll('input[name=zoom]').forEach((r) => r.addEventListener('change', () => draw(Number(r.value))));
-    draw(4);
   </script>
 </body>
 </html>

@@ -4,18 +4,21 @@ import {
 } from './core/battle.js';
 import { CARDS } from './core/cards.js';
 import { ENEMY_IDS } from './core/enemies.js';
-import { createScene, FEET, SCALE, SPRITE_TOP } from './ui/scene.js';
+import { createBackdrop } from './ui/backdrop.js';
+import { DESIGNS } from './ui/characters.js';
 
-const PLAYER_SPRITE = 'orthodox-sword';
+const PLAYER_ART = 'orthodox-sword';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
-const scene = createScene($('scene'), PLAYER_SPRITE);
+const backdrop = createBackdrop($('bg'));
+const PANEL = { player: $('player-panel'), enemy: $('enemy-panel') };
 
 const TYPE_LABEL = { attack: '초식', defense: '호신강기', skill: '심법' };
+// 데미지 숫자가 뜨는 위치 (초상화 가운데)
 const POS = {
-  player: { x: FEET.player.x * SCALE, y: FEET.player.y * SCALE },
-  enemy: { x: FEET.enemy.x * SCALE, y: FEET.enemy.y * SCALE },
+  player: { x: 220, y: 225 },
+  enemy: { x: 740, y: 225 },
 };
 
 let battle = null;
@@ -36,7 +39,8 @@ function newBattle() {
   const enemyId = choices[Math.floor(Math.random() * choices.length)];
   lastEnemy = enemyId;
   battle = createBattle({ enemyId, seed: (Math.random() * 2 ** 31) | 0 });
-  scene.setEnemy(battle.enemy.sprite);
+  setPortrait('player', PLAYER_ART, '검객');
+  setPortrait('enemy', battle.enemy.art, battle.enemy.name);
   $('hand').replaceChildren();
   $('result').hidden = true;
   busy = false;
@@ -50,8 +54,10 @@ function newBattle() {
 function render() {
   const s = battle;
   $('turn-label').textContent = `제 ${s.turn} 턴`;
-  renderUnit($('player-info'), '검객', '정파 · 떠돌이 무인', s.player, POS.player);
-  renderUnit($('enemy-info'), s.enemy.name, s.enemy.title, s.enemy, POS.enemy);
+  renderUnit($('player-info'), '정파 · 떠돌이 무인', s.player);
+  renderUnit($('enemy-info'), s.enemy.title, s.enemy);
+  PANEL.player.classList.toggle('defeated', s.player.hp <= 0);
+  PANEL.enemy.classList.toggle('defeated', s.enemy.hp <= 0);
   renderIntent();
 
   $('energy-value').textContent = `${s.player.energy}/${s.player.maxEnergy}`;
@@ -62,16 +68,23 @@ function render() {
   renderHand();
 }
 
-function renderUnit(el, name, title, u, pos) {
+function setPortrait(who, artKey, name) {
+  const panel = PANEL[who];
+  const d = DESIGNS[artKey];
+  const img = panel.querySelector('img');
+  img.src = d.portrait;
+  img.alt = d.title;
+  panel.querySelector('.nameplate').textContent = name;
+  panel.classList.remove('defeated', 'hit', 'lunge');
+}
+
+function renderUnit(el, title, u) {
   if (!el.firstChild) {
     el.innerHTML = `
       <div class="hpbar"><div class="fill"></div><div class="text"></div></div>
       <div class="block-badge" hidden></div>
-      <div class="name"></div><div class="title"></div>`;
+      <div class="title"></div>`;
   }
-  el.style.left = `${pos.x}px`;
-  el.style.top = `${pos.y + 8}px`;
-  el.querySelector('.name').textContent = name;
   el.querySelector('.title').textContent = title;
   el.querySelector('.fill').style.width = `${(u.hp / u.maxHp) * 100}%`;
   el.querySelector('.hpbar .text').textContent = `${u.hp} / ${u.maxHp}`;
@@ -84,8 +97,6 @@ function renderUnit(el, name, title, u, pos) {
 function renderIntent() {
   const el = $('intent');
   const s = battle;
-  el.style.left = `${POS.enemy.x}px`;
-  el.style.top = `${SPRITE_TOP.enemy * SCALE - 6}px`;
   if (s.phase === 'won' || s.phase === 'lost') {
     el.classList.add('hidden');
     return;
@@ -188,16 +199,16 @@ async function playEvents(events) {
   for (const ev of events) {
     switch (ev.type) {
       case 'play':
-        if (CARDS[ev.card].damage) scene.play('player', 'lunge');
+        if (CARDS[ev.card].damage) animate('player', 'lunge');
         break;
       case 'enemyAct':
         showBanner(ev.name, '#ffb0a0', 800);
-        scene.play('enemy', 'lunge');
+        animate('enemy', 'lunge');
         await wait(180);
         break;
       case 'damage':
         if (ev.amount > 0) {
-          scene.play(ev.target, 'hit');
+          animate(ev.target, 'hit');
           popup(ev.target, `-${ev.amount}`, 'dmg');
         }
         if (ev.blocked > 0) popup(ev.target, `막음 ${ev.blocked}`, 'blk', 26);
@@ -224,6 +235,13 @@ async function playEvents(events) {
         break;
     }
   }
+}
+
+function animate(who, kind) {
+  const el = PANEL[who];
+  el.classList.remove(kind);
+  void el.offsetWidth;
+  el.classList.add(kind);
 }
 
 function popup(target, text, cls, offsetY = 0) {
@@ -272,7 +290,7 @@ function wait(ms) {
 
 // ── 메인 루프 ─────────────────────────
 function frame(now) {
-  scene.draw(now, battle);
+  backdrop.draw(now);
   requestAnimationFrame(frame);
 }
 

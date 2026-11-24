@@ -30,7 +30,7 @@ export function createBattle({
       id: def.id,
       name: def.name,
       title: def.title,
-      sprite: def.sprite,
+      art: def.art,
       hp: def.maxHp,
       maxHp: def.maxHp,
       block: 0,

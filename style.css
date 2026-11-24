@@ -35,16 +35,92 @@ html, body {
   transform-origin: center center;
   transform: translate(-50%, -50%) scale(var(--scale, 1));
   overflow: hidden;
-  background: #2f2540;
+  background: #141a22;
 }
 
-#scene {
+#bg {
   position: absolute;
   inset: 0;
   width: 960px;
   height: 540px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+}
+
+/* ── 초상화 액자 ─────────────────── */
+.fighter {
+  position: absolute;
+  top: 58px;
+  width: 329px;
+  height: 206px;
+  transition: filter .4s;
+}
+.fighter.player { left: 56px; }
+.fighter.enemy { right: 56px; }
+.fighter .frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0f13;
+  border: 2px solid #050507;
+  box-shadow: 0 0 0 1px #7a705e, 0 0 0 4px #0b0b0e, 0 12px 30px rgba(0,0,0,.65);
+}
+.fighter img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.fighter .hitflash {
+  position: absolute;
+  inset: 0;
+  background: #c8202a;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+/* 붓으로 그은 듯한 이름표 */
+.fighter .nameplate {
+  position: absolute;
+  left: 50%;
+  bottom: -16px;
+  transform: translateX(-50%);
+  min-width: 150px;
+  padding: 5px 34px 7px;
+  text-align: center;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: 20px;
+  color: #f4f1ea;
+  white-space: nowrap;
+  background: radial-gradient(ellipse at center, #050507 55%, rgba(5,5,7,.85) 70%, rgba(5,5,7,0) 76%);
+  text-shadow: 0 2px 0 #000;
+}
+.fighter.lunge.player { animation: lunge-right .32s ease-out; }
+.fighter.lunge.enemy { animation: lunge-left .32s ease-out; }
+@keyframes lunge-right { 45% { transform: translateX(46px) scale(1.04); } }
+@keyframes lunge-left { 45% { transform: translateX(-46px) scale(1.04); } }
+.fighter.hit { animation: shake .32s; }
+.fighter.hit .hitflash { animation: hitflash .35s ease-out; }
+@keyframes shake {
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+@keyframes hitflash { 0% { opacity: .55; } 100% { opacity: 0; } }
+.fighter.defeated { filter: grayscale(1) brightness(.45); }
+
+.versus {
+  position: absolute;
+  left: 50%;
+  top: 196px;
+  transform: translateX(-50%);
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: 46px;
+  color: rgba(244, 234, 216, .16);
+  pointer-events: none;
 }
 
 /* ── 상단 ─────────────────── */
@@ -67,7 +143,8 @@ html, body {
 /* ── 체력 / 호신강기 ─────────────────── */
 .unit-info {
   position: absolute;
-  width: 150px;
+  top: 284px;
+  width: 260px;
   transform: translateX(-50%);
   text-align: center;
   font-size: 13px;
@@ -78,10 +155,12 @@ html, body {
   font-weight: 900;
   font-size: 15px;
 }
-.unit-info .title { font-size: 11px; opacity: 0.85; }
+.unit-info .title { margin-top: 3px; font-size: 12px; opacity: 0.85; }
+#player-info { left: 220px; }
+#enemy-info { left: 740px; }
 .hpbar {
   position: relative;
-  height: 14px;
+  height: 16px;
   margin-top: 3px;
   border: 2px solid var(--ink);
   background: #3a2530;
@@ -96,13 +175,13 @@ html, body {
   position: absolute;
   inset: 0;
   font-size: 11px;
-  line-height: 10px;
+  line-height: 12px;
   font-weight: 700;
 }
 .block-badge {
   position: absolute;
-  left: -22px;
-  top: 30px;
+  left: -36px;
+  top: -8px;
   width: 28px;
   height: 28px;
   display: grid;
@@ -120,7 +199,10 @@ html, body {
 /* ── 적 의도 (다음 초식 예고) ─────────────────── */
 .intent {
   position: absolute;
-  transform: translate(-50%, -100%);
+  left: 50%;
+  top: 104px;
+  transform: translateX(-50%);
+  text-align: center;
   padding: 4px 10px 5px;
   background: var(--paper);
   color: var(--ink);
@@ -135,11 +217,11 @@ html, body {
 .intent::after {
   content: '';
   position: absolute;
-  left: 50%;
-  bottom: -8px;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: var(--ink);
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 7px solid transparent;
+  border-right-color: var(--paper);
 }
 .intent .label { display: block; font-size: 10px; color: #7a6a5a; font-weight: 600; }
 .intent .atk { color: var(--red); }
