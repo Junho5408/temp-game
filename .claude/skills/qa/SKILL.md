@@ -1,0 +1,41 @@
+---
+name: qa
+description: 백일회귀(temp-game) QA 한 회차를 돌린다 (QA Manager). 기능·탐색·밸런스 QA 에이전트를 동시에 실행하고, 버그 분석가와 보고 담당을 이어 실행해 docs/qa/ 에 보고서와 버그 티켓을 남긴다. 사용자가 "/qa", "QA 돌려줘", "테스트 한 바퀴" 등을 요청할 때.
+---
+
+# QA Manager — QA 한 회차 진행
+
+너(메인 세션)가 QA Manager 다. 서브 에이전트는 다른 에이전트를 부를 수 없으므로 **진행 순서와 판단은 네가 맡는다.**
+형식과 심각도 기준: `docs/qa/README.md`.
+
+## 0. 준비
+- run 이름 정하기: `qa-YYYYMMDD-HHMM` (사용자가 인자로 이름을 주면 그것). 아래에서 `<run>`.
+- `git status --short` 로 작업 중인 변경이 있는지 확인. 있으면 사용자에게 알리고 그 상태 그대로 점검한다 (커밋하지 않음).
+- 인자 해석: `quick` = 몽키 시드 2개·밸런스 300판 / 기본 = 몽키 시드 4개·밸런스 600판 / `functional` `exploratory` `balance` 처럼 역할 이름을 주면 그 역할만.
+- 사용자에게 한 줄로 시작을 알린다 (예: "QA <run> 시작: 기능·탐색·밸런스 동시 진행, 10~20분 걸림").
+
+## 1. 점검 (동시에)
+Agent 도구로 아래 셋을 **한 응답에서 동시에** 실행한다 (subagent_type 은 이름 그대로, 백그라운드):
+- `qa-functional` — 프롬프트: "run 이름은 <run>. 지시대로 기능 QA 를 수행하고 qa-output/<run>/findings-functional.md 를 작성해."
+- `qa-exploratory` — 프롬프트: "run 이름은 <run>. 몽키 시드 <목록>, 각 300걸음. 극단 상황 점검까지 하고 qa-output/<run>/findings-exploratory.md 를 작성해."
+- `qa-balance` — 프롬프트: "run 이름은 <run>. 봇 <n>판. qa-output/<run>/findings-balance.md 를 작성해."
+- 기다리는 동안 결과를 미리 짐작해 말하지 않는다. 셋 다 끝나면 다음으로.
+- 어느 에이전트가 실패하거나 파일을 안 남겼으면, 같은 프롬프트로 한 번만 다시 시도. 그래도 안 되면 보고서에 "미실시"로 남긴다.
+
+## 2. 분석
+- `qa-output/<run>/findings-*.md` 가 하나라도 있으면 `qa-bug-analyst` 실행 (백그라운드 아님, 결과를 기다림).
+  프롬프트: "run 이름은 <run>. findings 를 모두 분석해서 qa-output/<run>/analysis.md 를 작성해."
+- 발견 사항이 0건이면 분석은 건너뛴다.
+
+## 3. 보고
+- `qa-reporter` 실행. 프롬프트: "run 이름은 <run>. 보고서와 티켓을 작성해."
+- 끝나면 `docs/qa/reports/<run>.md` 를 직접 읽고 확인: 티켓 형식이 README 와 맞는지, 근거 없는 티켓이 없는지. 문제가 있으면 직접 고친다 (게임 코드는 건드리지 않음).
+
+## 4. 마무리
+- `docs/qa/` 변경만 커밋 & 푸시 (`QA <run>: 티켓 n건` 같은 메시지). 게임 코드 변경은 커밋에 넣지 않는다.
+- 보고서를 사용자에게 보내고(SendUserFile 이 있으면), 답변은 짧게:
+  - 한 줄 결론 (치명/높음/보통/낮음 개수)
+  - 새 티켓 표 (번호·제목·심각도)
+  - 밸런스 핵심 1~2줄
+  - "고치려면 `/fix-bugs` (전체) 또는 `/fix-bugs BUG-003` (하나)"
+- **이 단계에서 버그를 고치지 않는다.** 사용자가 고치라고 할 때 `/fix-bugs` 로.

@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "start": "python3 -m http.server 8000"
+    "start": "python3 -m http.server 8000",
+    "qa:smoke": "node tools/qa/smoke.cjs",
+    "qa:monkey": "node tools/qa/monkey.cjs",
+    "qa:balance": "node tools/qa/balance.mjs"
   }
 }

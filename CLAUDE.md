@@ -26,4 +26,5 @@
 - 규칙 파일: battle.js(전투) run.js(한 판) map.js(지도) events.js(기연) cards.js enemies.js(적·특성 TRAITS) items.js(행낭 물품·보물)
 - 용어: 카드 = 무공, 일시적 아이템 = 행낭 물품, 영구 아이템 = 보물(영약·비급·보구)
 - 테스트에서 확률을 끄려면 createBattle({ luck: false }), 규칙 확인용 적은 dummy / dummyMulti
+- QA: `/qa` (QA Manager) → 에이전트 .claude/agents/qa-*.md → 보고서 docs/qa/reports, 티켓 docs/qa/tickets → `/fix-bugs` 로 수정. 형식은 docs/qa/README.md, 도구 tools/qa/ (npm run qa:smoke / qa:monkey / qa:balance), 원자료 qa-output/(git 제외)
 - 새 그림 처리: `python3 tools/prepare_sprite.py <원본> <세력-계열 또는 npc-이름> [--despill all]` 후 src/ui/characters.js 의 SPRITES 에 footX 등록
