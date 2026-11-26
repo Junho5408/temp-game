@@ -78,6 +78,29 @@ export const ENEMIES = {
   },
 };
 
+// ── 프롤로그 (튜토리얼) ─────────────────
+// 지도에는 나오지 않음
+Object.assign(ENEMIES, {
+  drunkThug: {
+    name: '왕삼', title: '술 취한 흑도 주먹패', art: 'unorthodox-fist', tier: 'tutorial',
+    maxHp: 22,
+    pattern: [
+      { name: '주먹질', damage: 4 },
+      { name: '딸꾹질', strength: 1 },
+      { name: '막무가내 난타', damage: 2, hits: 3 },
+    ],
+  },
+  bloodShadow: {
+    name: '혈영대원', title: '귀면 가면의 자객', art: 'demonic-assassin', tier: 'tutorial',
+    maxHp: 48,
+    pattern: [
+      { name: '살기 개방', strength: 2 },
+      { name: '혈인참', damage: 6 },
+      { name: '귀면 위압', damage: 5, weak: 2 },
+    ],
+  },
+});
+
 for (const [id, e] of Object.entries(ENEMIES)) e.id = id;
 
 export const ENEMY_IDS = Object.keys(ENEMIES);

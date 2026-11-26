@@ -65,7 +65,9 @@ export async function createScene(canvas, { player }) {
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
-  const background = renderBackground();
+  // 배경: arena(비무대) / inn(청운객잔, 프롤로그)
+  const backgrounds = { arena: renderBackground(), inn: renderInnBackground() };
+  let mode = 'arena';
   const fx = [];
   const sparks = [];
   const embers = Array.from({ length: 60 }, () => spawnEmber(true));
@@ -163,8 +165,9 @@ export async function createScene(canvas, { player }) {
       sx = (Math.random() - 0.5) * shakePower * 2;
       sy = (Math.random() - 0.5) * shakePower * 2;
     }
-    ctx.drawImage(background, 0, 0, W, H);
-    drawFog(ctx, now);
+    ctx.drawImage(backgrounds[mode], 0, 0, W, H);
+    if (mode === 'arena') drawFog(ctx, now);
+    else drawInnLife(ctx, now);
     ctx.save();
     ctx.translate(sx, sy);
     // 뒤에 있는 적부터
@@ -173,7 +176,7 @@ export async function createScene(canvas, { player }) {
     drawFx(ctx, now);
     drawSparks(ctx, now);
     ctx.restore();
-    drawEmbers(ctx, now);
+    if (mode === 'arena') drawEmbers(ctx, now);
   }
 
   function drawUnit(g, u, who, now, state) {
@@ -462,7 +465,11 @@ export async function createScene(canvas, { player }) {
     }
   }
 
-  return { setEnemy, clearEnemy, reset, attack, hit, buff, die, shake, draw };
+  function setBackground(name) {
+    mode = name;
+  }
+
+  return { setEnemy, clearEnemy, reset, attack, hit, buff, die, shake, draw, setBackground };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.
@@ -705,4 +712,179 @@ function drawPlatform(g) {
   g.lineTo(...T);
   g.lineTo(...R);
   g.stroke();
+}
+
+// ── 청운객잔 (프롤로그) ─────────────────────────
+const INN_WINDOWS = [[140, 70, 180, 128], [640, 70, 180, 128]];
+const INN_LANTERNS = [[330, 34], [480, 22], [630, 34]];
+
+function renderInnBackground() {
+  const c = makeCanvas(W, H);
+  const g = c.getContext('2d');
+  g.scale(DPR, DPR);
+
+  // 벽
+  const wall = g.createLinearGradient(0, 0, 0, 300);
+  wall.addColorStop(0, '#140e0b');
+  wall.addColorStop(1, '#2c1e16');
+  g.fillStyle = wall;
+  g.fillRect(0, 0, W, 300);
+  // 기둥
+  for (const x of [40, 400, 560, 920]) {
+    g.fillStyle = '#120c09';
+    g.fillRect(x - 10, 0, 20, 300);
+    g.fillStyle = 'rgba(255, 200, 140, 0.06)';
+    g.fillRect(x + 6, 0, 3, 300);
+  }
+  // 대들보
+  g.fillStyle = '#0f0a08';
+  g.fillRect(0, 0, W, 16);
+
+  // 창 (밖은 비 오는 밤)
+  for (const [x, y, w, h] of INN_WINDOWS) {
+    const night = g.createLinearGradient(0, y, 0, y + h);
+    night.addColorStop(0, '#0b1018');
+    night.addColorStop(1, '#151d28');
+    g.fillStyle = night;
+    g.fillRect(x, y, w, h);
+    g.strokeStyle = '#3a271b';
+    g.lineWidth = 4;
+    g.strokeRect(x, y, w, h);
+    g.lineWidth = 2;
+    for (let i = 1; i < 4; i++) {
+      g.beginPath();
+      g.moveTo(x + (w * i) / 4, y);
+      g.lineTo(x + (w * i) / 4, y + h);
+      g.stroke();
+    }
+    for (let i = 1; i < 3; i++) {
+      g.beginPath();
+      g.moveTo(x, y + (h * i) / 3);
+      g.lineTo(x + w, y + (h * i) / 3);
+      g.stroke();
+    }
+  }
+
+  // 바닥 (나무 마루)
+  const floor = g.createLinearGradient(0, 280, 0, H);
+  floor.addColorStop(0, '#3b2719');
+  floor.addColorStop(1, '#1a110b');
+  g.fillStyle = floor;
+  g.fillRect(0, 280, W, H - 280);
+  g.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  g.lineWidth = 1.2;
+  for (let k = -20; k < 40; k++) {
+    // 쿼터뷰 방향의 마루 널
+    const x0 = k * 46;
+    g.beginPath();
+    g.moveTo(x0, 280);
+    g.lineTo(x0 + 520, 540);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(0,0,0,0.5)';
+  g.fillRect(0, 276, W, 6); // 벽과 바닥 경계 그림자
+
+  // 탁자와 의자
+  innTable(g, 150, 300);
+  innTable(g, 820, 296);
+  // 탁자 위 그릇
+  g.fillStyle = '#d8cbb0';
+  g.beginPath();
+  g.ellipse(150, 270, 14, 5, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = '#5a3a24';
+  g.beginPath();
+  g.ellipse(820, 266, 9, 12, 0, 0, Math.PI * 2);
+  g.fill(); // 술병
+
+  // 등불 줄
+  for (const [x, y] of INN_LANTERNS) {
+    g.strokeStyle = '#0c0806';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x, 0);
+    g.lineTo(x, y);
+    g.stroke();
+  }
+
+  const vig = g.createRadialGradient(W / 2, H * 0.5, H * 0.3, W / 2, H * 0.5, W * 0.7);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+  g.fillStyle = vig;
+  g.fillRect(0, 0, W, H);
+  return c;
+}
+
+function innTable(g, x, y) {
+  const hw = 62;
+  const hh = 22;
+  const top = y - 40;
+  g.fillStyle = '#1a110b';
+  for (const [lx, ly] of [[-hw + 10, 0], [hw - 10, 0], [0, hh - 6], [0, -hh + 6]]) g.fillRect(x + lx - 3, top + ly, 6, 40);
+  g.fillStyle = '#5a3c26';
+  g.beginPath();
+  g.moveTo(x - hw, top);
+  g.lineTo(x, top - hh);
+  g.lineTo(x + hw, top);
+  g.lineTo(x, top + hh);
+  g.closePath();
+  g.fill();
+  g.fillStyle = '#3a2618';
+  g.beginPath();
+  g.moveTo(x - hw, top);
+  g.lineTo(x, top + hh);
+  g.lineTo(x, top + hh + 7);
+  g.lineTo(x - hw, top + 7);
+  g.closePath();
+  g.fill();
+  g.fillStyle = '#2a1b11';
+  g.beginPath();
+  g.moveTo(x, top + hh);
+  g.lineTo(x + hw, top);
+  g.lineTo(x + hw, top + 7);
+  g.lineTo(x, top + hh + 7);
+  g.closePath();
+  g.fill();
+}
+
+// 등불 흔들림 + 창밖 빗줄기
+function drawInnLife(g, now) {
+  for (const [i, [x, y]] of INN_LANTERNS.entries()) {
+    const flicker = 0.85 + Math.sin(now / 130 + i * 2) * 0.08 + Math.sin(now / 47 + i) * 0.05;
+    const glow = g.createRadialGradient(x, y + 14, 4, x, y + 14, 210);
+    glow.addColorStop(0, `rgba(255, 150, 70, ${0.32 * flicker})`);
+    glow.addColorStop(1, 'rgba(255, 150, 70, 0)');
+    g.fillStyle = glow;
+    g.fillRect(x - 210, y - 196, 420, 420);
+    g.fillStyle = '#a3262e';
+    g.beginPath();
+    g.ellipse(x, y + 14, 13, 17, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = `rgba(255, 200, 120, ${0.55 * flicker})`;
+    g.beginPath();
+    g.ellipse(x, y + 14, 7, 11, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#c99a3e';
+    g.fillRect(x - 8, y - 4, 16, 4);
+    g.fillRect(x - 8, y + 30, 16, 4);
+  }
+  g.save();
+  g.strokeStyle = 'rgba(150, 170, 200, 0.35)';
+  g.lineWidth = 1;
+  for (const [x, y, w, h] of INN_WINDOWS) {
+    g.save();
+    g.beginPath();
+    g.rect(x + 2, y + 2, w - 4, h - 4);
+    g.clip();
+    for (let k = 0; k < 26; k++) {
+      const rx = x + ((k * 37 + now / 3) % w);
+      const ry = y + ((k * 53 + now / 1.4) % h);
+      g.beginPath();
+      g.moveTo(rx, ry);
+      g.lineTo(rx - 3, ry + 12);
+      g.stroke();
+    }
+    g.restore();
+  }
+  g.restore();
 }

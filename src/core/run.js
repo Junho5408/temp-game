@@ -25,7 +25,8 @@ const REWARD_WEIGHTS = {
 const GOLD_REWARD = { normal: [12, 20], elite: [28, 36] };
 const PRICE = { common: [45, 55], uncommon: [70, 85], rare: [135, 155] };
 
-export function createRun({ seed = 1 } = {}) {
+// extraCards: 회귀하며 기억한 무공 (시작 덱에 추가)
+export function createRun({ seed = 1, extraCards = [] } = {}) {
   const run = {
     seed,
     rng: createRng(seed),
@@ -48,6 +49,7 @@ export function createRun({ seed = 1 } = {}) {
     battlesWon: 0,
   };
   for (const id of STARTER_DECK) addCard(run, id);
+  for (const id of extraCards) addCard(run, id);
   return run;
 }
 

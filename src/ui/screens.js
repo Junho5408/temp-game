@@ -225,7 +225,7 @@ export function renderEnd(run, onRestart) {
       <div><b>${run.deck.length}</b><span>덱 장수</span></div>
       <div><b>${run.gold}</b><span>남은 은자</span></div>
     </div>`;
-  actions.appendChild(button('새 판 시작', onRestart));
+  actions.appendChild(button('처음 화면으로', onRestart));
 }
 
 // ── 덱 보기 ─────────────────────────
