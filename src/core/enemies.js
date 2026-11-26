@@ -125,7 +125,7 @@ export const ENEMIES = {
 Object.assign(ENEMIES, {
   bandit: {
     name: '장칠', title: '녹림 산적', art: 'unorthodox-fist', tier: 'normal',
-    maxHp: 50,
+    maxHp: 58,
     pattern: [
       { name: '도끼질', damage: 9 },
       { name: '함성 · 기를 모은다', strength: 2 },
@@ -143,7 +143,7 @@ Object.assign(ENEMIES, {
   },
   blackWind: {
     name: '흑풍', title: '흑풍채 쾌도', art: 'unorthodox-sword', tier: 'normal',
-    maxHp: 46, evasion: 10,
+    maxHp: 54, evasion: 10,
     pattern: [
       { name: '쾌도 이연참', damage: 5, hits: 2 },
       { name: '바람을 모은다', strength: 1 },
@@ -218,7 +218,7 @@ Object.assign(ENEMIES, {
   },
   demonSword: {
     name: '마검수', title: '마교 검대', art: 'demonic-sword', tier: 'normal',
-    maxHp: 60, traits: ['killer'],
+    maxHp: 72, traits: ['killer'],
     pattern: [
       { name: '마검', damage: 12 },
       { name: '혈기', strength: 3 },
@@ -246,7 +246,7 @@ Object.assign(ENEMIES, {
   },
   bloodWolf: {
     name: '혈랑', title: '혈영대 부대주', art: 'demonic-assassin', tier: 'elite',
-    maxHp: 110, evasion: 20, traits: ['feint', 'killer'],
+    maxHp: 95, evasion: 20, traits: ['feint', 'killer'],
     pattern: [
       { name: '혈랑 연참', damage: 5, hits: 3 },
       { name: '반격 자세', counter: 9 },

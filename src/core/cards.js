@@ -137,7 +137,7 @@ export const CARDS = {
   // ── 희귀 ─────────────────
   heavenWind: {
     name: '천풍검', type: 'attack', rarity: 'rare', glyph: '天',
-    cost: 3, damage: 28, accuracy: 80,
+    cost: 3, damage: 28, accuracy: 90,
     upgrade: { damage: 36 },
   },
   swordRain: {
@@ -157,8 +157,8 @@ export const CARDS = {
   },
   deathPoint: {
     name: '사혈점', type: 'attack', rarity: 'rare', glyph: '死',
-    cost: 2, damage: 10, point: 15, sure: true,
-    upgrade: { damage: 14, point: 20 },
+    cost: 2, damage: 13, point: 9, sure: true,
+    upgrade: { damage: 17, point: 13 },
   },
 };
 
