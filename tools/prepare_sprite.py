@@ -29,12 +29,26 @@ def chroma_alpha(rgb):
     return alpha
 
 
+def edge_band(alpha, width=4):
+    """투명한 곳에서 width 픽셀 안쪽까지의 가장자리 영역."""
+    band = alpha < 0.99
+    grown = band.copy()
+    for _ in range(width):
+        nxt = grown.copy()
+        nxt[1:, :] |= grown[:-1, :]
+        nxt[:-1, :] |= grown[1:, :]
+        nxt[:, 1:] |= grown[:, :-1]
+        nxt[:, :-1] |= grown[:, 1:]
+        grown = nxt
+    return grown
+
+
 def despill(rgb, alpha):
+    """가장자리에 남은 초록 번짐만 지움. 안쪽의 초록 옷 색은 그대로 둠."""
     out = rgb.copy()
     r, g, b = out[..., 0], out[..., 1], out[..., 2]
     limit = np.maximum(r, b)
-    spill = g > limit
-    # 초록 번짐을 빨강/파랑 중 큰 값으로 눌러줌
+    spill = (g > limit) & edge_band(alpha)
     out[..., 1] = np.where(spill, limit + (g - limit) * 0.15, g)
     return out
 

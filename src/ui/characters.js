@@ -32,6 +32,8 @@ const NOTES = {
 // 전신 그림 등록 (prepare_sprite.py 가 출력한 footX 값)
 const SPRITES = {
   'orthodox-sword': { image: 'assets/characters/orthodox-sword.webp', footX: 0.4073 },
+  'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.5286 },
+  'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
 };
 
 // 공격 이펙트 색 (검기/권경/암기)

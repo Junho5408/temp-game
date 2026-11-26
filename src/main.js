@@ -16,6 +16,7 @@ let scene = null;
 let battle = null;
 let busy = false;
 let lastEnemy = null;
+let enemyActing = false; // 적이 움직이는 동안 예고 말풍선 숨김
 
 // ── 화면 크기 맞추기 ─────────────────────────
 function fit() {
@@ -89,7 +90,7 @@ function renderUnit(el, name, title, u, who) {
 function renderIntent() {
   const el = $('intent');
   const s = battle;
-  if (s.phase === 'won' || s.phase === 'lost') {
+  if (enemyActing || s.phase === 'won' || s.phase === 'lost') {
     el.classList.add('hidden');
     return;
   }
@@ -164,9 +165,12 @@ async function onEndTurn() {
   if (busy || !endPlayerTurn(battle)) return;
   busy = true;
   render();
+  enemyActing = true;
+  renderIntent();
   await wait(350);
   runEnemyTurn(battle);
   await playEvents(takeEvents(battle));
+  enemyActing = false;
   busy = false;
   render();
 }
@@ -217,6 +221,7 @@ async function playEvents(events) {
         await wait(150);
         break;
       case 'turnStart':
+        enemyActing = false;
         render();
         await wait(200);
         showBanner(`제 ${ev.turn} 턴 · 나의 차례`, '#f4ead8', 900);
