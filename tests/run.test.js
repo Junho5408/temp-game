@@ -19,11 +19,15 @@ test('지도 규칙: 층 구성, 막힌 칸 없음, 필수 칸 존재 (여러 �
     assert.equal(map.rows.length, ROWS + 1);
     assert.ok(map.rows[0].every((n) => n.type === 'battle'), '0층은 전투');
     assert.ok(map.rows[ROWS - 1].every((n) => n.type === 'rest'), '두목 앞은 운기조식');
+    assert.ok(map.rows[5].every((n) => n.type === 'rest'), '중간(5층)은 운기조식');
+    const half = (rows, type) => rows.some((r) => map.rows[r].some((n) => n.type === type));
+    assert.ok(half([1, 2, 3, 4], 'shop') && half([6, 7, 8, 9, 10], 'shop'), `seed ${seed}: 앞뒤 객잔`);
+    assert.ok(half([3, 4], 'elite') && half([6, 7, 8, 9, 10], 'elite'), `seed ${seed}: 앞뒤 고수`);
     assert.equal(map.rows[ROWS][0].type, 'boss');
     const nodes = allNodes(map);
     assert.ok(nodes.some((n) => n.type === 'shop'), `seed ${seed}: 객잔 없음`);
     assert.ok(nodes.some((n) => n.type === 'elite'), `seed ${seed}: 고수 없음`);
-    assert.ok(map.rows[1].every((n) => n.type !== 'elite'), '고수는 2층부터');
+    assert.ok([1, 2].every((r) => map.rows[r].every((n) => n.type !== 'elite')), '고수는 3층부터');
     for (let r = 0; r < ROWS; r++) {
       for (const n of map.rows[r]) assert.ok(n.next.length > 0, `seed ${seed}: ${n.id} 나가는 길 없음`);
     }
@@ -77,8 +81,8 @@ function autoBattle(battle) {
 
 function score(card, attacking) {
   const c = cardStats(card);
-  let v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8;
-  v += (c.block ?? 0) * (attacking ? 1.4 : 0.3);
+  const v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
+    + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3;
   return v / Math.max(1, c.cost);
 }
 
@@ -114,7 +118,7 @@ test('운기조식: 회복(최대 체력 30%) 또는 연마', () => {
   const run = createRun({ seed: 1 });
   run.phase = 'rest';
   run.hp = 20;
-  assert.equal(restHeal(run), 18);
+  assert.equal(restHeal(run), 21); // 최대 체력 70의 30%
   assert.equal(run.phase, 'map');
   run.phase = 'rest';
   const card = run.deck[0];
@@ -184,7 +188,7 @@ function autoRun(seed) {
     if (run.phase === 'map') {
       const opts = availableNodes(run);
       // 단순한 선택: 체력이 낮으면 휴식/객잔 쪽, 아니면 아무거나
-      const pref = run.hp < run.maxHp * 0.4 ? ['rest', 'shop', 'event', 'battle', 'elite', 'boss'] : ['battle', 'event', 'elite', 'shop', 'rest', 'boss'];
+      const pref = run.hp < run.maxHp * 0.45 ? ['rest', 'shop', 'event', 'battle', 'elite', 'boss'] : ['battle', 'event', 'elite', 'shop', 'rest', 'boss'];
       opts.sort((a, b) => pref.indexOf(a.type) - pref.indexOf(b.type));
       enterNode(run, opts[0].id);
     } else if (run.phase === 'battle') {
@@ -194,8 +198,9 @@ function autoRun(seed) {
     } else if (run.phase === 'reward') {
       chooseReward(run, 0);
     } else if (run.phase === 'rest') {
-      if (run.hp < run.maxHp * 0.7) restHeal(run);
-      else restUpgrade(run, run.deck.find((c) => !c.upgraded).uid);
+      const up = run.deck.find((c) => !c.upgraded);
+      if (run.hp < run.maxHp * 0.75 || !up) restHeal(run);
+      else restUpgrade(run, up.uid);
     } else if (run.phase === 'shop') {
       const i = run.shop.items.findIndex((it) => it.price <= run.gold);
       if (i >= 0) buyCard(run, i);
@@ -212,14 +217,17 @@ function autoRun(seed) {
 
 test('자동 플레이로 한 판이 끝까지 진행됨 + 승률이 너무 높거나 낮지 않음', () => {
   let wins = 0;
-  const N = 60;
+  let earlyDeaths = 0;
+  const N = 80;
   for (let seed = 1; seed <= N; seed++) {
     const run = autoRun(seed);
     assert.ok(['victory', 'defeat'].includes(run.phase), `seed ${seed}: ${run.phase}에서 멈춤`);
     if (run.phase === 'victory') wins++;
+    if (run.phase === 'defeat' && Number(run.position.split('-')[0]) <= 3) earlyDeaths++;
   }
   const rate = wins / N;
-  console.log(`  자동 플레이 승률: ${(rate * 100).toFixed(0)}% (${wins}/${N})`);
-  // 단순한 봇 기준. 사람은 이보다 잘함 → 봇 승률은 25~85% 사이가 적당
-  assert.ok(rate >= 0.25 && rate <= 0.85, `승률 ${rate}`);
+  console.log(`  자동 플레이 승률: ${(rate * 100).toFixed(0)}% (${wins}/${N}), 3층 이하에서 쓰러짐 ${earlyDeaths}판`);
+  // 단순한 봇 기준 (사람은 이보다 잘함). 사용자 요청: 전보다 어렵게, 특히 후반이 어렵게
+  assert.ok(rate >= 0.12 && rate <= 0.6, `승률 ${rate}`);
+  assert.ok(earlyDeaths <= N * 0.05, `초반에 너무 많이 쓰러짐: ${earlyDeaths}`);
 });

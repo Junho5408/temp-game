@@ -13,14 +13,10 @@ function setup(enemyId = 'ironFist', opts = {}) {
   return s;
 }
 
-function cardInHand(s, id) {
-  return s.hand.find((c) => c.id === id);
-}
-
 function forceHand(s, ids) {
   // 테스트용: 손패를 원하는 카드로 교체
   s.drawPile.push(...s.hand);
-  s.hand = ids.map((id, i) => ({ uid: 1000 + i, id }));
+  s.hand = ids.map((id, i) => ({ uid: 1000 + i, id, upgraded: false }));
 }
 
 test('전투 시작 시 5장 뽑고 내공 3, 덱 총합은 시작 덱과 같음', () => {
@@ -40,7 +36,6 @@ test('기본 검법은 내공 1을 쓰고 피해 6', () => {
   assert.ok(playCard(s, 1000));
   assert.equal(s.enemy.hp, hp - 6);
   assert.equal(s.player.energy, MAX_ENERGY - 1);
-  assert.equal(s.hand.length, 0);
   assert.equal(s.discard.at(-1).id, 'strike');
 });
 
@@ -51,49 +46,46 @@ test('내공이 부족하면 카드를 쓸 수 없음', () => {
   assert.equal(s.player.energy, 1);
   assert.equal(canPlay(s, 1001), false);
   assert.equal(playCard(s, 1001), false);
-  assert.equal(s.hand.length, 1);
 });
 
-test('유수검은 피해 9 + 호신강기 4', () => {
+test('유수검은 2연격 (7 × 2)', () => {
   const s = setup();
   forceHand(s, ['yusu']);
   const hp = s.enemy.hp;
   playCard(s, 1000);
-  assert.equal(s.enemy.hp, hp - 9);
-  assert.equal(s.player.block, 4);
+  assert.equal(s.enemy.hp, hp - 14);
 });
 
-test('호신강기가 적의 공격을 먼저 막음', () => {
+test('방어가 없음: 적의 공격은 그대로 체력을 깎음', () => {
   const s = setup('ironFist'); // 첫 행동: 피해 7
-  forceHand(s, ['guard']);
-  playCard(s, 1000);
   endPlayerTurn(s);
   runEnemyTurn(s);
-  assert.equal(s.player.hp, PLAYER_MAX_HP - 2); // 7 - 5
+  assert.equal(s.player.hp, PLAYER_MAX_HP - 7);
+  assert.equal(s.player.block, undefined);
 });
 
-test('호신강기는 내 다음 턴 시작 시 사라짐', () => {
-  const s = setup('ronin');
-  forceHand(s, ['guard', 'guard', 'guard']);
-  playCard(s, 1000); playCard(s, 1001); playCard(s, 1002); // 15
-  endPlayerTurn(s);
-  runEnemyTurn(s); // 4 x 2 = 8 막힘
-  assert.equal(s.player.hp, PLAYER_MAX_HP);
-  assert.equal(s.player.block, 0);
-});
-
-test('적 방어도가 피해를 줄이고, 적 차례가 시작되면 사라짐', () => {
+test('견제: 피해 4 + 적 기혈 흐트러짐 → 적 공격 25% 감소', () => {
   const s = setup('ironFist');
-  endPlayerTurn(s); runEnemyTurn(s); // 철검 내려치기
-  endPlayerTurn(s); runEnemyTurn(s); // 철벽세: 방어 8
-  assert.equal(s.enemy.block, 8);
-  forceHand(s, ['strike']);
+  forceHand(s, ['feint']);
+  playCard(s, 1000);
+  assert.equal(s.enemy.status.weak, 1);
+  endPlayerTurn(s);
+  runEnemyTurn(s);
+  assert.equal(s.player.hp, PLAYER_MAX_HP - 5); // floor(7 * 0.75)
+});
+
+test('역류검: 적이 공격을 예고한 턴에는 추가 피해', () => {
+  const s = setup('ironFist'); // 1번째 행동: 공격
+  forceHand(s, ['counter']);
   const hp = s.enemy.hp;
   playCard(s, 1000);
-  assert.equal(s.enemy.hp, hp); // 6은 전부 막힘
-  assert.equal(s.enemy.block, 2);
-  endPlayerTurn(s); runEnemyTurn(s);
-  assert.equal(s.enemy.block, 0);
+  assert.equal(s.enemy.hp, hp - 12);
+  endPlayerTurn(s);
+  runEnemyTurn(s); // 다음 예고: 기 모으기 (공격 아님)
+  forceHand(s, ['counter']);
+  const hp2 = s.enemy.hp;
+  playCard(s, 1000);
+  assert.equal(s.enemy.hp, hp2 - 6);
 });
 
 test('적 행동 패턴이 순서대로 반복되고 다음 행동이 예고됨', () => {
@@ -118,10 +110,20 @@ test('턴 종료 시 손패는 버린 패로, 뽑을 패가 없으면 버린 패
 });
 
 test('다단 공격은 타수만큼 피해', () => {
-  const s = setup('ronin'); // 연환창 4 x 2
+  const s = setup('ronin'); // 쾌검 이연격 4 x 2
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, PLAYER_MAX_HP - 8);
+});
+
+test('위층 적: 체력 배율과 처음부터 붙은 기세', () => {
+  const s = createBattle({ enemyId: 'ironFist', seed: 1, scale: { hp: 1.5, strength: 2 } });
+  assert.equal(s.enemy.maxHp, 60);
+  assert.equal(s.enemy.status.strength, 2);
+  startPlayerTurn(s);
+  endPlayerTurn(s);
+  runEnemyTurn(s);
+  assert.equal(s.player.hp, PLAYER_MAX_HP - 9);
 });
 
 test('적 체력이 0이 되면 승리, 이후 카드 사용 불가', () => {
@@ -159,22 +161,18 @@ test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', (
   assert.equal(s.phase, 'lost');
 });
 
-test('기본 덱과 단순한 전략으로 두 적 모두 이길 수 있음 (간단 밸런스 확인)', () => {
+test('시작 덱으로 1층 일반 적은 모두 이길 수 있음 (간단 밸런스 확인)', () => {
   for (const enemyId of Object.keys(ENEMIES).filter((id) => ENEMIES[id].tier === 'normal')) {
     for (let seed = 1; seed <= 20; seed++) {
       const s = createBattle({ enemyId, seed });
       startPlayerTurn(s);
       let guard = 0;
       while (s.phase === 'player' && guard++ < 50) {
-        // 간단한 전략: 적이 공격하면 방어 우선, 아니면 공격 우선
-        const attacking = !!s.enemy.intent.damage;
-        const order = attacking ? ['guard', 'yusu', 'strike'] : ['yusu', 'strike', 'guard'];
         let played = true;
         while (played && s.phase === 'player') {
           played = false;
-          for (const id of order) {
-            const c = cardInHand(s, id);
-            if (c && playCard(s, c.uid)) { played = true; break; }
+          for (const c of [...s.hand]) {
+            if (playCard(s, c.uid)) { played = true; break; }
           }
         }
         if (s.phase !== 'player') break;

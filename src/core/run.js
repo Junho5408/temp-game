@@ -9,6 +9,12 @@ import { createRng } from './rng.js';
 
 export const START_GOLD = 60;
 export const REST_HEAL_RATIO = 0.3;
+
+// 위층으로 갈수록 적이 강해짐: 체력 배율, 처음부터 붙은 기세
+export function scaleForRow(row, tier) {
+  if (tier === 'boss') return { hp: 1, strength: 0 };
+  return { hp: 1 + 0.05 * row, strength: Math.floor(row / 4) };
+}
 export const REMOVE_COST_START = 50;
 export const REMOVE_COST_STEP = 25;
 
@@ -86,11 +92,12 @@ export function enterNode(run, id) {
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {
     const pool = node.type === 'boss' ? POOLS.boss
       : node.type === 'elite' ? POOLS.elite
-        : node.row <= 1 ? POOLS.easy : POOLS.normal;
+        : node.row <= 2 ? POOLS.easy : POOLS.normal;
     const choices = pool.length > 1 ? pool.filter((e) => e !== run.lastEnemy) : pool;
     const enemyId = choices[Math.floor(run.rng() * choices.length)];
     run.lastEnemy = enemyId;
-    run.encounter = { enemyId, tier: ENEMIES[enemyId].tier };
+    const tier = ENEMIES[enemyId].tier;
+    run.encounter = { enemyId, tier, scale: scaleForRow(node.row, tier) };
     run.phase = 'battle';
   } else if (node.type === 'rest') {
     run.phase = 'rest';
@@ -116,6 +123,7 @@ export function startEncounter(run) {
     deck: run.deck,
     playerHp: run.hp,
     playerMaxHp: run.maxHp,
+    scale: run.encounter.scale,
   });
 }
 

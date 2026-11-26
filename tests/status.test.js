@@ -85,14 +85,15 @@ test('적 기세가 예고 피해에 반영됨', () => {
   assert.equal(intentPreview(s).damage, 10);
 });
 
-test('기 모으기는 내공을 돌려주고, 검기 집중은 카드를 뽑음', () => {
+test('기 모으기는 내공을 돌려주고, 검기 집중은 기세와 카드 1장', () => {
   const s = setup();
   forceHand(s, ['gather', 'focus']);
   playCard(s, 1000);
   assert.equal(s.player.energy, 4);
   const before = s.hand.length;
-  playCard(s, 1001);
-  assert.equal(s.hand.length, before - 1 + 2);
+  playCard(s, 1001); // 기세 +1, 카드 1장
+  assert.equal(s.hand.length, before - 1 + 1);
+  assert.equal(s.player.status.strength, 1);
 });
 
 test('computeDamage는 음수가 되지 않음', () => {

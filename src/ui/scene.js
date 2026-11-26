@@ -96,7 +96,7 @@ export async function createScene(canvas, { player }) {
   // 새 전투 시작: 쓰러짐 등 이전 동작 상태를 지움
   function reset() {
     for (const u of Object.values(units)) {
-      if (u) u.anim = { attack: -1e9, hit: -1e9, guard: -1e9, death: 0 };
+      if (u) u.anim = { attack: -1e9, hit: -1e9, buff: -1e9, death: 0 };
     }
     fx.length = 0;
     sparks.length = 0;
@@ -126,10 +126,11 @@ export async function createScene(canvas, { player }) {
     if (amount >= 8) shake(amount >= 11 ? 7 : 4);
   }
 
-  function guard(who) {
+  // 기세를 끌어올릴 때: 몸에서 금빛 기운이 퍼짐
+  function buff(who) {
     const u = units[who];
     if (!u) return;
-    u.anim.guard = performance.now();
+    u.anim.buff = performance.now();
   }
 
   function die(who) {
@@ -245,11 +246,11 @@ export async function createScene(canvas, { player }) {
     g.fill();
     g.restore();
 
-    // 호신강기 (방어도가 있을 때 몸을 감싸는 푸른 기운)
-    const block = state?.[who]?.block ?? 0;
-    const gt = now - a.guard;
-    if (block > 0 || (gt >= 0 && gt < 500)) {
-      drawAura(g, feet.x + x, feet.y + y, u, now, block > 0, gt);
+    // 기세: 끌어올리는 순간 금빛 고리 + 기세가 쌓여 있으면 은은한 기운
+    const strength = state?.[who]?.status?.strength ?? 0;
+    const gt = now - a.buff;
+    if (strength > 0 || (gt >= 0 && gt < 600)) {
+      drawAura(g, feet.x + x, feet.y + y, u, now, strength, gt);
     }
 
     // 돌진 잔상
@@ -278,35 +279,30 @@ export async function createScene(canvas, { player }) {
     g.restore();
   }
 
-  function drawAura(g, x, y, u, now, active, gt) {
+  function drawAura(g, x, y, u, now, strength, gt) {
     const cy = y - u.h * 0.5;
-    const pulse = 0.5 + Math.sin(now / 260) * 0.5;
     g.save();
-    if (active) {
-      const grad = g.createRadialGradient(x, cy, 10, x, cy, u.h * 0.62);
-      grad.addColorStop(0, `rgba(110, 170, 255, ${0.06 + pulse * 0.04})`);
-      grad.addColorStop(0.75, `rgba(110, 170, 255, ${0.16 + pulse * 0.06})`);
-      grad.addColorStop(1, 'rgba(110, 170, 255, 0)');
+    if (strength > 0) {
+      // 기세가 쌓일수록 진해지는 발밑의 금빛 기운
+      const k = Math.min(1, strength / 6);
+      const pulse = 0.5 + Math.sin(now / 300) * 0.5;
+      const grad = g.createRadialGradient(x, y - 6, 4, x, y - 6, 90);
+      grad.addColorStop(0, `rgba(255, 190, 90, ${(0.18 + pulse * 0.08) * (0.5 + k)})`);
+      grad.addColorStop(1, 'rgba(255, 190, 90, 0)');
       g.fillStyle = grad;
       g.beginPath();
-      g.ellipse(x, cy, u.h * 0.45, u.h * 0.62, 0, 0, Math.PI * 2);
+      g.ellipse(x, y - 6, 90, 26, 0, 0, Math.PI * 2);
       g.fill();
-      g.strokeStyle = `rgba(170, 210, 255, ${0.35 + pulse * 0.2})`;
-      g.lineWidth = 2;
-      g.setLineDash([14, 10]);
-      g.lineDashOffset = -now / 25;
-      g.beginPath();
-      g.ellipse(x, cy, u.h * 0.42, u.h * 0.58, 0, 0, Math.PI * 2);
-      g.stroke();
     }
-    if (gt >= 0 && gt < 500) {
-      // 강기를 끌어올리는 순간 퍼지는 고리
-      const p = gt / 500;
-      g.setLineDash([]);
-      g.strokeStyle = `rgba(190, 225, 255, ${0.8 * (1 - p)})`;
+    if (gt >= 0 && gt < 600) {
+      // 기세를 끌어올리는 순간 몸을 타고 올라가는 금빛 고리
+      const p = gt / 600;
+      g.strokeStyle = `rgba(255, 210, 120, ${0.85 * (1 - p)})`;
       g.lineWidth = 4 * (1 - p) + 1;
+      g.shadowColor = '#ffb84a';
+      g.shadowBlur = 16;
       g.beginPath();
-      g.ellipse(x, cy, u.h * (0.3 + p * 0.25), u.h * (0.42 + p * 0.3), 0, 0, Math.PI * 2);
+      g.ellipse(x, y - u.h * p * 0.9, 60 - p * 20, 16 - p * 4, 0, 0, Math.PI * 2);
       g.stroke();
     }
     g.restore();
@@ -466,7 +462,7 @@ export async function createScene(canvas, { player }) {
     }
   }
 
-  return { setEnemy, clearEnemy, reset, attack, hit, guard, die, shake, draw };
+  return { setEnemy, clearEnemy, reset, attack, hit, buff, die, shake, draw };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.
@@ -502,7 +498,7 @@ async function makeUnit(artKey, dir, fallbackImg) {
     flashWhite: tinted(image, w, h, '#ffffff', 0.85),
     flashRed: tinted(image, w, h, '#ff2a2a', 0.45),
     phase: Math.random() * 10,
-    anim: { attack: -1e9, hit: -1e9, guard: -1e9, death: 0 },
+    anim: { attack: -1e9, hit: -1e9, buff: -1e9, death: 0 },
   };
 }
 

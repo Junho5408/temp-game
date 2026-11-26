@@ -164,13 +164,12 @@ function renderControls() {
   renderHand();
 }
 
-// 머리 위: 이름 / 소속 / 체력 / 상태 효과
+// 머리 위: 이름 / 소속 / 체력 / 상태 효과 (방어 수치는 없음)
 function renderUnit(el, name, title, u, who) {
   if (!el.firstChild) {
     el.innerHTML = `
       <div class="name"></div><div class="title"></div>
       <div class="hpbar"><div class="fill"></div><div class="text"></div></div>
-      <div class="block-badge" hidden></div>
       <div class="statuses"></div>`;
   }
   el.style.left = `${FEET[who].x}px`;
@@ -179,10 +178,6 @@ function renderUnit(el, name, title, u, who) {
   el.querySelector('.title').textContent = title;
   el.querySelector('.fill').style.width = `${(u.hp / u.maxHp) * 100}%`;
   el.querySelector('.hpbar .text').textContent = `${u.hp} / ${u.maxHp}`;
-  const badge = el.querySelector('.block-badge');
-  badge.hidden = u.block <= 0;
-  badge.textContent = u.block;
-  badge.title = `호신강기 ${u.block}`;
   const st = el.querySelector('.statuses');
   st.innerHTML = Object.entries(u.status)
     .filter(([, v]) => v > 0)
@@ -203,7 +198,6 @@ function renderIntent() {
   if (s.enemy.intent.damage) {
     parts.push(`<span class="atk">⚔ ${it.damage}${it.hits > 1 ? ` × ${it.hits}` : ''}</span>`);
   }
-  if (it.block) parts.push(`<span class="def">🛡 ${it.block}</span>`);
   if (it.strength) parts.push(`<span class="buf">勢 +${it.strength}</span>`);
   if (it.vulnerable) parts.push(`<span class="deb">傷 ${it.vulnerable}</span>`);
   if (it.weak) parts.push(`<span class="deb">亂 ${it.weak}</span>`);
@@ -297,19 +291,13 @@ async function playEvents(events) {
           scene.hit(ev.target, ev.amount);
           popup(ev.target, `-${ev.amount}`, 'dmg');
         }
-        if (ev.blocked > 0) popup(ev.target, `막음 ${ev.blocked}`, 'blk', 30);
         renderStatus();
         if (battle[ev.target].hp <= 0) scene.die(ev.target);
         await wait(300);
         break;
       }
-      case 'block':
-        scene.guard(ev.target);
-        popup(ev.target, `+${ev.amount} 강기`, 'gain', -20);
-        renderStatus();
-        await wait(150);
-        break;
       case 'status':
+        if (ev.kind === 'strength') scene.buff(ev.target);
         popup(ev.target, `${STATUS_POPUP[ev.kind]} ${ev.kind === 'strength' ? '+' : ''}${ev.amount}`, `st-${ev.kind}`, -50);
         renderStatus();
         await wait(180);

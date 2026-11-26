@@ -52,16 +52,17 @@ function button(label, onClick, cls = '') {
 }
 
 // ── 지도 ─────────────────────────
-const MAP_X0 = 96;
-const MAP_DX = 128;
-const MAP_Y0 = 132;
+// 12층 + 두목 = 13열을 한 화면에
+const MAP_X0 = 64;
+const MAP_DX = 66;
+const MAP_Y0 = 136;
 const MAP_H = 300;
 
 function nodePos(node) {
   const x = MAP_X0 + node.row * MAP_DX;
   const y = node.count === 1 ? MAP_Y0 + MAP_H / 2 : MAP_Y0 + ((node.col + 0.5) * MAP_H) / node.count;
   // 손으로 그린 지도처럼 살짝 어긋나게 (항상 같은 값)
-  const jx = ((node.row * 37 + node.col * 53) % 17) - 8;
+  const jx = ((node.row * 37 + node.col * 53) % 9) - 4;
   const jy = ((node.row * 29 + node.col * 41) % 15) - 7;
   return { x: x + (node.type === 'boss' ? 0 : jx), y: y + (node.type === 'boss' ? 0 : jy) };
 }
@@ -88,7 +89,7 @@ export function renderMap(run, onPick) {
   el.innerHTML = `
     <div class="map-title">
       <h2>제1구역 · 후기지수 비무대회</h2>
-      <p>갈 곳을 고르시오 · 마지막에는 우승 후보가 기다린다</p>
+      <p>갈 곳을 고르시오 · 방어는 없다, 운기조식(息)에서 회복하라 · 마지막에는 우승 후보가 기다린다</p>
     </div>
     <svg class="map-lines" viewBox="0 0 960 540" width="960" height="540">${lines}</svg>
     <div class="map-nodes"></div>

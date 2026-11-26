@@ -1,6 +1,8 @@
 // 전투 규칙 (화면과 무관한 순수 로직)
 // 화면은 state.events 를 읽어 연출하고 비운다.
 //
+// 방어(호신강기) 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복.
+//
 // 상태 효과
 //   기세(strength)        공격 피해 +n (전투 내내 유지)
 //   내상(vulnerable)      받는 피해 1.5배, 남은 턴 수
@@ -13,16 +15,18 @@ import { createRng, shuffle } from './rng.js';
 export const HAND_SIZE = 5;
 export const MAX_HAND = 10;
 export const MAX_ENERGY = 3;
-export const PLAYER_MAX_HP = 60;
+export const PLAYER_MAX_HP = 70;
 
 const newStatus = () => ({ strength: 0, vulnerable: 0, weak: 0 });
 
+// scale: 위층 적일수록 강하게 { hp: 배율, strength: 처음부터 붙은 기세 }
 export function createBattle({
   enemyId,
   seed = 1,
   deck = STARTER_DECK,
   playerHp = PLAYER_MAX_HP,
   playerMaxHp = PLAYER_MAX_HP,
+  scale = { hp: 1, strength: 0 },
 } = {}) {
   const def = ENEMIES[enemyId];
   if (!def) throw new Error(`알 수 없는 적: ${enemyId}`);
@@ -31,13 +35,14 @@ export function createBattle({
   const cards = deck.map((c, i) => (typeof c === 'string'
     ? { uid: i + 1, id: c, upgraded: false }
     : { uid: c.uid ?? i + 1, id: c.id, upgraded: !!c.upgraded }));
+  const maxHp = Math.round(def.maxHp * scale.hp);
 
   return {
     rng,
     turn: 0,
     phase: 'start', // start → player → enemy → player ... → won | lost
     player: {
-      hp: playerHp, maxHp: playerMaxHp, block: 0, energy: 0, maxEnergy: MAX_ENERGY, status: newStatus(),
+      hp: playerHp, maxHp: playerMaxHp, energy: 0, maxEnergy: MAX_ENERGY, status: newStatus(),
     },
     enemy: {
       id: def.id,
@@ -45,10 +50,9 @@ export function createBattle({
       title: def.title,
       art: def.art,
       tier: def.tier,
-      hp: def.maxHp,
-      maxHp: def.maxHp,
-      block: 0,
-      status: newStatus(),
+      hp: maxHp,
+      maxHp,
+      status: { ...newStatus(), strength: scale.strength },
       patternIndex: 0,
       intent: def.pattern[0],
     },
@@ -79,7 +83,6 @@ export function drawCards(s, n) {
 export function startPlayerTurn(s) {
   if (s.phase === 'won' || s.phase === 'lost') return;
   s.turn += 1;
-  s.player.block = 0;
   s.player.energy = s.player.maxEnergy;
   drawCards(s, HAND_SIZE);
   s.phase = 'player';
@@ -96,16 +99,8 @@ export function computeDamage(attacker, defender, base) {
 
 function applyDamage(s, targetKey, amount) {
   const t = s[targetKey];
-  const blocked = Math.min(t.block, amount);
-  const dealt = amount - blocked;
-  t.block -= blocked;
-  t.hp = Math.max(0, t.hp - dealt);
-  emit(s, { type: 'damage', target: targetKey, amount: dealt, blocked });
-}
-
-function gainBlock(s, targetKey, amount) {
-  s[targetKey].block += amount;
-  emit(s, { type: 'block', target: targetKey, amount });
+  t.hp = Math.max(0, t.hp - amount);
+  emit(s, { type: 'damage', target: targetKey, amount });
 }
 
 function addStatus(s, targetKey, kind, amount) {
@@ -134,6 +129,13 @@ export function canPlay(s, uid) {
   return !!card && cardStats(card).cost <= s.player.energy;
 }
 
+// 카드 한 타의 기본 피해 (역류검처럼 조건부 추가 피해 포함)
+export function cardBaseDamage(s, c) {
+  let base = c.damage ?? 0;
+  if (c.bonusIfAttacking && s.enemy.intent.damage) base += c.bonusIfAttacking;
+  return base;
+}
+
 // 카드 사용. 성공하면 true.
 export function playCard(s, uid) {
   if (!canPlay(s, uid)) return false;
@@ -145,12 +147,12 @@ export function playCard(s, uid) {
   s.hand.splice(idx, 1);
   emit(s, { type: 'play', card: card.id, attack: !!c.damage });
 
-  if (c.block) gainBlock(s, 'player', c.block);
   if (c.strength) addStatus(s, 'player', 'strength', c.strength);
   if (c.damage) {
     const hits = c.hits ?? 1;
+    const base = cardBaseDamage(s, c);
     for (let h = 0; h < hits && s.enemy.hp > 0; h++) {
-      applyDamage(s, 'enemy', computeDamage(s.player, s.enemy, c.damage));
+      applyDamage(s, 'enemy', computeDamage(s.player, s.enemy, base));
     }
   }
   if (s.enemy.hp > 0) {
@@ -180,10 +182,8 @@ export function runEnemyTurn(s) {
   if (s.phase !== 'enemy') return false;
   const e = s.enemy;
   const act = e.intent;
-  e.block = 0;
   emit(s, { type: 'enemyAct', name: act.name });
 
-  if (act.block) gainBlock(s, 'enemy', act.block);
   if (act.strength) addStatus(s, 'enemy', 'strength', act.strength);
   if (act.damage) {
     const hits = act.hits ?? 1;

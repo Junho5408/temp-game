@@ -108,23 +108,6 @@ html, body {
   line-height: 12px;
   font-weight: 700;
 }
-.block-badge {
-  position: absolute;
-  left: -34px;
-  bottom: -7px;
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 13px;
-  color: #fff;
-  background: var(--blue);
-  border: 2px solid var(--ink);
-  border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
-  box-shadow: 0 2px 0 rgba(0,0,0,.4);
-}
-.block-badge[hidden] { display: none; }
 
 /* ── 적 의도 (다음 초식 예고) ─────────────────── */
 .intent {
@@ -229,7 +212,6 @@ html, body {
   pointer-events: none;
 }
 .card.attack { --accent: #b23a3a; --accent-glow: rgba(210, 70, 60, .5); }
-.card.defense { --accent: #3f72b8; --accent-glow: rgba(90, 150, 235, .5); }
 .card.skill { --accent: #3f8a63; --accent-glow: rgba(80, 180, 130, .5); }
 
 @keyframes deal {
@@ -480,9 +462,9 @@ html, body {
 
 .map-node {
   position: absolute;
-  width: 46px;
-  height: 46px;
-  margin: -23px 0 0 -23px;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
   border-radius: 50%;
   border: 2px solid #000;
   box-shadow: inset 0 0 0 1px var(--brass-dim), 0 4px 8px rgba(0,0,0,.6);
@@ -490,7 +472,7 @@ html, body {
   color: #cfc4ad;
   font-family: var(--serif);
   font-weight: 900;
-  font-size: 21px;
+  font-size: 18px;
   display: grid;
   place-items: center;
   cursor: default;
@@ -503,7 +485,7 @@ html, body {
 .map-node.shop { color: #f0c862; }
 .map-node.event { color: #9cc4ff; }
 .map-node.boss {
-  width: 70px; height: 70px; margin: -35px 0 0 -35px; font-size: 32px;
+  width: 60px; height: 60px; margin: -30px 0 0 -30px; font-size: 28px;
   color: #ffb08a;
   background: radial-gradient(circle at 40% 35%, #6e1f24, #1d0a0c);
   box-shadow: inset 0 0 0 2px var(--brass), 0 0 22px rgba(200, 50, 40, .45);
