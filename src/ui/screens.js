@@ -14,7 +14,7 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
   if (tag === 'button') el.type = 'button';
   el.className = `card ${c.type}${c.upgraded ? ' upgraded' : ''}`;
   el.innerHTML = `
-    ${showKey ? '<span class="key"></span>' : ''}
+    ${showKey ? '<span class="key"></span><span class="hit"></span>' : ''}
     <span class="cost">${c.cost}</span>
     <span class="cname">${c.displayName}</span>
     <span class="art">${c.glyph}</span>

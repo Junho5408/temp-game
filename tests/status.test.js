@@ -5,8 +5,8 @@ import {
 } from '../src/core/battle.js';
 import { cardStats, CARDS } from '../src/core/cards.js';
 
-function setup(enemyId = 'ironFist') {
-  const s = createBattle({ enemyId, seed: 7 });
+function setup(enemyId = 'dummy') {
+  const s = createBattle({ enemyId, seed: 7, luck: false });
   startPlayerTurn(s);
   return s;
 }
@@ -55,7 +55,7 @@ test('내상: 받는 피해 1.5배, 적 차례가 끝날 때 1 줄어듦', () =>
 });
 
 test('기혈 흐트러짐: 주는 피해 0.75배 (내림)', () => {
-  const s = setup('ironFist'); // 첫 행동 피해 7
+  const s = setup('dummy'); // 첫 행동 피해 7
   forceHand(s, ['sway']);
   playCard(s, 1000); // 적에게 기혈 흐트러짐 2
   assert.equal(intentPreview(s).damage, 5); // floor(7 * 0.75)
@@ -65,7 +65,8 @@ test('기혈 흐트러짐: 주는 피해 0.75배 (내림)', () => {
 });
 
 test('적이 건 디버프도 플레이어에게 적용되고 내 차례가 끝나면 줄어듦', () => {
-  const s = setup('inspector'); // 암침: 피해 5 + 기혈 흐트러짐 2
+  const s = setup();
+  s.enemy.intent = { name: '암침', damage: 5, weak: 2 };
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.status.weak, 2);
@@ -78,11 +79,13 @@ test('적이 건 디버프도 플레이어에게 적용되고 내 차례가 끝�
 });
 
 test('적 기세가 예고 피해에 반영됨', () => {
-  const s = setup('brawler'); // 주먹 자랑: 기세 +2 → 박치기 8
+  const s = setup(); // 타격 7 → 기 모으기(기세 +2) → 강타 10
+  endPlayerTurn(s);
+  runEnemyTurn(s);
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.enemy.status.strength, 2);
-  assert.equal(intentPreview(s).damage, 10);
+  assert.equal(intentPreview(s).damage, 12);
 });
 
 test('기 모으기는 내공을 돌려주고, 검기 집중은 기세와 카드 1장', () => {

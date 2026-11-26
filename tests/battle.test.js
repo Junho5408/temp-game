@@ -7,8 +7,8 @@ import {
 import { STARTER_DECK } from '../src/core/cards.js';
 import { ENEMIES } from '../src/core/enemies.js';
 
-function setup(enemyId = 'ironFist', opts = {}) {
-  const s = createBattle({ enemyId, seed: 42, ...opts });
+function setup(enemyId = 'dummy', opts = {}) {
+  const s = createBattle({ enemyId, seed: 42, luck: false, ...opts });
   startPlayerTurn(s);
   return s;
 }
@@ -57,7 +57,7 @@ test('유수검은 2연격 (7 × 2)', () => {
 });
 
 test('방어가 없음: 적의 공격은 그대로 체력을 깎음', () => {
-  const s = setup('ironFist'); // 첫 행동: 피해 7
+  const s = setup('dummy'); // 첫 행동: 피해 7
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, PLAYER_MAX_HP - 7);
@@ -65,7 +65,7 @@ test('방어가 없음: 적의 공격은 그대로 체력을 깎음', () => {
 });
 
 test('견제: 피해 4 + 적 기혈 흐트러짐 → 적 공격 25% 감소', () => {
-  const s = setup('ironFist');
+  const s = setup('dummy');
   forceHand(s, ['feint']);
   playCard(s, 1000);
   assert.equal(s.enemy.status.weak, 1);
@@ -75,7 +75,7 @@ test('견제: 피해 4 + 적 기혈 흐트러짐 → 적 공격 25% 감소', () 
 });
 
 test('역류검: 적이 공격을 예고한 턴에는 추가 피해', () => {
-  const s = setup('ironFist'); // 1번째 행동: 공격
+  const s = setup('dummy'); // 1번째 행동: 공격
   forceHand(s, ['counter']);
   const hp = s.enemy.hp;
   playCard(s, 1000);
@@ -89,8 +89,8 @@ test('역류검: 적이 공격을 예고한 턴에는 추가 피해', () => {
 });
 
 test('적 행동 패턴이 순서대로 반복되고 다음 행동이 예고됨', () => {
-  const s = setup('ironFist');
-  const pattern = ENEMIES.ironFist.pattern;
+  const s = setup('dummy');
+  const pattern = ENEMIES.dummy.pattern;
   for (let i = 0; i < pattern.length * 2; i++) {
     assert.equal(s.enemy.intent, pattern[i % pattern.length]);
     endPlayerTurn(s);
@@ -110,14 +110,14 @@ test('턴 종료 시 손패는 버린 패로, 뽑을 패가 없으면 버린 패
 });
 
 test('다단 공격은 타수만큼 피해', () => {
-  const s = setup('ronin'); // 쾌검 이연격 4 x 2
+  const s = setup('dummyMulti'); // 쾌검 이연격 4 x 2
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, PLAYER_MAX_HP - 8);
 });
 
 test('위층 적: 체력 배율과 처음부터 붙은 기세', () => {
-  const s = createBattle({ enemyId: 'ironFist', seed: 1, scale: { hp: 1.5, strength: 2 } });
+  const s = createBattle({ enemyId: 'dummy', seed: 1, scale: { hp: 1.5, strength: 2 }, luck: false });
   assert.equal(s.enemy.maxHp, 60);
   assert.equal(s.enemy.status.strength, 2);
   startPlayerTurn(s);
@@ -137,7 +137,7 @@ test('적 체력이 0이 되면 승리, 이후 카드 사용 불가', () => {
 });
 
 test('내 체력이 0이 되면 패배', () => {
-  const s = setup('ironFist', { playerHp: 3 });
+  const s = setup('dummy', { playerHp: 3 });
   endPlayerTurn(s);
   runEnemyTurn(s);
   assert.equal(s.player.hp, 0);
@@ -152,7 +152,7 @@ test('플레이어 차례가 아닐 때는 카드 사용/턴 종료 불가', () 
 });
 
 test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', () => {
-  const s = setup('ironFist');
+  const s = setup('dummy');
   let guard = 0;
   while (s.phase !== 'lost' && guard++ < 100) {
     endPlayerTurn(s);
@@ -161,9 +161,10 @@ test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', (
   assert.equal(s.phase, 'lost');
 });
 
-test('시작 덱으로 1층 일반 적은 모두 이길 수 있음 (간단 밸런스 확인)', () => {
+test('시작 덱으로 1층 일반 적은 거의 이길 수 있음 (간단 밸런스 확인)', () => {
   for (const enemyId of Object.keys(ENEMIES).filter((id) => ENEMIES[id].tier === 'normal')) {
-    for (let seed = 1; seed <= 20; seed++) {
+    let wins = 0;
+    for (let seed = 1; seed <= 40; seed++) {
       const s = createBattle({ enemyId, seed });
       startPlayerTurn(s);
       let guard = 0;
@@ -179,7 +180,8 @@ test('시작 덱으로 1층 일반 적은 모두 이길 수 있음 (간단 밸�
         endPlayerTurn(s);
         runEnemyTurn(s);
       }
-      assert.equal(s.phase, 'won', `${enemyId} seed ${seed}: 체력 ${s.player.hp}`);
+      if (s.phase === 'won') wins += 1;
     }
+    assert.ok(wins >= 36, `${enemyId}: 40판 중 ${wins}승`);
   }
 });

@@ -98,7 +98,7 @@ export async function createScene(canvas, { player }) {
   // 새 전투 시작: 쓰러짐 등 이전 동작 상태를 지움
   function reset() {
     for (const u of Object.values(units)) {
-      if (u) u.anim = { attack: -1e9, hit: -1e9, buff: -1e9, death: 0 };
+      if (u) u.anim = { attack: -1e9, hit: -1e9, buff: -1e9, dodge: -1e9, death: 0 };
     }
     fx.length = 0;
     sparks.length = 0;
@@ -126,6 +126,13 @@ export async function createScene(canvas, { player }) {
       sparks.push({ x: at.x, y: at.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 1.5, life: 1, born: performance.now() });
     }
     if (amount >= 8) shake(amount >= 11 ? 7 : 4);
+  }
+
+  // 회피: 뒤로 미끄러지며 잔상
+  function dodge(who) {
+    const u = units[who];
+    if (!u) return;
+    u.anim.dodge = performance.now();
   }
 
   // 기세를 끌어올릴 때: 몸에서 금빛 기운이 퍼짐
@@ -230,6 +237,17 @@ export async function createScene(canvas, { player }) {
       else if (ht < 240) flash = u.flashRed;
     }
 
+    // 회피: 뒤로 크게 비켜섰다가 돌아옴
+    const dt = now - (a.dodge ?? -1e9);
+    if (dt >= 0 && dt < 520) {
+      const p = dt / 520;
+      const k = p < 0.25 ? ease.out(p / 0.25) : 1 - ease.inOut((p - 0.25) / 0.75);
+      x -= u.dir * 58 * k;
+      y += 8 * k;
+      rot -= u.dir * 0.05 * k;
+      if (p < 0.6) ghost = 2;
+    }
+
     // 쓰러짐
     if (a.death) {
       const p = clamp01((now - a.death) / 750);
@@ -256,12 +274,13 @@ export async function createScene(canvas, { player }) {
       drawAura(g, feet.x + x, feet.y + y, u, now, strength, gt);
     }
 
-    // 돌진 잔상
+    // 돌진 잔상 (회피는 반대쪽으로 남김)
     if (ghost) {
+      const back = ghost === 2 ? -1 : 1;
       for (let i = 1; i <= 3; i++) {
         g.save();
         g.globalAlpha = 0.12 * (4 - i) * alpha;
-        drawBody(g, u, feet.x + x - u.dir * i * 16, feet.y + y, rot, scaleX, scaleY, u.image);
+        drawBody(g, u, feet.x + x - back * u.dir * i * 16, feet.y + y, rot, scaleX, scaleY, u.image);
         g.restore();
       }
     }
@@ -271,6 +290,23 @@ export async function createScene(canvas, { player }) {
     drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, u.image);
     if (flash) drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, flash);
     g.restore();
+
+    // 점혈·파기로 굳음: 머리 위를 도는 혈도 표시
+    if (!a.death && state?.[who]?.status?.stun > 0) {
+      const hy = HEAD_Y[who] - 8;
+      g.save();
+      g.fillStyle = '#9cd7ff';
+      g.shadowColor = '#9cd7ff';
+      g.shadowBlur = 8;
+      for (let i = 0; i < 3; i++) {
+        const t = now / 420 + (i * Math.PI * 2) / 3;
+        g.globalAlpha = 0.55 + 0.45 * Math.sin(t);
+        g.beginPath();
+        g.arc(feet.x + x + Math.cos(t) * 30, hy + Math.sin(t) * 8, 4, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+    }
   }
 
   function drawBody(g, u, x, y, rot, sx, sy, img) {
@@ -469,7 +505,7 @@ export async function createScene(canvas, { player }) {
     mode = name;
   }
 
-  return { setEnemy, clearEnemy, reset, attack, hit, buff, die, shake, draw, setBackground };
+  return { setEnemy, clearEnemy, reset, attack, hit, dodge, buff, die, shake, draw, setBackground };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.

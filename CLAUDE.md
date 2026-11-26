@@ -5,8 +5,9 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 3-C 완료 (1구역 스토리·단서, 주노·진소하 그림) → 사용자 확인 대기
-- 다음 할 일: 피드백 반영 후 2-B(2·3구역, 정파 루트) 계획 보여주고 승인받기
+- 진행 중: 2-C 완료 (전투 개편: 명중·회피·치명, 경공·점혈·연계, 적 특성·패턴) → 사용자 확인 대기
+- 다음 할 일: 피드백 반영 후 2-D(영약·심법 비급) 계획 보여주고 승인 → 2-B(2·3구역 + 최종 결전)
+- 2-B용 그림 준비됨: demonic-fist(혈마 장로), boss-nokrim(녹림 총채주), boss-gwimyeon(귀면) — 아직 SPRITES 미등록
 
 ## 작업 규칙
 - 각 단계 시작 전 계획을 먼저 보여주고 승인받기
@@ -22,5 +23,6 @@
 - 테스트: `npm test` (src/core 규칙 테스트, Node 기본 테스트 러너)
 - 대사·단서 정의는 src/story/script.js (이야기 기연은 events.js 의 story/npc, 적 단서는 enemies.js 의 clue), 회귀 기록은 src/core/meta.js (localStorage 키 temp-game.meta.v1)
 - 게임 규칙은 src/core 에만 두고 화면 코드(src/ui, src/main.js)와 섞지 않기
-- 규칙 파일: battle.js(전투) run.js(한 판) map.js(지도) events.js(기연) cards.js enemies.js
+- 규칙 파일: battle.js(전투) run.js(한 판) map.js(지도) events.js(기연) cards.js enemies.js(적·특성 TRAITS)
+- 테스트에서 확률을 끄려면 createBattle({ luck: false }), 규칙 확인용 적은 dummy / dummyMulti
 - 새 그림 처리: `python3 tools/prepare_sprite.py <원본> <세력-계열 또는 npc-이름> [--despill all]` 후 src/ui/characters.js 의 SPRITES 에 footX 등록

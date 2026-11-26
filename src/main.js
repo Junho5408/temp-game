@@ -2,13 +2,14 @@
 // 규칙은 src/core 에만 있고, 여기서는 상태를 그리고 입력을 전달함.
 import {
   createBattle, startPlayerTurn, playCard, canPlay, endPlayerTurn, runEnemyTurn, takeEvents, intentPreview,
+  playerHitChance, playerEvasion, comboActive,
 } from './core/battle.js';
 import { cardStats } from './core/cards.js';
 import {
   createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
   memoryCandidates, rememberCard, validateLoadout, addClue, meetNpc,
 } from './core/meta.js';
-import { ENEMIES } from './core/enemies.js';
+import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
   createRun, enterNode, startEncounter, finishBattle, chooseReward, restHeal, restUpgrade,
@@ -32,8 +33,13 @@ const PLAYER_ART = 'orthodox-sword';
 const SAVE_KEY = 'temp-game.meta.v1';
 const STATUS_INFO = {
   strength: { glyph: '勢', name: '기세', tip: '공격 피해 +' },
-  vulnerable: { glyph: '傷', name: '내상', tip: '받는 피해 1.5배, 남은 턴' },
-  weak: { glyph: '亂', name: '기혈 흐트러짐', tip: '주는 피해 0.75배, 남은 턴' },
+  vulnerable: { glyph: '傷', name: '내상', tip: '받는 피해 1.5배, 남은 턴 ' },
+  weak: { glyph: '亂', name: '기혈 흐트러짐', tip: '주는 피해 0.75배, 남은 턴 ' },
+  poison: { glyph: '毒', name: '중독', tip: '차례 시작에 이만큼 피해 (1씩 줄어듦): ' },
+  evasion: { glyph: '輕', name: '경공', tip: '적의 다음 차례 동안 회피율 +10%씩: ' },
+  insight: { glyph: '見', name: '간파', tip: '다음 초식이 반드시 명중하고 치명: ' },
+  counter: { glyph: '反', name: '반격 자세', tip: '초식으로 공격하면 카드마다 되받는 피해 ' },
+  stun: { glyph: '定', name: '굳음', tip: '다음 차례에 움직이지 못함' },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -391,10 +397,22 @@ function renderUnit(el, name, title, u, who) {
   el.querySelector('.fill').style.width = `${(u.hp / u.maxHp) * 100}%`;
   el.querySelector('.hpbar .text').textContent = `${u.hp} / ${u.maxHp}`;
   const st = el.querySelector('.statuses');
-  st.innerHTML = Object.entries(u.status)
-    .filter(([, v]) => v > 0)
-    .map(([k, v]) => `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${v}">${STATUS_INFO[k].glyph}<b>${v}</b></span>`)
-    .join('');
+  const chips = Object.entries(u.status)
+    .filter(([k, v]) => v > 0 && STATUS_INFO[k])
+    .map(([k, v]) => {
+      const label = k === 'evasion' ? `${playerEvasion(battle)}%` : k === 'stun' || k === 'insight' ? '' : v;
+      return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${k === 'stun' ? '' : v}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
+    });
+  if (who === 'enemy') {
+    // 점혈 게이지와 타고난 특성
+    if (u.status.point > 0) chips.push(`<span class="st point" title="점혈: ${u.pointMax} 이 되면 한 차례 굳음">穴<b>${u.status.point}/${u.pointMax}</b></span>`);
+    const traits = [];
+    if (u.evasion > 0) traits.push(`<span class="trait" title="경신술: 회피율 ${u.evasion}%">迅 ${u.evasion}%</span>`);
+    for (const t of u.traits) traits.push(`<span class="trait" title="${TRAITS[t].name}: ${TRAITS[t].desc}">${TRAITS[t].glyph} ${TRAITS[t].name}</span>`);
+    el.querySelector('.traits')?.remove();
+    if (traits.length) el.insertAdjacentHTML('beforeend', `<div class="traits">${traits.join('')}</div>`);
+  }
+  st.innerHTML = chips.join('');
 }
 
 function renderIntent() {
@@ -406,12 +424,28 @@ function renderIntent() {
   }
   el.classList.remove('hidden');
   const it = intentPreview(s);
+  el.classList.toggle('charge', !!it.charge);
+  el.classList.toggle('stunned', !!it.stunned);
+  if (it.stunned) {
+    el.innerHTML = '<span class="label">혈도가 막혔다</span><span class="buf">定 이번 차례는 움직이지 못함</span>';
+    return;
+  }
+  if (it.hidden) {
+    el.innerHTML = '<span class="label">허초 · 수를 숨겼다</span><span class="atk">? ? ?</span>';
+    return;
+  }
   const parts = [];
-  if (s.enemy.intent.damage) parts.push(`<span class="atk">⚔ ${it.damage}${it.hits > 1 ? ` × ${it.hits}` : ''}</span>`);
+  if (it.damage) parts.push(`<span class="atk">⚔ ${it.damage}${it.hits > 1 ? ` × ${it.hits}` : ''}</span><span class="acc">명중 ${it.hitChance}%</span>`);
   if (it.strength) parts.push(`<span class="buf">勢 +${it.strength}</span>`);
+  if (it.counter) parts.push(`<span class="buf">反 반격 ${it.counter}</span>`);
+  if (it.heal) parts.push(`<span class="buf">회복 ${it.heal}</span>`);
   if (it.vulnerable) parts.push(`<span class="deb">傷 ${it.vulnerable}</span>`);
   if (it.weak) parts.push(`<span class="deb">亂 ${it.weak}</span>`);
-  el.innerHTML = `<span class="label">다음 초식 · ${it.name}</span>${parts.join(' &nbsp;')}`;
+  if (it.poison) parts.push(`<span class="deb">毒 ${it.poison}</span>`);
+  const label = it.charge ? `필살 · ${it.name}` : `다음 초식 · ${it.name}`;
+  const brk = it.charge
+    ? `<span class="break">파기 ${Math.min(it.breakProgress, it.breakAt)} / ${it.breakAt}</span>` : '';
+  el.innerHTML = `<span class="label">${label}</span>${parts.join(' &nbsp;')}${brk}`;
 }
 
 function renderHand() {
@@ -432,6 +466,15 @@ function renderHand() {
     }
     handEl.appendChild(el); // 순서 유지
     el.querySelector('.key').textContent = i < 9 ? i + 1 : '';
+    const stats = cardStats(card);
+    const hitEl = el.querySelector('.hit');
+    if (stats.damage) {
+      const ch = playerHitChance(s, stats);
+      hitEl.textContent = `명중 ${ch}%`;
+      hitEl.classList.toggle('low', ch < 70);
+      hitEl.classList.toggle('sure', ch >= 100);
+    }
+    el.classList.toggle('combo-on', comboActive(s) && !!(stats.combo || stats.comboHits || stats.perAttack));
     const playable = !busy && canPlay(s, card.uid);
     el.classList.toggle('disabled', !playable);
     el.setAttribute('aria-disabled', String(!playable));
@@ -512,30 +555,86 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ── 연출 ─────────────────────────
-const STATUS_POPUP = { strength: '기세', vulnerable: '내상', weak: '흐트러짐' };
+const STATUS_POPUP = {
+  strength: '기세', vulnerable: '내상', weak: '흐트러짐', poison: '중독', evasion: '경공', insight: '간파', counter: '반격 자세', point: '점혈',
+};
 
 async function playEvents(events) {
   for (const ev of events) {
     switch (ev.type) {
       case 'enemyAct':
-        showBanner(ev.name, '#ffb0a0', 800);
+        showBanner(ev.name, ev.stunned ? '#9cd7ff' : '#ffb0a0', ev.stunned ? 1100 : 800);
+        if (ev.stunned) await wait(700);
         break;
       case 'damage': {
+        if (ev.poison) {
+          // 중독: 공격 동작 없이 독 피해
+          scene.hit(ev.target, 2);
+          popup(ev.target, `毒 -${ev.amount}`, 'poison');
+          renderStatus();
+          if (battle[ev.target].hp <= 0) scene.die(ev.target);
+          await wait(450);
+          break;
+        }
         // 타격마다 공격 모션 → 닿는 순간 피격 연출 (다단 공격은 여러 번 휘두름)
         const from = ev.target === 'player' ? 'enemy' : 'player';
+        if (ev.counter) popup(from, '반격!', 'st-counter', -60);
         await wait(scene.attack(from));
         if (ev.amount > 0) {
-          scene.hit(ev.target, ev.amount);
-          popup(ev.target, `-${ev.amount}`, 'dmg');
+          scene.hit(ev.target, ev.crit ? ev.amount + 6 : ev.amount);
+          if (ev.crit) {
+            popup(ev.target, `치명! -${ev.amount}`, 'crit');
+            scene.shake(8);
+          } else {
+            popup(ev.target, `-${ev.amount}`, 'dmg');
+          }
+          if (ev.guarded) popup(ev.target, '鐵 철포삼', 'guard', -70);
         }
         renderStatus();
         if (battle[ev.target].hp <= 0) scene.die(ev.target);
         await wait(300);
         break;
       }
+      case 'miss': {
+        const from = ev.target === 'player' ? 'enemy' : 'player';
+        await wait(scene.attack(from) - 60);
+        scene.dodge(ev.target);
+        popup(ev.target, ev.target === 'player' ? '회피!' : '빗나감', 'miss');
+        await wait(360);
+        break;
+      }
+      case 'heal':
+        popup(ev.target, `+${ev.amount}`, 'heal', -40);
+        renderStatus();
+        await wait(250);
+        break;
+      case 'break':
+        scene.shake(10);
+        showBanner(`파기(破氣)! ${ev.name}이(가) 끊겼다`, '#9cd7ff', 1300);
+        renderStatus();
+        await wait(500);
+        break;
+      case 'stun':
+        scene.shake(6);
+        showBanner('점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
+        renderStatus();
+        await wait(500);
+        break;
+      case 'trait':
+        scene.buff('enemy');
+        showBanner(`${TRAITS[ev.trait].name}! ${TRAITS[ev.trait].desc}`, '#ff8a7a', 1300);
+        await wait(400);
+        break;
+      case 'phase':
+        scene.buff('enemy');
+        scene.shake(9);
+        showBanner(ev.text, '#ff8a7a', 2200);
+        renderStatus();
+        await wait(1100);
+        break;
       case 'status':
         if (ev.kind === 'strength') scene.buff(ev.target);
-        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${ev.kind === 'strength' ? '+' : ''}${ev.amount}`, `st-${ev.kind}`, -50);
+        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) ? '+' : ''}${ev.kind === 'insight' ? '' : ev.amount}`, `st-${ev.kind}`, -50);
         renderStatus();
         await wait(180);
         break;

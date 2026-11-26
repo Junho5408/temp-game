@@ -886,3 +886,62 @@ button.card:disabled { cursor: not-allowed; filter: grayscale(.5) brightness(.55
 .clue-list li { padding: 6px 10px; border-left: 3px solid #9cc4ff; background: rgba(156, 196, 255, 0.07); }
 .clue-list b { display: block; color: #cfe0ff; font-size: 14px; }
 .clue-list span { font-size: 12px; opacity: 0.8; }
+
+/* ── 2-C 전투 개편: 명중·회피·치명, 특성, 필살기 ─────────────────── */
+.card .hit {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  transform: translateX(-50%);
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  white-space: nowrap;
+  color: #dfe6ee;
+  background: #1a1d24;
+  border: 1px solid #3a3f4a;
+  border-radius: 8px;
+}
+.card .hit:empty { display: none; }
+#hand .card .hit:not(:empty) ~ .ctype { visibility: hidden; }
+.card .hit.low { color: #ffb08a; border-color: #8a4a30; }
+.card .hit.sure { color: #9cd7ff; border-color: #3d6f94; }
+.card.combo-on { box-shadow: 0 0 0 2px #f2c14e, 0 0 16px rgba(242, 193, 78, .55); }
+.card.combo-on .desc { color: #ffe3a0; }
+
+.st.poison { background: #3f7a2a; }
+.st.evasion { background: #3b6fa8; }
+.st.insight { background: #a8862b; }
+.st.counter { background: #8a2f2f; }
+.st.stun { background: #2a6f8f; }
+.st.point { background: #4b5a78; }
+.unit-info .traits { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 3px; }
+.trait {
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 700;
+  color: #f1dcc0;
+  background: rgba(40, 20, 16, .85);
+  border: 1px solid #6e4a30;
+  border-radius: 3px;
+  cursor: help;
+}
+
+.intent .acc { margin-left: 6px; font-size: 11px; color: #c9cfd8; font-weight: 600; }
+.intent .break { display: block; margin-top: 2px; font-size: 11px; color: #9cd7ff; }
+.intent.charge { border-color: #c0392b; box-shadow: 0 0 0 1px #c0392b, 0 0 18px rgba(220, 60, 40, .55); }
+.intent.charge .label { color: #ff8a7a; }
+.intent.stunned { border-color: #3d6f94; }
+
+.popup.crit { color: #ffd34d; font-size: 38px; }
+.popup.miss { color: #c9d4e0; font-size: 22px; font-style: italic; }
+.popup.poison { color: #8fe06a; font-size: 24px; }
+.popup.heal { color: #7fe0a0; font-size: 22px; }
+.popup.guard { color: #c8b89a; font-size: 16px; }
+.popup.st-poison { color: #8fe06a; font-size: 20px; }
+.popup.st-evasion { color: #9cc4ff; font-size: 20px; }
+.popup.st-insight { color: #ffd34d; font-size: 20px; }
+.popup.st-counter { color: #ff8a7a; font-size: 20px; }
+.popup.st-point { color: #9cd7ff; font-size: 20px; }

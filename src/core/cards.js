@@ -1,15 +1,20 @@
 // 카드 정의 (검객)
-// 방어(호신강기) 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복.
+// 방어 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복. 대신 경공으로 피한다.
 // type: attack(초식) / skill(심법·보법)
 // rarity: starter(시작 덱 전용) / common(일반) / uncommon(고급) / rare(희귀)
 // 효과 필드
 //   damage, hits        피해 (타수, 기본 1)
+//   accuracy            명중률 % (기본 90, 상대 회피율만큼 깎임)
+//   sure                필중 (반드시 명중)
+//   crit                치명 확률 +n% (기본 10%)
 //   bonusIfAttacking    적이 이번에 공격을 예고했으면 한 타 피해 +n
-//   draw                카드 뽑기
-//   energy              내공 회복
-//   strength            기세 (이번 전투 동안 공격 피해 +n)
-//   vulnerable          상대에게 내상 n턴 (받는 피해 1.5배)
-//   weak                상대에게 기혈 흐트러짐 n턴 (주는 피해 0.75배)
+//   combo               연계: 이번 턴에 이미 초식을 썼으면 한 타 피해 +n
+//   comboHits           연계: 이번 턴에 이미 초식을 썼으면 타수 +n
+//   perAttack           이번 턴에 앞서 쓴 초식 한 장마다 한 타 피해 +n
+//   point               점혈 게이지 +n (가득 차면 적이 한 차례 굳음)
+//   evasion             경공 +n (적의 다음 차례 동안 회피율 +10%씩)
+//   insight             간파: 다음 초식 한 장이 반드시 명중하고 치명
+//   draw / energy / strength / vulnerable / weak
 // upgrade: 연마(+)했을 때 바뀌는 값
 
 export const CARDS = {
@@ -21,7 +26,7 @@ export const CARDS = {
   },
   feint: {
     name: '견제', type: 'attack', rarity: 'starter', glyph: '牽',
-    cost: 1, damage: 4, weak: 1,
+    cost: 1, damage: 4, weak: 1, accuracy: 95,
     upgrade: { damage: 6, weak: 2 },
   },
   yusu: {
@@ -29,16 +34,21 @@ export const CARDS = {
     cost: 2, damage: 7, hits: 2,
     upgrade: { damage: 9 },
   },
+  lightBody: {
+    name: '경신법', type: 'skill', rarity: 'starter', glyph: '輕',
+    cost: 1, evasion: 3,
+    upgrade: { evasion: 5 },
+  },
 
   // ── 일반 ─────────────────
   quick: {
     name: '쾌검', type: 'attack', rarity: 'common', glyph: '快',
-    cost: 0, damage: 4,
+    cost: 0, damage: 4, accuracy: 95,
     upgrade: { damage: 6 },
   },
   chain: {
     name: '연환검', type: 'attack', rarity: 'common', glyph: '連',
-    cost: 1, damage: 4, hits: 2,
+    cost: 1, damage: 4, hits: 2, comboHits: 1,
     upgrade: { damage: 5 },
   },
   rend: {
@@ -53,7 +63,7 @@ export const CARDS = {
   },
   footwork: {
     name: '보법', type: 'skill', rarity: 'common', glyph: '步',
-    cost: 0, draw: 1,
+    cost: 0, draw: 1, evasion: 1,
     upgrade: { draw: 2 },
   },
   focus: {
@@ -61,11 +71,26 @@ export const CARDS = {
     cost: 1, strength: 1, draw: 1,
     upgrade: { draw: 2 },
   },
+  pointStrike: {
+    name: '점혈수', type: 'attack', rarity: 'common', glyph: '點',
+    cost: 1, damage: 4, point: 5, accuracy: 95,
+    upgrade: { damage: 6, point: 7 },
+  },
+  followUp: {
+    name: '추혼검', type: 'attack', rarity: 'common', glyph: '追',
+    cost: 1, damage: 5, combo: 5,
+    upgrade: { damage: 7, combo: 7 },
+  },
+  cloudStep: {
+    name: '운룡보', type: 'skill', rarity: 'common', glyph: '雲',
+    cost: 1, evasion: 4, draw: 1,
+    upgrade: { evasion: 6 },
+  },
 
   // ── 고급 ─────────────────
   flash: {
     name: '일섬', type: 'attack', rarity: 'uncommon', glyph: '閃',
-    cost: 2, damage: 15,
+    cost: 2, damage: 15, accuracy: 85, crit: 15,
     upgrade: { damage: 20 },
   },
   counter: {
@@ -88,11 +113,31 @@ export const CARDS = {
     cost: 0, energy: 1,
     upgrade: { energy: 1, draw: 1 },
   },
+  insight: {
+    name: '간파', type: 'skill', rarity: 'uncommon', glyph: '見',
+    cost: 1, insight: 1, draw: 1,
+    upgrade: { cost: 0 },
+  },
+  oneFinger: {
+    name: '일지선', type: 'attack', rarity: 'uncommon', glyph: '指',
+    cost: 2, damage: 7, point: 10, sure: true,
+    upgrade: { damage: 9, point: 13 },
+  },
+  triple: {
+    name: '연환삼식', type: 'attack', rarity: 'uncommon', glyph: '三',
+    cost: 1, damage: 3, hits: 2, comboHits: 2,
+    upgrade: { damage: 4 },
+  },
+  phantom: {
+    name: '이형환위', type: 'skill', rarity: 'uncommon', glyph: '影',
+    cost: 2, evasion: 6, strength: 1,
+    upgrade: { evasion: 8 },
+  },
 
   // ── 희귀 ─────────────────
   heavenWind: {
     name: '천풍검', type: 'attack', rarity: 'rare', glyph: '天',
-    cost: 3, damage: 28,
+    cost: 3, damage: 28, accuracy: 80,
     upgrade: { damage: 36 },
   },
   swordRain: {
@@ -105,15 +150,25 @@ export const CARDS = {
     cost: 2, strength: 4,
     upgrade: { strength: 5 },
   },
+  meteor: {
+    name: '유성낙화', type: 'attack', rarity: 'rare', glyph: '星',
+    cost: 1, damage: 4, perAttack: 4,
+    upgrade: { damage: 6, perAttack: 5 },
+  },
+  deathPoint: {
+    name: '사혈점', type: 'attack', rarity: 'rare', glyph: '死',
+    cost: 2, damage: 10, point: 15, sure: true,
+    upgrade: { damage: 14, point: 20 },
+  },
 };
 
 for (const [id, c] of Object.entries(CARDS)) c.id = id;
 
-// 검객 시작 덱: 기본 검법 6 + 견제 3 + 유수검 1
+// 검객 시작 덱: 기본 검법 5 + 견제 3 + 유수검 1 + 경신법 1
 export const STARTER_DECK = [
-  'strike', 'strike', 'strike', 'strike', 'strike', 'strike',
+  'strike', 'strike', 'strike', 'strike', 'strike',
   'feint', 'feint', 'feint',
-  'yusu',
+  'yusu', 'lightBody',
 ];
 
 export const RARITY_LABEL = { starter: '기본', common: '일반', uncommon: '고급', rare: '희귀' };
@@ -131,10 +186,21 @@ export function cardStats(card) {
 
 export function describe(c) {
   const lines = [];
-  if (c.damage) lines.push(c.hits > 1 ? `피해 ${c.damage} × ${c.hits}` : `피해 ${c.damage}`);
+  if (c.damage) {
+    let line = c.hits > 1 ? `피해 ${c.damage} × ${c.hits}` : `피해 ${c.damage}`;
+    if (c.comboHits) line += ` (연계 시 × ${(c.hits ?? 1) + c.comboHits})`;
+    lines.push(line);
+  }
+  if (c.sure) lines.push('필중');
+  if (c.crit) lines.push(`치명 +${c.crit}%`);
+  if (c.combo) lines.push(`연계: 피해 +${c.combo}`);
+  if (c.perAttack) lines.push(`앞선 초식마다 +${c.perAttack}`);
   if (c.bonusIfAttacking) lines.push(`공격 예고 시 +${c.bonusIfAttacking}`);
+  if (c.point) lines.push(`점혈 ${c.point}`);
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
+  if (c.evasion) lines.push(`경공 +${c.evasion}`);
+  if (c.insight) lines.push('간파: 다음 초식 필중·치명');
   if (c.strength) lines.push(`기세 +${c.strength}`);
   if (c.energy) lines.push(`내공 +${c.energy}`);
   if (c.draw) lines.push(`카드 ${c.draw}장 뽑기`);
