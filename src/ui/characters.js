@@ -1,5 +1,8 @@
 // 캐릭터 디자인 데이터 (세력 × 계열)
-// 그림: assets/portraits/<세력>-<계열>.webp (사용자가 만든 샘플 일러스트에서 잘라낸 상반신 초상화)
+// 그림
+//  - 전투용 전신: assets/characters/<세력>-<계열>.webp (초록 배경 그림을 tools/prepare_sprite.py 로 처리)
+//    → 아래 SPRITES 에 발 위치(footX)와 함께 등록. 없으면 전투에서 실루엣으로 대신 나옴
+//  - 도감용 상반신: assets/portraits/<세력>-<계열>.webp (스타일 참고 샘플에서 잘라냄)
 // 정파: 백색·청색 / 마교: 흑색·적색 / 사파: 갈색·암녹색·무채색
 
 export const FACTIONS = {
@@ -26,6 +29,14 @@ const NOTES = {
   'unorthodox-assassin': '한쪽 눈 안대, 낡은 천 복면, 경계하는 눈빛',
 };
 
+// 전신 그림 등록 (prepare_sprite.py 가 출력한 footX 값)
+const SPRITES = {
+  'orthodox-sword': { image: 'assets/characters/orthodox-sword.webp', footX: 0.4073 },
+};
+
+// 공격 이펙트 색 (검기/권경/암기)
+const FX_COLOR = { orthodox: '#9cc4ff', demonic: '#ff5a5a', unorthodox: '#e8c27a' };
+
 export const DESIGNS = {};
 for (const [fid, f] of Object.entries(FACTIONS)) {
   for (const [cid, c] of Object.entries(CLASSES)) {
@@ -37,6 +48,9 @@ for (const [fid, f] of Object.entries(FACTIONS)) {
       title: `${f.name} ${c.name}`,
       note: NOTES[key],
       portrait: `assets/portraits/${key}.webp`,
+      sprite: SPRITES[key] ?? null,
+      factionColor: f.color,
+      fxColor: FX_COLOR[fid],
     };
   }
 }

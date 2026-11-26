@@ -4,23 +4,15 @@ import {
 } from './core/battle.js';
 import { CARDS } from './core/cards.js';
 import { ENEMY_IDS } from './core/enemies.js';
-import { createBackdrop } from './ui/backdrop.js';
-import { DESIGNS } from './ui/characters.js';
+import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 
 const PLAYER_ART = 'orthodox-sword';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
-const backdrop = createBackdrop($('bg'));
-const PANEL = { player: $('player-panel'), enemy: $('enemy-panel') };
-
 const TYPE_LABEL = { attack: '초식', defense: '호신강기', skill: '심법' };
-// 데미지 숫자가 뜨는 위치 (초상화 가운데)
-const POS = {
-  player: { x: 220, y: 225 },
-  enemy: { x: 740, y: 225 },
-};
 
+let scene = null;
 let battle = null;
 let busy = false;
 let lastEnemy = null;
@@ -34,13 +26,13 @@ window.addEventListener('resize', fit);
 fit();
 
 // ── 전투 시작 ─────────────────────────
-function newBattle() {
+async function newBattle() {
   const choices = ENEMY_IDS.filter((id) => id !== lastEnemy);
   const enemyId = choices[Math.floor(Math.random() * choices.length)];
   lastEnemy = enemyId;
   battle = createBattle({ enemyId, seed: (Math.random() * 2 ** 31) | 0 });
-  setPortrait('player', PLAYER_ART, '검객');
-  setPortrait('enemy', battle.enemy.art, battle.enemy.name);
+  busy = true;
+  await scene.setEnemy(battle.enemy.art);
   $('hand').replaceChildren();
   $('result').hidden = true;
   busy = false;
@@ -52,14 +44,20 @@ function newBattle() {
 
 // ── 그리기 ─────────────────────────
 function render() {
+  renderStatus();
+  renderControls();
+}
+
+function renderStatus() {
   const s = battle;
   $('turn-label').textContent = `제 ${s.turn} 턴`;
-  renderUnit($('player-info'), '정파 · 떠돌이 무인', s.player);
-  renderUnit($('enemy-info'), s.enemy.title, s.enemy);
-  PANEL.player.classList.toggle('defeated', s.player.hp <= 0);
-  PANEL.enemy.classList.toggle('defeated', s.enemy.hp <= 0);
+  renderUnit($('player-info'), '검객', '정파 · 떠돌이 무인', s.player, 'player');
+  renderUnit($('enemy-info'), s.enemy.name, s.enemy.title, s.enemy, 'enemy');
   renderIntent();
+}
 
+function renderControls() {
+  const s = battle;
   $('energy-value').textContent = `${s.player.energy}/${s.player.maxEnergy}`;
   $('energy').classList.toggle('empty', s.player.energy === 0);
   $('draw-count').textContent = `뽑을 패 ${s.drawPile.length}`;
@@ -68,23 +66,17 @@ function render() {
   renderHand();
 }
 
-function setPortrait(who, artKey, name) {
-  const panel = PANEL[who];
-  const d = DESIGNS[artKey];
-  const img = panel.querySelector('img');
-  img.src = d.portrait;
-  img.alt = d.title;
-  panel.querySelector('.nameplate').textContent = name;
-  panel.classList.remove('defeated', 'hit', 'lunge');
-}
-
-function renderUnit(el, title, u) {
+// 머리 위: 이름 / 소속 / 체력
+function renderUnit(el, name, title, u, who) {
   if (!el.firstChild) {
     el.innerHTML = `
+      <div class="name"></div><div class="title"></div>
       <div class="hpbar"><div class="fill"></div><div class="text"></div></div>
-      <div class="block-badge" hidden></div>
-      <div class="title"></div>`;
+      <div class="block-badge" hidden></div>`;
   }
+  el.style.left = `${FEET[who].x}px`;
+  el.style.top = `${HEAD_Y[who] - 56}px`;
+  el.querySelector('.name').textContent = name;
   el.querySelector('.title').textContent = title;
   el.querySelector('.fill').style.width = `${(u.hp / u.maxHp) * 100}%`;
   el.querySelector('.hpbar .text').textContent = `${u.hp} / ${u.maxHp}`;
@@ -152,7 +144,7 @@ function makeCardEl(card) {
 }
 
 // ── 입력 ─────────────────────────
-function onCard(uid, el) {
+async function onCard(uid, el) {
   if (busy || battle.phase !== 'player') return;
   if (!playCard(battle, uid)) {
     el.classList.remove('denied');
@@ -161,7 +153,10 @@ function onCard(uid, el) {
     if (battle.phase === 'player') showBanner('내공이 부족하다', '#ff9a9a', 700);
     return;
   }
-  playEvents(takeEvents(battle));
+  busy = true;
+  renderControls(); // 카드는 바로 손에서 빠지고, 체력은 맞는 순간에 줄어듦
+  await playEvents(takeEvents(battle));
+  busy = false;
   render();
 }
 
@@ -198,37 +193,40 @@ window.addEventListener('keydown', (e) => {
 async function playEvents(events) {
   for (const ev of events) {
     switch (ev.type) {
-      case 'play':
-        if (CARDS[ev.card].damage) animate('player', 'lunge');
-        break;
       case 'enemyAct':
         showBanner(ev.name, '#ffb0a0', 800);
-        animate('enemy', 'lunge');
-        await wait(180);
         break;
-      case 'damage':
+      case 'damage': {
+        // 타격마다 공격 모션 → 닿는 순간 피격 연출 (다단 공격은 여러 번 휘두름)
+        const from = ev.target === 'player' ? 'enemy' : 'player';
+        await wait(scene.attack(from));
         if (ev.amount > 0) {
-          animate(ev.target, 'hit');
+          scene.hit(ev.target, ev.amount);
           popup(ev.target, `-${ev.amount}`, 'dmg');
         }
-        if (ev.blocked > 0) popup(ev.target, `막음 ${ev.blocked}`, 'blk', 26);
-        render();
-        await wait(150);
+        if (ev.blocked > 0) popup(ev.target, `막음 ${ev.blocked}`, 'blk', 30);
+        renderStatus();
+        if ((ev.target === 'player' ? battle.player : battle.enemy).hp <= 0) scene.die(ev.target);
+        await wait(300);
         break;
+      }
       case 'block':
-        popup(ev.target, `+${ev.amount} 강기`, 'gain', -10);
+        scene.guard(ev.target);
+        popup(ev.target, `+${ev.amount} 강기`, 'gain', -20);
+        renderStatus();
+        await wait(150);
         break;
       case 'turnStart':
         render();
-        await wait(250);
+        await wait(200);
         showBanner(`제 ${ev.turn} 턴 · 나의 차례`, '#f4ead8', 900);
         break;
       case 'won':
-        await wait(500);
+        await wait(800);
         showResult(true);
         break;
       case 'lost':
-        await wait(500);
+        await wait(800);
         showResult(false);
         break;
       default:
@@ -237,20 +235,13 @@ async function playEvents(events) {
   }
 }
 
-function animate(who, kind) {
-  const el = PANEL[who];
-  el.classList.remove(kind);
-  void el.offsetWidth;
-  el.classList.add(kind);
-}
-
 function popup(target, text, cls, offsetY = 0) {
   const el = document.createElement('div');
   el.className = `popup ${cls}`;
   el.textContent = text;
   const jitter = Math.round((Math.random() - 0.5) * 30);
-  el.style.left = `${POS[target].x + jitter}px`;
-  el.style.top = `${POS[target].y - 60 + offsetY}px`;
+  el.style.left = `${CHEST[target].x + jitter}px`;
+  el.style.top = `${CHEST[target].y - 30 + offsetY}px`;
   $('popups').appendChild(el);
   setTimeout(() => el.remove(), 950);
 }
@@ -288,11 +279,14 @@ function wait(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// ── 메인 루프 ─────────────────────────
+// ── 시작 ─────────────────────────
 function frame(now) {
-  backdrop.draw(now);
+  scene.draw(now, battle);
   requestAnimationFrame(frame);
 }
 
-newBattle();
-requestAnimationFrame(frame);
+(async () => {
+  scene = await createScene($('scene'), { player: PLAYER_ART });
+  await newBattle();
+  requestAnimationFrame(frame);
+})();

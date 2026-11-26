@@ -18,13 +18,16 @@
       display: grid; place-items: center; padding: 0 4px; border-radius: 6px; }
     .cell { background: #1e2530; border: 2px solid #050507; border-radius: 6px; padding: 10px; text-align: center; }
     .cell img { width: 100%; display: block; border: 2px solid #050507; box-shadow: 0 0 0 1px #7a705e; }
+    .cell img.full { height: 240px; width: auto; max-width: 100%; margin: 0 auto; object-fit: contain; border: 0; box-shadow: none;
+      background: radial-gradient(ellipse at 50% 90%, #2e3644, #1e2530 70%); }
+    .cell .wait { font-size: 11px; color: #e0b04a; margin-top: 6px; }
     .cell .t { font-family: 'Noto Serif KR', serif; font-weight: 900; margin: 8px 0 2px; }
     .cell .n { font-size: 12px; opacity: .75; line-height: 1.45; }
   </style>
 </head>
 <body>
   <h1>캐릭터 도감</h1>
-  <p class="sub">세력 3 × 계열 3</p>
+  <p class="sub">세력 3 × 계열 3 · 전신 그림이 준비된 캐릭터는 전투용 그림, 나머지는 스타일 참고 샘플</p>
   <div class="grid" id="grid"></div>
   <script type="module">
     import { DESIGNS, FACTIONS, CLASSES } from './src/ui/characters.js';
@@ -40,7 +43,10 @@
       for (const cid of Object.keys(CLASSES)) {
         const d = DESIGNS[`${fid}-${cid}`];
         const cell = document.createElement('div'); cell.className = 'cell';
-        cell.innerHTML = `<img src="${d.portrait}" alt="${d.title}"><div class="t">${d.title}</div><div class="n">${d.note}</div>`;
+        const img = d.sprite
+          ? `<img class="full" src="${d.sprite.image}" alt="${d.title}">`
+          : `<img src="${d.portrait}" alt="${d.title}"><div class="wait">전신 그림 대기 중 (스타일 참고 샘플)</div>`;
+        cell.innerHTML = `${img}<div class="t">${d.title}</div><div class="n">${d.note}</div>`;
         grid.append(cell);
       }
     }
