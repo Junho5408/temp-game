@@ -39,6 +39,7 @@ const SPRITES = {
   'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
   'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
   'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.5143 },
+  'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.5332 },
 };
 
 // 공격 이펙트 색 (검기/권경/암기)
@@ -67,6 +68,14 @@ export const DESIGN_IDS = Object.keys(DESIGNS);
 // ── 이야기 인물 (세력·계열 밖) ─────────────────────────
 // 그림 원본: docs/reference/npc-*-raw.webp → tools/prepare_sprite.py <원본> npc-<id>
 const NPCS = {
+  'boss-nokrim': {
+    title: '녹림 총채주 곽패', note: '2구역 두목. 개산부를 휘두르는 산군',
+    cls: 'fist', color: '#8e7050', sprite: { image: 'assets/characters/boss-nokrim.webp', footX: 0.4055 },
+  },
+  'boss-gwimyeon': {
+    title: '혈영대주 귀면', note: '그날 밤 나를 벤 자. 뿔 달린 귀면 가면과 쌍도',
+    cls: 'assassin', color: '#c22a36', sprite: { image: 'assets/characters/boss-gwimyeon.webp', footX: 0.469 },
+  },
   'npc-juno': {
     title: '주노(酒老)', note: '늘 취해 있는 노고수. 회차가 바뀌어도 나를 알아보는 듯하다',
     cls: 'fist', color: '#a08a6a', sprite: { image: 'assets/characters/npc-juno.webp', footX: 0.5025 },

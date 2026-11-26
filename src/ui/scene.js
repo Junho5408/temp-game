@@ -65,8 +65,13 @@ export async function createScene(canvas, { player }) {
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
-  // 배경: arena(비무대) / inn(청운객잔, 프롤로그)
-  const backgrounds = { arena: renderBackground(), inn: renderInnBackground() };
+  // 배경: arena(1구역 비무대) / forest(2구역 녹림 산채) / gate(3구역 불타는 관문) / inn(청운객잔)
+  const backgrounds = {
+    arena: renderBackground('arena'),
+    forest: renderBackground('forest'),
+    gate: renderBackground('gate'),
+    inn: renderInnBackground(),
+  };
   let mode = 'arena';
   const fx = [];
   const sparks = [];
@@ -173,8 +178,8 @@ export async function createScene(canvas, { player }) {
       sy = (Math.random() - 0.5) * shakePower * 2;
     }
     ctx.drawImage(backgrounds[mode], 0, 0, W, H);
-    if (mode === 'arena') drawFog(ctx, now);
-    else drawInnLife(ctx, now);
+    if (mode === 'inn') drawInnLife(ctx, now);
+    else drawFog(ctx, now);
     ctx.save();
     ctx.translate(sx, sy);
     // 뒤에 있는 적부터
@@ -183,7 +188,7 @@ export async function createScene(canvas, { player }) {
     drawFx(ctx, now);
     drawSparks(ctx, now);
     ctx.restore();
-    if (mode === 'arena') drawEmbers(ctx, now);
+    if (mode !== 'inn') drawEmbers(ctx, now);
   }
 
   function drawUnit(g, u, who, now, state) {
@@ -490,11 +495,15 @@ export async function createScene(canvas, { player }) {
       e.x += e.vx + Math.sin(now / 900 + e.phase) * 0.25;
       if (e.y < -10) embers[i] = spawnEmber();
       const flicker = 0.55 + Math.sin(now / 160 + e.phase) * 0.35;
-      g.fillStyle = `rgba(255, 120, 40, ${0.16 * flicker})`;
+      // 숲에서는 반딧불, 관문에서는 굵은 불티
+      const [glow, core] = mode === 'forest' ? ['170, 230, 120', '220, 255, 170']
+        : mode === 'gate' ? ['255, 80, 30', '255, 170, 90'] : ['255, 120, 40', '255, 195, 120'];
+      const big = mode === 'gate' ? 1.4 : 1;
+      g.fillStyle = `rgba(${glow}, ${0.16 * flicker})`;
       g.beginPath();
-      g.arc(e.x, e.y, e.size * 3, 0, Math.PI * 2);
+      g.arc(e.x, e.y, e.size * 3 * big, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = `rgba(255, 195, 120, ${flicker})`;
+      g.fillStyle = `rgba(${core}, ${flicker})`;
       g.beginPath();
       g.arc(e.x, e.y, e.size, 0, Math.PI * 2);
       g.fill();
@@ -546,36 +555,56 @@ async function makeUnit(artKey, dir, fallbackImg) {
 }
 
 // ── 배경 (한 번만 그려서 재사용) ─────────────────────────
-function renderBackground() {
+const THEMES = {
+  arena: {
+    sky: ['#0f141b', '#1d2530', '#2e2a30', '#1a1517'], haze: '160, 60, 40', hazeA: 0.35,
+    ridges: [['#2a3340', '#232b36'], ['#212833', '#1a2029'], ['#181d25', '#13171d']],
+    banners: [['#a3262e', '#6e161c'], ['#2f5ea8', '#1d3b6e']],
+  },
+  forest: {
+    sky: ['#0b1412', '#14231f', '#1f2a22', '#121713'], haze: '120, 150, 70', hazeA: 0.22,
+    ridges: [['#1d2b26', '#18241f'], ['#16221c', '#111a15'], ['#0f1712', '#0b110d']],
+    banners: [['#5b6b2a', '#38421a'], ['#7a5a32', '#4e3a20']],
+    trees: true,
+  },
+  gate: {
+    sky: ['#140909', '#2a1110', '#3d1712', '#1a0c0b'], haze: '230, 70, 30', hazeA: 0.55,
+    ridges: [['#2a1714', '#22120f'], ['#1f100e', '#190c0a'], ['#150b0a', '#0f0807']],
+    banners: [['#1a1a1d', '#0a0a0c'], ['#9c1f26', '#5e1015']],
+    wall: true,
+  },
+};
+
+function renderBackground(theme = 'arena') {
+  const t = THEMES[theme];
   const c = makeCanvas(W, H);
   const g = c.getContext('2d');
   g.scale(DPR, DPR);
 
   // 하늘
   const sky = g.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, '#0f141b');
-  sky.addColorStop(0.45, '#1d2530');
-  sky.addColorStop(0.62, '#2e2a30');
-  sky.addColorStop(1, '#1a1517');
+  [0, 0.45, 0.62, 1].forEach((p, i) => sky.addColorStop(p, t.sky[i]));
   g.fillStyle = sky;
   g.fillRect(0, 0, W, H);
 
-  // 지평선의 붉은 기운
+  // 지평선의 기운
   const haze = g.createRadialGradient(W * 0.55, 300, 20, W * 0.55, 300, 560);
-  haze.addColorStop(0, 'rgba(160, 60, 40, 0.35)');
-  haze.addColorStop(1, 'rgba(160, 60, 40, 0)');
+  haze.addColorStop(0, `rgba(${t.haze}, ${t.hazeA})`);
+  haze.addColorStop(1, `rgba(${t.haze}, 0)`);
   g.fillStyle = haze;
   g.fillRect(0, 0, W, H);
 
   // 먼 산 → 가까운 산 (뒤로 갈수록 흐리게)
-  ridge(g, 205, 70, 0.006, 1.1, ['#2a3340', '#232b36']);
+  ridge(g, 205, 70, 0.006, 1.1, t.ridges[0]);
   mist(g, 200, 60, 0.16);
-  ridge(g, 245, 60, 0.009, 3.7, ['#212833', '#1a2029']);
+  if (t.wall) drawFortress(g);
+  ridge(g, 245, 60, 0.009, 3.7, t.ridges[1]);
   mist(g, 240, 50, 0.14);
-  ridge(g, 282, 34, 0.013, 5.2, ['#181d25', '#13171d']);
+  if (t.trees) drawPines(g);
+  ridge(g, 282, 34, 0.013, 5.2, t.ridges[2]);
 
-  drawBanner(g, 198, 300, '#a3262e', '#6e161c');
-  drawBanner(g, 772, 292, '#2f5ea8', '#1d3b6e');
+  drawBanner(g, 198, 300, ...t.banners[0]);
+  drawBanner(g, 772, 292, ...t.banners[1]);
   drawPlatform(g);
 
   // 가장자리 어둡게
@@ -585,6 +614,52 @@ function renderBackground() {
   g.fillStyle = vig;
   g.fillRect(0, 0, W, H);
   return c;
+}
+
+// 2구역: 산채 숲의 소나무 실루엣
+function drawPines(g) {
+  let seed = 7;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = 0; i < 26; i++) {
+    const x = rnd() * W;
+    const base = 250 + rnd() * 40;
+    const h = 70 + rnd() * 90;
+    const w = h * 0.32;
+    g.fillStyle = i % 2 ? '#101a15' : '#0c140f';
+    g.beginPath();
+    for (let k = 0; k < 4; k++) {
+      const y = base - h + (h * k) / 4;
+      const ww = (w * (k + 1)) / 4;
+      g.moveTo(x, y);
+      g.lineTo(x - ww, y + h / 3);
+      g.lineTo(x + ww, y + h / 3);
+    }
+    g.fill();
+    g.fillRect(x - 2, base - 4, 4, 10);
+  }
+}
+
+// 3구역: 멀리 불타는 관문 성벽
+function drawFortress(g) {
+  const y = 232;
+  g.fillStyle = '#1b0e0c';
+  g.fillRect(250, y - 40, 460, 60);
+  for (let x = 250; x < 710; x += 22) g.fillRect(x, y - 52, 12, 14); // 여장
+  g.fillRect(430, y - 92, 100, 60); // 문루
+  g.beginPath();
+  g.moveTo(415, y - 92);
+  g.lineTo(480, y - 120);
+  g.lineTo(545, y - 92);
+  g.fill();
+  g.fillStyle = 'rgba(255, 110, 40, 0.55)';
+  g.beginPath();
+  g.ellipse(480, y + 2, 26, 30, 0, Math.PI, 0); // 불타는 성문
+  g.fill();
+  const fire = g.createRadialGradient(480, y - 60, 10, 480, y - 60, 260);
+  fire.addColorStop(0, 'rgba(255, 120, 40, 0.35)');
+  fire.addColorStop(1, 'rgba(255, 120, 40, 0)');
+  g.fillStyle = fire;
+  g.fillRect(200, y - 260, 560, 320);
 }
 
 function ridge(g, baseY, amp, freq, phase, [top, bottom]) {

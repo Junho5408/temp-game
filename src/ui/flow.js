@@ -29,7 +29,9 @@ function btn(label, onClick, cls = '') {
 }
 
 // ── 타이틀 ─────────────────────────
-export function renderTitle(meta, { onStart, onRecord, onReset }) {
+export function renderTitle(meta, {
+  saved, onContinue, onStart, onRecord, onReset,
+}) {
   const el = overlay();
   el.classList.add('title-screen');
   const fresh = !meta.prologueDone;
@@ -43,7 +45,14 @@ export function renderTitle(meta, { onStart, onRecord, onReset }) {
       <p class="title-note">임시 제목 · temp-game</p>
     </div>`;
   const actions = el.querySelector('.title-actions');
-  actions.appendChild(btn(fresh ? '시작하기' : '다시 백 일 전으로', onStart));
+  if (saved) {
+    actions.appendChild(btn(`이어하기 <small>${saved.zone} · 체력 ${saved.hp}/${saved.maxHp}</small>`, onContinue));
+    actions.appendChild(btn('이 생을 버리고 백 일 전으로', () => {
+      if (window.confirm('진행 중인 판을 포기할까요? 쓰러진 것으로 기록되고, 이번 생의 무공은 기억하지 못합니다.')) onStart();
+    }, 'ghost'));
+  } else {
+    actions.appendChild(btn(fresh ? '시작하기' : '다시 백 일 전으로', onStart));
+  }
   if (!fresh) {
     actions.appendChild(btn('기록', onRecord, 'ghost'));
     actions.appendChild(btn('처음부터', () => {
@@ -64,6 +73,9 @@ export function renderRecord(meta, onBack) {
         <div><b>${meta.deaths}</b><span>쓰러진 횟수</span></div>
         <div><b>${meta.bestFloor}</b><span>가장 높이 오른 층</span></div>
         <div><b>${meta.clears.zone1}</b><span>1구역 돌파</span></div>
+        <div><b>${meta.clears.zone2 ?? 0}</b><span>2구역 돌파</span></div>
+        <div><b>${meta.clears.zone3 ?? 0}</b><span>3구역 돌파</span></div>
+        <div><b>${meta.clears.final ?? 0}</b><span>그날 밤을 넘김</span></div>
       </div>
       <h3>기억한 무공</h3>
       <div class="card-grid small"></div>

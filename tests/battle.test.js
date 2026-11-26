@@ -5,7 +5,7 @@ import {
   HAND_SIZE, MAX_ENERGY, PLAYER_MAX_HP,
 } from '../src/core/battle.js';
 import { STARTER_DECK } from '../src/core/cards.js';
-import { ENEMIES } from '../src/core/enemies.js';
+import { ENEMIES, ZONE_POOLS } from '../src/core/enemies.js';
 
 function setup(enemyId = 'dummy', opts = {}) {
   const s = createBattle({ enemyId, seed: 42, luck: false, ...opts });
@@ -162,7 +162,7 @@ test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', (
 });
 
 test('시작 덱으로 1층 일반 적은 거의 이길 수 있음 (간단 밸런스 확인)', () => {
-  for (const enemyId of Object.keys(ENEMIES).filter((id) => ENEMIES[id].tier === 'normal')) {
+  for (const enemyId of ZONE_POOLS[0].normal) {
     let wins = 0;
     for (let seed = 1; seed <= 40; seed++) {
       const s = createBattle({ enemyId, seed });

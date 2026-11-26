@@ -2,7 +2,7 @@
 // 전투 자체는 battle.js 가 맡고, 여기서는 전투 전후만 다룸.
 import { createBattle, PLAYER_MAX_HP } from './battle.js';
 import { CARDS, STARTER_DECK, canUpgrade, cardsByRarity } from './cards.js';
-import { ENEMIES, POOLS } from './enemies.js';
+import { ENEMIES, ZONE_POOLS, FINAL_BOSS } from './enemies.js';
 import { EVENTS, EVENT_IDS } from './events.js';
 import { findNode, generateMap } from './map.js';
 import {
@@ -14,9 +14,10 @@ export const START_GOLD = 60;
 export const REST_HEAL_RATIO = 0.3;
 
 // 위층으로 갈수록 적이 강해짐: 체력 배율, 처음부터 붙은 기세
-export function scaleForRow(row, tier) {
+// 구역이 올라갈수록(zone) 덱도 커지므로 일반·고수에게 기세와 체력을 더 붙임. 두목은 따로 설계
+export function scaleForRow(row, tier, zone = 0) {
   if (tier === 'boss') return { hp: 1, strength: 0 };
-  return { hp: 1 + 0.05 * row, strength: Math.floor(row / 4) };
+  return { hp: 1 + 0.05 * row + [0, 0.1, 0.15][zone], strength: Math.floor(row / 4) + (zone > 0 ? 1 : 0) };
 }
 export const REMOVE_COST_START = 50;
 export const REMOVE_COST_STEP = 25;
@@ -24,8 +25,11 @@ export const REMOVE_COST_STEP = 25;
 const REWARD_WEIGHTS = {
   normal: [['common', 60], ['uncommon', 33], ['rare', 7]],
   elite: [['common', 35], ['uncommon', 45], ['rare', 20]],
+  boss: [['uncommon', 30], ['rare', 70]],
 };
-const GOLD_REWARD = { normal: [12, 20], elite: [28, 36] };
+const GOLD_REWARD = { normal: [12, 20], elite: [28, 36], boss: [55, 70] };
+export const ZONE_COUNT = 3; // 구역 셋을 지나면 그날 밤의 최종 결전
+export const ZONE_HEAL_RATIO = 0.5; // 구역을 넘어갈 때 잃은 체력의 절반 회복
 const PRICE = { common: [45, 55], uncommon: [70, 85], rare: [135, 155] };
 const ITEM_PRICE = { common: [28, 36], uncommon: [45, 55], rare: [70, 80] };
 const TREASURE_PRICE = { common: [100, 120], uncommon: [135, 155], rare: [175, 195] };
@@ -38,7 +42,11 @@ export const SNOW_LOTUS_HEAL = 6;
 export function createRun({ seed = 1, extraCards = [] } = {}) {
   const run = {
     seed,
-    rng: createRng(seed),
+    rng: null,
+    rngCount: 0, // 저장·불러오기 때 난수 위치를 되살리기 위해 센다
+    zone: 0, // 0~2 = 1~3구역, 3 = 최종 결전
+    zonesCleared: 0,
+    pendingAdvance: false, // 두목을 이겨서 다음 구역으로 넘어갈 차례
     hp: PLAYER_MAX_HP,
     maxHp: PLAYER_MAX_HP,
     gold: START_GOLD,
@@ -61,9 +69,46 @@ export function createRun({ seed = 1, extraCards = [] } = {}) {
     cluesFound: [], // 이번 판에서 알아낸 단서 id (화면 쪽이 회귀 기록에 옮겨 담음)
     battlesWon: 0,
   };
+  attachRng(run);
   for (const id of STARTER_DECK) addCard(run, id);
   for (const id of extraCards) addCard(run, id);
   return run;
+}
+
+// 난수: 몇 번 썼는지 세어 두면 저장한 판을 같은 흐름으로 되살릴 수 있음
+function attachRng(run) {
+  const base = createRng(run.seed);
+  for (let i = 0; i < run.rngCount; i++) base();
+  run.rng = () => {
+    run.rngCount += 1;
+    return base();
+  };
+}
+
+// ── 판 중간 저장 ─────────────────────────
+export const RUN_SAVE_VERSION = 1;
+
+export function serializeRun(run) {
+  const { rng, ...data } = run;
+  return JSON.stringify({ v: RUN_SAVE_VERSION, ...data });
+}
+
+// 깨졌거나 버전이 다르면 null
+export function parseRun(text) {
+  try {
+    const data = JSON.parse(text);
+    if (!data || data.v !== RUN_SAVE_VERSION || !Array.isArray(data.deck) || !data.map) return null;
+    if (!data.deck.every((c) => CARDS[c.id])) return null;
+    const { v, ...run } = data;
+    attachRng(run);
+    return run;
+  } catch {
+    return null;
+  }
+}
+
+export function zonePools(run) {
+  return ZONE_POOLS[Math.min(run.zone, ZONE_POOLS.length - 1)];
 }
 
 function randInt(rng, [lo, hi]) {
@@ -105,14 +150,15 @@ export function enterNode(run, id) {
   run.visited.push(id);
 
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {
-    const pool = node.type === 'boss' ? POOLS.boss
-      : node.type === 'elite' ? POOLS.elite
-        : node.row <= 2 ? POOLS.easy : POOLS.normal;
+    const pools = zonePools(run);
+    const pool = node.type === 'boss' ? pools.boss
+      : node.type === 'elite' ? pools.elite
+        : node.row <= 2 ? pools.easy : pools.normal;
     const choices = pool.length > 1 ? pool.filter((e) => e !== run.lastEnemy) : pool;
     const enemyId = choices[Math.floor(run.rng() * choices.length)];
     run.lastEnemy = enemyId;
     const tier = ENEMIES[enemyId].tier;
-    run.encounter = { enemyId, tier, scale: scaleForRow(node.row, tier) };
+    run.encounter = { enemyId, tier, scale: scaleForRow(node.row, tier, run.zone) };
     run.phase = 'battle';
   } else if (node.type === 'rest') {
     run.phase = 'rest';
@@ -130,7 +176,8 @@ export function enterNode(run, id) {
 
 // 이야기 기연(주노, 흰 옷의 사내)은 조건이 맞으면 그 판에서 먼저 한 번씩 나오고, 나머지는 무작위
 function pickEvent(run, row) {
-  const story = EVENT_IDS.find((e) => EVENTS[e].story && !run.seenEvents.includes(e) && row >= (EVENTS[e].minRow ?? 0));
+  const story = EVENT_IDS.find((e) => EVENTS[e].story && (EVENTS[e].zone ?? 0) === run.zone
+    && !run.seenEvents.includes(e) && row >= (EVENTS[e].minRow ?? 0));
   if (story) return story;
   const normal = EVENT_IDS.filter((e) => !EVENTS[e].story);
   const fresh = normal.filter((e) => !run.seenEvents.includes(e));
@@ -206,11 +253,24 @@ export function finishBattle(run, battle) {
   if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
   run.battlesWon += 1;
   const tier = run.encounter.tier;
+  const final = !!run.encounter.final;
   const clue = ENEMIES[run.encounter.enemyId].clue;
   if (clue && !run.cluesFound.includes(clue)) run.cluesFound.push(clue);
   run.encounter = null;
-  if (tier === 'boss') {
+  if (final) {
     run.phase = 'victory';
+    return;
+  }
+  if (tier === 'boss') {
+    // 구역 돌파: 보물(대환단 포함) → 무공 → 다음 구역
+    run.zonesCleared = Math.max(run.zonesCleared, run.zone + 1);
+    const gold = randInt(run.rng, GOLD_REWARD.boss);
+    run.gold += gold;
+    run.reward = { gold, cards: rollCards(run, REWARD_WEIGHTS.boss, 3), item: null, itemKept: false };
+    const choice = run.treasures.includes('daeHwan') ? [] : ['daeHwan'];
+    run.treasureChoice = [...choice, ...rollTreasures(run, 3 - choice.length)];
+    run.pendingAdvance = true;
+    run.phase = 'treasure';
     return;
   }
   const gold = randInt(run.rng, GOLD_REWARD[tier]);
@@ -267,6 +327,25 @@ export function chooseReward(run, index) {
     addCard(run, id);
   }
   run.reward = null;
+  run.phase = run.pendingAdvance ? 'zoneClear' : 'map';
+  return true;
+}
+
+// 다음 구역으로 (마지막 구역 뒤에는 그날 밤의 최종 결전)
+export function advanceZone(run) {
+  if (run.phase !== 'zoneClear') return false;
+  run.pendingAdvance = false;
+  run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * ZONE_HEAL_RATIO));
+  run.zone += 1;
+  run.position = null;
+  run.visited = [];
+  run.lastEnemy = null;
+  if (run.zone >= ZONE_COUNT) {
+    run.encounter = { enemyId: FINAL_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
+    run.phase = 'battle';
+    return true;
+  }
+  run.map = generateMap(run.seed + run.zone * 7919);
   run.phase = 'map';
   return true;
 }

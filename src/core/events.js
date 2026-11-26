@@ -1,7 +1,7 @@
 // 기연 (지도의 ? 칸): 선택지가 있는 짧은 사건
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
-import { CONSUMABLES } from './items.js';
+import { CONSUMABLES, TREASURES } from './items.js';
 
 function heal(run, n) {
   const before = run.hp;
@@ -102,6 +102,75 @@ export const EVENTS = {
         effect(run) {
           heal(run, 6);
           return '지금 쫓아 봐야 얻을 것은 없다. 숨을 고르고 다음 비무를 준비했다.';
+        },
+      },
+    ],
+  },
+  // 2구역: 토벌대 막사에서 흰 옷의 사내와 다시 만남 — 이름이 밝혀짐
+  soohaCamp: {
+    story: true,
+    npc: 'sooha',
+    intro: 'soohaCamp',
+    zone: 1,
+    minRow: 2,
+    title: '토벌대 막사의 진소하',
+    text: '"무림맹 순찰사 진소하요." 사내가 짧게 포권한다.\n백 일 뒤 그 객잔에서, 나 대신 살아 나갈 사내.',
+    options: [
+      {
+        label: '그날 밤에 대해 경고한다',
+        hint: '행낭에 연막탄 · 그는 믿을까?',
+        effect(run, rng, api) {
+          const kept = api.addItem('smoke');
+          return `"백 일 뒤 청운객잔에 가지 마시오." 진소하는 한참 나를 보더니 연막탄 하나를 건넸다.\n"이상한 사람이군. 쓸 일이 생기면 쓰시오."${kept ? '' : '\n(행낭이 가득 차서 돌려주었다.)'}`;
+        },
+      },
+      {
+        label: '검을 섞어 본다',
+        hint: '체력 -8 · 무작위 카드 2장 연마',
+        effect(run, rng) {
+          damage(run, 8);
+          const names = [];
+          for (let i = 0; i < 2; i++) {
+            const options = run.deck.filter(canUpgrade);
+            if (options.length === 0) break;
+            const card = options[Math.floor(rng() * options.length)];
+            card.upgraded = true;
+            names.push(CARDS[card.id].name);
+          }
+          return `정파의 정석 같은 검이었다. 몇 번 베였지만 배운 것이 있다.${names.length ? `\n『${names.join('』, 『')}』 연마.` : ''}`;
+        },
+      },
+    ],
+  },
+  // 3구역: 불타는 관문 뒤에서 주노와 다시 만남
+  junoGate: {
+    story: true,
+    npc: 'juno',
+    intro: 'junoGate',
+    zone: 2,
+    minRow: 3,
+    title: '관문 뒤의 주노',
+    text: '연기 속에서 노인이 호리병을 흔든다.\n"백 일이 거의 다 됐군. 술 익을 때가 됐어."',
+    options: [
+      {
+        label: '약을 받는다',
+        hint: '체력 +25',
+        effect(run) {
+          const healed = heal(run, 25);
+          return `노인이 내민 호리병의 술은 쓰고, 뜨거웠다. 체력을 ${healed} 회복했다.`;
+        },
+      },
+      {
+        label: '한 수 배운다',
+        hint: '은자 -30 · 보물 하나',
+        disabled: (run) => run.gold < 30,
+        effect(run, rng, api) {
+          run.gold -= 30;
+          const order = ['taiji', 'farSight', 'silkArmor', 'drunkenFist', 'chainArt', 'mirror'];
+          const id = order.find((t) => !run.treasures.includes(t));
+          if (!id) return '"자네한테 더 가르칠 게 없구먼." 노인은 술값만 받아 갔다.';
+          api.addTreasure(id);
+          return `"잘 봐 두게. 두 번은 안 보여 줘." — 보물 『${TREASURES[id].name}』을(를) 얻었다.`;
         },
       },
     ],

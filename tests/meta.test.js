@@ -83,9 +83,13 @@ test('판 결과 기록: 죽음 수, 최고 층, 1구역 돌파 수', () => {
   recordRunEnd(m, run);
   assert.equal(m.deaths, 1);
   assert.equal(m.bestFloor, 8);
+  run.zonesCleared = 3;
+  run.zone = 3;
   run.phase = 'victory';
   recordRunEnd(m, run);
   assert.equal(m.clears.zone1, 1);
+  assert.equal(m.clears.zone3, 1);
+  assert.equal(m.clears.final, 1);
 });
 
 test('프롤로그 적은 지도에 나오지 않고 전투는 정상 동작', () => {

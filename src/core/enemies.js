@@ -121,6 +121,202 @@ export const ENEMIES = {
   },
 };
 
+// ══ 2구역: 녹림 토벌 (무림맹의 사파 토벌대에 끼어서) ══════════════
+Object.assign(ENEMIES, {
+  bandit: {
+    name: '장칠', title: '녹림 산적', art: 'unorthodox-fist', tier: 'normal',
+    maxHp: 50,
+    pattern: [
+      { name: '도끼질', damage: 9 },
+      { name: '함성 · 기를 모은다', strength: 2 },
+      { name: '난도질', damage: 4, hits: 3 },
+    ],
+  },
+  snakeWoman: {
+    name: '여독사', title: '독사방 독수', art: 'unorthodox-assassin', tier: 'normal',
+    maxHp: 42, evasion: 20, traits: ['venom'], patternMode: 'random',
+    pattern: [
+      { name: '사독침', damage: 3, hits: 2 },
+      { name: '사독장', damage: 7, poison: 3 },
+      { name: '똬리 틀기 · 반격 자세', counter: 6 },
+    ],
+  },
+  blackWind: {
+    name: '흑풍', title: '흑풍채 쾌도', art: 'unorthodox-sword', tier: 'normal',
+    maxHp: 46, evasion: 10,
+    pattern: [
+      { name: '쾌도 이연참', damage: 5, hits: 2 },
+      { name: '바람을 모은다', strength: 1 },
+      { name: '질풍참', damage: 17, charge: true, breakAt: 12 },
+      { name: '반격 자세', counter: 6 },
+    ],
+  },
+  fallenMonk: {
+    name: '혜광', title: '파계승', art: 'orthodox-fist', tier: 'normal',
+    maxHp: 54, traits: ['ironBody', 'berserk'],
+    pattern: [
+      { name: '금강권', damage: 10 },
+      { name: '사자후', weak: 2, vulnerable: 1 },
+      { name: '나한 연타', damage: 4, hits: 3 },
+    ],
+  },
+  twinBlade: {
+    name: '쌍도귀', title: '녹림 칠십이채 행동대장', art: 'unorthodox-sword', tier: 'elite',
+    maxHp: 88, traits: ['killer'],
+    pattern: [
+      { name: '쌍도 난무', damage: 6, hits: 2 },
+      { name: '살기 개방', strength: 3 },
+      { name: '회전 난도', damage: 4, hits: 4 },
+      { name: '귀두참', damage: 24, charge: true, breakAt: 16 },
+    ],
+  },
+  poisonKing: {
+    name: '당철', title: '만독수', art: 'unorthodox-assassin', tier: 'elite',
+    maxHp: 82, evasion: 15, traits: ['venom', 'feint'],
+    pattern: [
+      { name: '만독장', damage: 7, poison: 4 },
+      { name: '독무', weak: 2, poison: 3 },
+      { name: '해독 · 흡독공', heal: 12, strength: 1 },
+      { name: '칠보단장', damage: 18, charge: true, breakAt: 14, poison: 5 },
+    ],
+  },
+  nokrimKing: {
+    name: '곽패', title: '녹림 총채주 · 산군', art: 'boss-nokrim', tier: 'boss',
+    maxHp: 210, traits: ['ironBody'],
+    clue: 'leak',
+    pattern: [
+      { name: '개산부', damage: 13 },
+      { name: '산적들아! · 기를 모은다', strength: 3 },
+      { name: '횡소천군', damage: 5, hits: 3 },
+      { name: '반격 자세', counter: 8 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '분노한 산군',
+      text: '곽패가 도끼를 바닥에 내리찍는다 — 산채가 울린다!',
+      strength: 2,
+      pattern: [
+        { name: '도끼를 치켜든다', strength: 2 },
+        { name: '파천부', damage: 30, charge: true, breakAt: 22 },
+        { name: '짓밟기', damage: 11, weak: 2 },
+        { name: '연속 도끼질', damage: 6, hits: 3 },
+      ],
+    },
+  },
+});
+
+// ══ 3구역: 마교 침공 저지 (불타는 관문) ══════════════
+Object.assign(ENEMIES, {
+  bloodCultist: {
+    name: '혈교도', title: '마교 혈의당', art: 'demonic-assassin', tier: 'normal',
+    maxHp: 56, evasion: 15, traits: ['feint'], patternMode: 'random',
+    pattern: [
+      { name: '혈인', damage: 7, hits: 2 },
+      { name: '은신 · 반격 자세', counter: 8 },
+      { name: '혈독침', damage: 6, poison: 4 },
+    ],
+  },
+  demonSword: {
+    name: '마검수', title: '마교 검대', art: 'demonic-sword', tier: 'normal',
+    maxHp: 60, traits: ['killer'],
+    pattern: [
+      { name: '마검', damage: 12 },
+      { name: '혈기', strength: 3 },
+      { name: '혈우', damage: 4, hits: 4 },
+    ],
+  },
+  jiangshi: {
+    name: '혈강시', title: '마교의 시체 병기', art: 'demonic-fist', tier: 'normal',
+    maxHp: 72, traits: ['ironBody', 'drain'],
+    pattern: [
+      { name: '강시권', damage: 11 },
+      { name: '굳은 몸 · 기를 모은다', strength: 2 },
+      { name: '강시 돌진', damage: 22, charge: true, breakAt: 14 },
+    ],
+  },
+  renegade: {
+    name: '배교자', title: '마교에 투항한 낭인', art: 'unorthodox-sword', tier: 'normal',
+    maxHp: 58, evasion: 10, patternMode: 'random',
+    pattern: [
+      { name: '배신의 칼', damage: 9, vulnerable: 2 },
+      { name: '난도질', damage: 4, hits: 3 },
+      { name: '반격 자세', counter: 7 },
+      { name: '흙뿌리기', weak: 2, damage: 4 },
+    ],
+  },
+  bloodWolf: {
+    name: '혈랑', title: '혈영대 부대주', art: 'demonic-assassin', tier: 'elite',
+    maxHp: 110, evasion: 20, traits: ['feint', 'killer'],
+    pattern: [
+      { name: '혈랑 연참', damage: 5, hits: 3 },
+      { name: '반격 자세', counter: 9 },
+      { name: '혈랑일섬', damage: 28, charge: true, breakAt: 18 },
+      { name: '귀면 위압', damage: 10, weak: 2 },
+    ],
+  },
+  heavenDemon: {
+    name: '천마검귀', title: '마교 검각 장로', art: 'demonic-sword', tier: 'elite',
+    maxHp: 115, traits: ['drain'],
+    pattern: [
+      { name: '천마검', damage: 14 },
+      { name: '마공 운기', strength: 3 },
+      { name: '흡혈검', damage: 8, hits: 2 },
+      { name: '혈해검막', damage: 6, hits: 3, vulnerable: 2 },
+    ],
+  },
+  bloodElder: {
+    name: '위극', title: '혈마 장로', art: 'demonic-fist', tier: 'boss',
+    maxHp: 250, traits: ['drain'],
+    clue: 'traitor',
+    pattern: [
+      { name: '혈마장', damage: 15 },
+      { name: '혈해 · 기를 모은다', strength: 3 },
+      { name: '혈수 연환', damage: 6, hits: 3, weak: 1 },
+      { name: '반격 자세', counter: 10 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '마공 폭주',
+      text: '위극의 핏줄이 터질 듯 부풀어 오른다 — 마공이 폭주한다!',
+      traits: ['berserk'],
+      strength: 3,
+      pattern: [
+        { name: '혈마 해방', strength: 3 },
+        { name: '천마혈수', damage: 34, charge: true, breakAt: 28, vulnerable: 2 },
+        { name: '혈우 난타', damage: 6, hits: 4 },
+        { name: '피를 마신다', heal: 20, damage: 8 },
+      ],
+    },
+  },
+});
+
+// ══ 최종 결전: 그날 밤, 청운객잔 ══════════════
+Object.assign(ENEMIES, {
+  gwimyeon: {
+    name: '귀면', title: '혈영대주', art: 'boss-gwimyeon', tier: 'boss',
+    maxHp: 235, evasion: 20, traits: ['feint', 'killer'],
+    clue: 'sender',
+    pattern: [
+      { name: '쌍월참', damage: 8, hits: 2 },
+      { name: '반격 자세', counter: 10 },
+      { name: '귀영보 · 살기를 모은다', strength: 3 },
+      { name: '귀면일섬', damage: 30, charge: true, breakAt: 22 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '가면에 금이 간 혈영대주',
+      text: '귀면의 가면에 금이 간다 — "…감히. 이름도 없는 놈이."',
+      strength: 3,
+      pattern: [
+        { name: '혈영난무', damage: 5, hits: 5 },
+        { name: '살기 폭발', strength: 4 },
+        { name: '귀면멸살', damage: 40, charge: true, breakAt: 30, vulnerable: 2 },
+        { name: '혈인', damage: 14, weak: 2 },
+      ],
+    },
+  },
+});
+
 // ── 프롤로그 (튜토리얼) ─────────────────
 // 지도에는 나오지 않음
 Object.assign(ENEMIES, {
@@ -167,10 +363,26 @@ for (const [id, e] of Object.entries(ENEMIES)) e.id = id;
 
 export const ENEMY_IDS = Object.keys(ENEMIES);
 
-// 지도에서 쓰는 적 목록 (층이 낮을 때는 쉬운 상대만)
-export const POOLS = {
-  easy: ['ironFist', 'ronin'],
-  normal: ['ironFist', 'ronin', 'brawler', 'inspector'],
-  elite: ['oneEye', 'masked'],
-  boss: ['spy'],
-};
+// 지도에서 쓰는 적 목록 (구역별, 층이 낮을 때는 쉬운 상대만)
+export const ZONE_POOLS = [
+  {
+    easy: ['ironFist', 'ronin'],
+    normal: ['ironFist', 'ronin', 'brawler', 'inspector'],
+    elite: ['oneEye', 'masked'],
+    boss: ['spy'],
+  },
+  {
+    easy: ['bandit', 'blackWind'],
+    normal: ['bandit', 'snakeWoman', 'blackWind', 'fallenMonk'],
+    elite: ['twinBlade', 'poisonKing'],
+    boss: ['nokrimKing'],
+  },
+  {
+    easy: ['demonSword', 'renegade'],
+    normal: ['bloodCultist', 'demonSword', 'jiangshi', 'renegade'],
+    elite: ['bloodWolf', 'heavenDemon'],
+    boss: ['bloodElder'],
+  },
+];
+export const POOLS = ZONE_POOLS[0];
+export const FINAL_BOSS = 'gwimyeon';

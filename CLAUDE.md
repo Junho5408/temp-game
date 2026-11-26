@@ -5,9 +5,8 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 2-D 완료 (행낭 물품=일시적 / 보물=영구: 영약·비급·보구) → 사용자 확인 대기
-- 다음 할 일: 피드백 반영 후 2-B(2·3구역 + 최종 결전) 세부 계획 보여주고 승인받기
-- 2-B용 그림 준비됨: demonic-fist(혈마 장로), boss-nokrim(녹림 총채주), boss-gwimyeon(귀면) — 아직 SPRITES 미등록
+- 진행 중: 2-B 완료 (정파 루트 1~3구역 + 최종 결전 귀면 + 일반 엔딩, 판 중간 저장) → 사용자 확인 대기
+- 다음 할 일: 피드백 반영 후 4단계(꾸미기: 효과음·연출 다듬기) 또는 다른 세력 루트 — 계획 보여주고 승인받기
 
 ## 작업 규칙
 - 각 단계 시작 전 계획을 먼저 보여주고 승인받기
@@ -21,6 +20,7 @@
 - 캐릭터 도감: http://localhost:8000/characters.html (데이터 src/ui/characters.js, 그림 assets/portraits/)
 - 그림은 사용자가 이미지 생성 도구로 만들어 제공, 원본은 docs/reference/
 - 테스트: `npm test` (src/core 규칙 테스트, Node 기본 테스트 러너)
+- 구역: 적 목록 enemies.js 의 ZONE_POOLS, 구역 이름·배경·구역 대사 script.js 의 ZONE_NAMES/ZONE_BACKGROUNDS/zoneIntro, 판 저장 localStorage temp-game.run.v1
 - 대사·단서 정의는 src/story/script.js (이야기 기연은 events.js 의 story/npc, 적 단서는 enemies.js 의 clue), 회귀 기록은 src/core/meta.js (localStorage 키 temp-game.meta.v1)
 - 게임 규칙은 src/core 에만 두고 화면 코드(src/ui, src/main.js)와 섞지 않기
 - 규칙 파일: battle.js(전투) run.js(한 판) map.js(지도) events.js(기연) cards.js enemies.js(적·특성 TRAITS) items.js(행낭 물품·보물)

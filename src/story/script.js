@@ -10,12 +10,20 @@ export const SPEAKERS = {
   juno: { name: '주노', art: 'npc-juno' },
   thug: { name: '왕삼', art: 'unorthodox-fist' },
   assassin: { name: '혈영대원', art: 'demonic-assassin' },
-  gwimyeon: { name: '귀면', art: 'demonic-assassin' },
+  gwimyeon: { name: '귀면', art: 'boss-gwimyeon' },
   sooha: { name: '흰 옷의 사내', art: 'npc-sooha' }, // 진소하 (아직 이름 모름)
   clerk: { name: '맹 서기', glyph: '盟' },
   oneEye: { name: '독안귀', art: 'unorthodox-assassin' },
   masked: { name: '무명', art: 'demonic-assassin' },
   spy: { name: '연무혁', art: 'demonic-sword' },
+  soohaNamed: { name: '진소하', art: 'npc-sooha' },
+  twinBlade: { name: '쌍도귀', art: 'unorthodox-sword' },
+  poisonKing: { name: '당철', art: 'unorthodox-assassin' },
+  nokrimKing: { name: '곽패', art: 'boss-nokrim' },
+  bloodWolf: { name: '혈랑', art: 'demonic-assassin' },
+  heavenDemon: { name: '천마검귀', art: 'demonic-sword' },
+  bloodElder: { name: '위극', art: 'demonic-fist' },
+  officer: { name: '토벌대장', glyph: '令' },
 };
 
 // ── 프롤로그 ─────────────────────────
@@ -115,7 +123,79 @@ export const CLUES = {
   mask: { title: '귀면 가면 = 혈영대', text: '그날 밤 자객들이 쓴 뿔 달린 귀면 가면은 마교 혈영대의 표식이다.' },
   envoy: { title: '흰 옷의 사내 = 무림맹', text: '나 대신 살아 나간 흰 옷의 사내는 무림맹의 패를 지니고 있었다.' },
   note: { title: '백 일 뒤, 청운객잔', text: '객잔 습격은 백 일 전부터 계획된 일이다. 노린 것은 흰 옷의 밀사와 그가 가진 밀서.' },
+  leak: { title: '무림맹 안에서 정보가 샌다', text: '녹림 총채주는 토벌대의 진로를 미리 알고 있었다. 맹 안의 누군가가 흘렸다.' },
+  traitor: { title: '배신자는 맹의 높은 자리', text: '혈마 장로는 "맹의 높으신 분"과 약속을 했다고 했다. 배신자는 말단이 아니다.' },
+  sender: { title: '귀면을 보낸 자', text: '귀면은 죽기 전에 "누가 우리를 보냈는지 아느냐"고 물었다. 혈영대를 움직인 것은 교주가 아니다.' },
 };
+
+// ── 구역 시작 (2구역부터) ─────────────────────────
+export const ZONE_NAMES = ['제1구역 · 후기지수 비무대회', '제2구역 · 녹림 토벌', '제3구역 · 마교 침공 저지', '그날 밤 · 청운객잔'];
+export const ZONE_BACKGROUNDS = ['arena', 'forest', 'gate', 'inn'];
+
+export function zoneIntro(zone, meta) {
+  if (zone === 1) {
+    return [
+      { who: 'narr', text: '비무대회가 끝나고 한 달.\n무림맹은 녹림 칠십이채를 치기 위해 토벌대를 꾸렸다.' },
+      { who: 'officer', text: '비무대회에서 이름 없이 올라온 자가 너인가. 쓸 만한 칼이면 신분은 묻지 않는다.' },
+      { who: 'me', text: '(연무혁의 쪽지. 마교는 맹 안까지 손을 뻗고 있다. 맹 가까이에 있어야 한다.)', thought: true },
+      ...(meta.clues.includes('leak')
+        ? [{ who: 'me', text: '(이번엔 안다. 이 토벌대의 진로는 이미 새어 나가 있다.)', thought: true }]
+        : [{ who: 'officer', text: '산채는 험하다. 독을 쓰는 놈들이 많으니 해독산을 챙겨라.' }]),
+    ];
+  }
+  if (zone === 2) {
+    return [
+      { who: 'narr', text: '녹림을 친 지 보름 만에, 북쪽 관문에서 봉화가 올랐다.\n마교가 움직였다.' },
+      { who: 'me', text: '백 일이 거의 다 됐다. 그날 밤까지, 이제 얼마 남지 않았다.' },
+      { who: 'me', text: '(혈영대도 이 전장 어딘가에 있다. 그리고 맹 안의 누군가도.)', thought: true },
+    ];
+  }
+  return [];
+}
+
+// 구역을 깬 뒤 넘어가는 대사
+export function zoneClearLines(zone) {
+  if (zone === 0) {
+    return [
+      { who: 'narr', text: '비무대회는 주인 없는 우승으로 끝났다.\n누구도 무명씨의 이름을 기억하지 못했다.' },
+      { who: 'me', text: '마교 첩자, 혈영대, 흰 옷의 밀사. 실마리는 무림맹으로 이어진다.' },
+    ];
+  }
+  if (zone === 1) {
+    return [
+      { who: 'narr', text: '녹림 칠십이채가 무너졌다. 그러나 토벌대도 절반을 잃었다.' },
+      { who: 'me', text: '진로를 아는 자가 산적들에게 흘렸다. …맹 안에 쥐가 있다.' },
+    ];
+  }
+  return [
+    { who: 'narr', text: '관문의 불길이 잦아들었다.\n그리고 하늘에서 비가 내리기 시작했다. 사흘 동안 그치지 않을 비가.' },
+    { who: 'me', text: '…오늘 밤이다.' },
+  ];
+}
+
+// ── 최종 결전: 그날 밤의 청운객잔 ─────────────────────────
+export const FINAL_INTRO = [
+  { who: 'narr', text: '비가 사흘째 그치지 않던 밤.\n산길 끝, 청운객잔에만 불이 켜져 있었다.' },
+  { who: 'boki', text: '손님! 국수 한 그릇 하실래요? 오늘 같은 날엔 뜨끈한 게 최고죠!' },
+  { who: 'me', text: '…그래. 이번엔 다 먹고 싶군.' },
+  { who: 'juno', text: '(딸꾹) 흰 옷은 비 오는 날 입는 게 아니라니까. …뭐, 이번엔 괜찮겠지.' },
+  { who: 'narr', text: '구석 자리, 흰 옷의 사내가 품속의 서찰을 감싸 쥐고 있다.' },
+  { who: 'narr', text: '쾅―!\n문이 부서지며 비바람과 함께 귀면 가면이 들어섰다.' },
+  { who: 'gwimyeon', text: '흰 옷에 검을 찬 놈. …둘이군. 둘 다 벤다.' },
+  { who: 'me', text: '백 일을 기다렸다. 이번엔 앞에서 와라.' },
+];
+
+export const ENDING = [
+  { who: 'gwimyeon', text: '크윽… 이름도 없는 놈에게…' },
+  { who: 'gwimyeon', text: '…어리석은 놈. 누가 우리를 보냈는지… 아느냐…' },
+  { who: 'narr', text: '귀면은 끝내 대답하지 않고 숨을 거두었다.\n깨진 가면 아래의 얼굴은, 아무도 알아보지 못했다.' },
+  { who: 'soohaNamed', text: '…목숨을 빚졌소. 당신은 대체 누구요?' },
+  { who: 'me', text: '국수 먹던 떠돌이.' },
+  { who: 'juno', text: '허허. 이번엔 국수가 식지 않았구먼.' },
+  { who: 'narr', text: '그날 밤, 나는 처음으로 살아서 아침을 맞았다.\n그러나 혈영대를 보낸 자는 여전히 무림맹 어딘가에 있다.' },
+  { who: 'narr', text: '― 일반 엔딩 · 그날 밤을 넘기다 ―\n(진엔딩: 세 세력의 길에서 단서를 모두 모아야 한다)' },
+];
+
 
 // ── 1구역 · 후기지수 비무대회 ─────────────────────────
 // 구역 시작: 처음 / 그 뒤
@@ -172,6 +252,42 @@ export function battleIntro(enemyId, known) {
           { who: 'me', text: '(웃고 있는데 눈이 웃지 않는다. 저건 정파의 눈빛이 아니다.)', thought: true },
           { who: 'spy', text: '마지막 비무요. 손속에 사정은 두지 않겠소.' },
         ];
+    case 'twinBlade':
+      return [{ who: 'twinBlade', text: '맹의 개가 하나 더 왔군. 칼 두 자루면 충분하다!' }];
+    case 'poisonKing':
+      return [
+        { who: 'poisonKing', text: '숨 쉬는 것도 조심하게. 이 산채의 공기엔 내 독이 섞여 있으니까.' },
+      ];
+    case 'nokrimKing':
+      return known
+        ? [
+          { who: 'nokrimKing', text: '토벌대가 올 줄 알고 있었다! 길까지 다 알려 줬거든!' },
+          { who: 'me', text: '누가 알려 줬는지, 이번엔 끝나고 듣겠다.' },
+        ]
+        : [
+          { who: 'narr', text: '산채 꼭대기. 거한이 도끼를 어깨에 걸치고 기다리고 있었다.' },
+          { who: 'nokrimKing', text: '크하하! 토벌대가 올 줄 알고 있었다. 길목마다 함정을 파 뒀지!' },
+          { who: 'me', text: '(알고 있었다…? 진로는 토벌대장만 알았을 텐데.)', thought: true },
+          { who: 'nokrimKing', text: '네놈 목을 걸어 두면 맹의 높으신 분들도 정신 좀 차리겠지!' },
+        ];
+    case 'bloodWolf':
+      return [{ who: 'bloodWolf', text: '흰 옷에 검… 대주님이 찾던 그 얼굴이군. 여기서 끝내 주마.' }];
+    case 'heavenDemon':
+      return [{ who: 'heavenDemon', text: '정파의 검이라… 피 맛이 싱겁겠구나.' }];
+    case 'bloodElder':
+      return known
+        ? [
+          { who: 'bloodElder', text: '여기까지 왔느냐. 맹의 개들은 다 죽었을 텐데.' },
+          { who: 'me', text: '약속한 분께 안부 전해라. 이번엔 직접 찾아가겠다고.' },
+        ]
+        : [
+          { who: 'narr', text: '불타는 관문 위, 백발의 노인이 핏빛 기운을 두르고 서 있다.' },
+          { who: 'bloodElder', text: '관문은 이미 열렸다. 안에서 열어 준 자가 있었으니까. 크크크.' },
+          { who: 'me', text: '(안에서…? 맹 안에서 마교를 들였다고?)', thought: true },
+          { who: 'bloodElder', text: '네 피로 이 혈마공을 마무리하마!' },
+        ];
+    case 'gwimyeon':
+      return FINAL_INTRO;
     default:
       return null;
   }
@@ -208,6 +324,32 @@ export function battleOutro(enemyId, known) {
           { who: 'me', text: '우연이 아니었어. 그날의 습격은 처음부터 계획된 거다.' },
           { who: 'narr', text: '― 단서: 백 일 뒤, 청운객잔 ―' },
         ];
+    case 'nokrimKing':
+      return known
+        ? [
+          { who: 'nokrimKing', text: '크윽… 맹 안의 그놈이… 이번엔 왜 말이 없었지…' },
+          { who: 'me', text: '말이 없었던 게 아니다. 이번엔 내가 먼저 왔을 뿐.' },
+        ]
+        : [
+          { who: 'nokrimKing', text: '크헉… 젠장… 길을 알려 준 놈이… 너 같은 게 있다는 말은 안 했는데…' },
+          { who: 'me', text: '누구냐. 누가 토벌대의 길을 알려 줬지?' },
+          { who: 'nokrimKing', text: '맹에서… 서찰이 왔다… 그 이상은… 몰라…' },
+          { who: 'narr', text: '― 단서: 무림맹 안에서 정보가 샌다 ―' },
+        ];
+    case 'bloodElder':
+      return known
+        ? [
+          { who: 'bloodElder', text: '크크… 늦었다… 오늘 밤… 객잔에서…' },
+          { who: 'me', text: '알고 있다. 그래서 가는 거다.' },
+        ]
+        : [
+          { who: 'bloodElder', text: '크헉… 이 혈마가… 애송이에게…' },
+          { who: 'bloodElder', text: '…맹의 높으신 분께 전해라… 약속은 지켰다고… 관문도 열었고… 밀사의 길도 알려 줬다고…' },
+          { who: 'me', text: '(밀사의 길… 그날 밤의 일까지 다 한 줄로 이어져 있다. 높은 자리의 누군가가.)', thought: true },
+          { who: 'narr', text: '― 단서: 배신자는 맹의 높은 자리 ―' },
+        ];
+    case 'gwimyeon':
+      return ENDING;
     default:
       return null;
   }
@@ -250,6 +392,22 @@ export function npcIntro(npc, n, meta) {
     ];
     return pool[n % pool.length];
   }
+  if (npc === 'soohaCamp') {
+    return [
+      { who: 'narr', text: '토벌대 막사. 낯익은 흰 옷이 지도를 들여다보고 있다.' },
+      { who: 'me', text: '(그 사내다. 그날 밤 뒷문으로 빠져나가던.)', thought: true },
+      { who: 'soohaNamed', text: '…어디서 본 얼굴 같소만. 무림맹 순찰사 진소하라 하오.' },
+      { who: 'me', text: '(진소하. 드디어 이름을 알았다.)', thought: true },
+    ];
+  }
+  if (npc === 'junoGate') {
+    return [
+      { who: 'narr', text: '불타는 관문 뒤, 무너진 담벼락에 노인이 기대앉아 있다.' },
+      { who: 'juno', text: '(딸꾹) 또 만났군. 이번 생은 꽤 멀리까지 왔어.' },
+      { who: 'me', text: '…이번 생이라고 하셨습니까.' },
+      { who: 'juno', text: '내가? 술김에 헛소리를 했나 보구먼. 허허.' },
+    ];
+  }
   if (npc === 'sooha') {
     if (meta.clues.includes('envoy')) {
       return [
@@ -267,9 +425,3 @@ export function npcIntro(npc, n, meta) {
   return [];
 }
 
-// ── 1구역 돌파 (아직 2구역이 없을 때) ─────────────────────────
-export const ZONE1_CLEAR = [
-  { who: 'narr', text: '비무대회는 주인 없는 우승으로 끝났다.\n누구도 무명씨의 이름을 기억하지 못했다.' },
-  { who: 'me', text: '혈영대, 흰 옷의 밀사, 그리고 밀서. 실마리는 무림맹으로 이어진다.' },
-  { who: 'narr', text: '― 2구역 "무림맹 사파 토벌"은 다음 이야기에서 ―' },
-];

@@ -14,7 +14,7 @@ export function createMeta() {
     prologueDone: false,
     runs: 0, // 회귀 후 시작한 판 수
     deaths: 0,
-    clears: { zone1: 0 },
+    clears: { zone1: 0, zone2: 0, zone3: 0, final: 0 },
     memories: [], // 기억한 무공 id (중복 없음)
     clues: [], // 알아낸 단서 id
     bestFloor: 0,
@@ -30,6 +30,7 @@ export function parseMeta(text) {
     const meta = { ...createMeta(), ...data };
     meta.memories = meta.memories.filter((id) => CARDS[id]);
     meta.met = { ...(data.met ?? {}) };
+    meta.clears = { ...createMeta().clears, ...(data.clears ?? {}) };
     return meta;
   } catch {
     return createMeta();
@@ -70,10 +71,16 @@ export function startNewRun(meta) {
 }
 
 export function recordRunEnd(meta, run) {
-  const floor = run.position ? Number(run.position.split('-')[0]) + 1 : 0;
-  meta.bestFloor = Math.max(meta.bestFloor, floor);
+  meta.bestFloor = Math.max(meta.bestFloor, runFloor(run));
   if (run.phase === 'defeat') meta.deaths += 1;
-  if (run.phase === 'victory') meta.clears.zone1 += 1;
+  for (let z = 1; z <= Math.min(3, run.zonesCleared ?? 0); z++) meta.clears[`zone${z}`] += 1;
+  if (run.phase === 'victory') meta.clears.final += 1;
+}
+
+// 지금까지 오른 층 (구역마다 13층: 12층 + 두목)
+export function runFloor(run) {
+  const inZone = run.position ? Number(run.position.split('-')[0]) + 1 : 0;
+  return (run.zone ?? 0) * 13 + inZone;
 }
 
 export function addClue(meta, id) {

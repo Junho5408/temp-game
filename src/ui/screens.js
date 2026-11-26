@@ -4,6 +4,7 @@ import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
 import { availableNodes, canBuy } from '../core/run.js';
+import { runFloor } from '../core/meta.js';
 import {
   BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND,
 } from '../core/items.js';
@@ -256,12 +257,12 @@ export function renderEvent(run, { onChoose, onLeave }) {
 // ── 판의 끝 ─────────────────────────
 export function renderEnd(run, onRestart) {
   const win = run.phase === 'victory';
-  const floor = run.position ? Number(run.position.split('-')[0]) + 1 : 0;
+  const floor = runFloor(run);
   const { body, actions } = openPanel(
-    win ? '제1구역 돌파' : '쓰러졌다',
+    win ? '그날 밤을 넘기다' : '쓰러졌다',
     win
-      ? '우승 후보 연무혁의 정체는 마교의 첩자였다.\n무림맹으로 향하는 길이 열렸다… (2구역은 다음 업데이트에서)'
-      : '눈앞이 어두워진다…\n(훗날 이곳에서 회귀가 시작됩니다)',
+      ? '귀면을 쓰러뜨리고 처음으로 살아서 아침을 맞았다.\n그러나 혈영대를 보낸 자는 아직 무림맹 어딘가에 있다. (일반 엔딩)'
+      : '눈앞이 어두워진다…',
   );
   $('panel').querySelector('.panel-box').classList.add(win ? 'win' : 'lose');
   body.innerHTML = `

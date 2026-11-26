@@ -4,6 +4,7 @@ import { generateMap, ROWS, allNodes } from '../src/core/map.js';
 import {
   createRun, availableNodes, enterNode, startEncounter, finishBattle, chooseReward,
   restHeal, restUpgrade, buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, chooseTreasure,
+  advanceZone, serializeRun, parseRun,
   START_GOLD,
 } from '../src/core/run.js';
 import {
@@ -186,7 +187,8 @@ test('기연: 은자가 부족하면 해당 선택지 불가', () => {
 function autoRun(seed) {
   const run = createRun({ seed });
   let steps = 0;
-  while (!['victory', 'defeat'].includes(run.phase) && steps++ < 100) {
+  while (!['victory', 'defeat'].includes(run.phase) && steps++ < 400) {
+    if (run.phase === 'zoneClear') { advanceZone(run); continue; }
     if (run.phase === 'map') {
       const opts = availableNodes(run);
       // 단순한 선택: 체력이 낮으면 휴식/객잔 쪽, 아니면 아무거나
@@ -221,18 +223,21 @@ function autoRun(seed) {
 
 test('자동 플레이로 한 판이 끝까지 진행됨 + 승률이 너무 높거나 낮지 않음', () => {
   let wins = 0;
+  let zone1 = 0;
   let earlyDeaths = 0;
   const N = 80;
   for (let seed = 1; seed <= N; seed++) {
     const run = autoRun(seed);
     assert.ok(['victory', 'defeat'].includes(run.phase), `seed ${seed}: ${run.phase}에서 멈춤`);
     if (run.phase === 'victory') wins++;
-    if (run.phase === 'defeat' && Number(run.position.split('-')[0]) <= 3) earlyDeaths++;
+    if (run.zonesCleared >= 1) zone1++;
+    if (run.phase === 'defeat' && run.zone === 0 && Number(run.position.split('-')[0]) <= 3) earlyDeaths++;
   }
-  const rate = wins / N;
-  console.log(`  자동 플레이 승률: ${(rate * 100).toFixed(0)}% (${wins}/${N}), 3층 이하에서 쓰러짐 ${earlyDeaths}판`);
-  // 단순한 봇 기준 (사람은 이보다 잘함). 사용자 요청: 전보다 어렵게, 특히 후반이 어렵게
-  assert.ok(rate >= 0.12 && rate <= 0.6, `승률 ${rate}`);
+  const rate = zone1 / N;
+  console.log(`  자동 플레이: 1구역 돌파 ${(rate * 100).toFixed(0)}%, 최종 결전 승리 ${wins}/${N}, 3층 이하에서 쓰러짐 ${earlyDeaths}판`);
+  // 단순한 봇 기준 (사람은 이보다 잘함). 1구역 돌파율로 확인, 전체 돌파는 훨씬 드묾
+  assert.ok(rate >= 0.12 && rate <= 0.6, `1구역 돌파율 ${rate}`);
+  assert.ok(wins <= zone1, '최종 승리가 1구역 돌파보다 많을 수 없음');
   assert.ok(earlyDeaths <= N * 0.05, `초반에 너무 많이 쓰러짐: ${earlyDeaths}`);
 });
 
@@ -275,4 +280,66 @@ test('복면객 무명을 쓰러뜨리면 단서 mask', () => {
   b.phase = 'won';
   finishBattle(run, b);
   assert.deepEqual(run.cluesFound, ['mask']);
+});
+
+// ── 2-B: 여러 구역 · 최종 결전 · 판 저장 ─────────────────────────
+test('두목을 이기면 보물(대환단 포함) → 무공 → 다음 구역 (잃은 체력 절반 회복)', () => {
+  const run = createRun({ seed: 12 });
+  run.encounter = { enemyId: 'spy', tier: 'boss', scale: { hp: 1, strength: 0 } };
+  run.phase = 'battle';
+  const b = startEncounter(run);
+  b.player.hp = 30;
+  b.enemy.hp = 0;
+  b.phase = 'won';
+  finishBattle(run, b);
+  assert.equal(run.phase, 'treasure');
+  assert.ok(run.treasureChoice.includes('daeHwan'));
+  chooseTreasure(run, 0);
+  assert.equal(run.phase, 'reward');
+  chooseReward(run, 0);
+  assert.equal(run.phase, 'zoneClear');
+  assert.ok(advanceZone(run));
+  assert.equal(run.zone, 1);
+  assert.equal(run.phase, 'map');
+  assert.equal(run.hp, 30 + Math.ceil((run.maxHp - 30) / 2));
+  assert.equal(run.position, null);
+});
+
+test('2구역 지도에는 2구역 적이 나옴', () => {
+  const run = createRun({ seed: 13 });
+  run.zone = 1;
+  run.map.rows[0][0].type = 'battle';
+  enterNode(run, run.map.rows[0][0].id);
+  assert.ok(['bandit', 'blackWind'].includes(run.encounter.enemyId));
+});
+
+test('3구역 두목 뒤에는 최종 결전 (귀면), 이기면 승리', () => {
+  const run = createRun({ seed: 14 });
+  run.zone = 2;
+  run.phase = 'zoneClear';
+  run.pendingAdvance = true;
+  assert.ok(advanceZone(run));
+  assert.equal(run.phase, 'battle');
+  assert.equal(run.encounter.enemyId, 'gwimyeon');
+  const b = startEncounter(run);
+  b.enemy.hp = 0;
+  b.phase = 'won';
+  finishBattle(run, b);
+  assert.equal(run.phase, 'victory');
+  assert.ok(run.cluesFound.includes('sender'));
+});
+
+test('판 저장 → 불러오기: 상태와 난수 흐름이 그대로 이어짐', () => {
+  const a = createRun({ seed: 21, extraCards: ['flash'] });
+  enterNode(a, availableNodes(a)[0].id);
+  a.gold = 77;
+  const text = serializeRun(a);
+  const b = parseRun(text);
+  assert.ok(b);
+  assert.equal(b.gold, 77);
+  assert.deepEqual(b.deck, a.deck);
+  assert.equal(b.position, a.position);
+  assert.equal(b.rng(), a.rng()); // 같은 다음 난수
+  assert.equal(parseRun('망가진 저장'), null);
+  assert.equal(parseRun(JSON.stringify({ v: 999 })), null);
 });

@@ -14,11 +14,12 @@ import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
   createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade,
-  buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent,
+  buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, advanceZone, serializeRun, parseRun,
 } from './core/run.js';
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
-  wakeLines, deathLines, ZONE1_CLEAR, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
+  wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
+  zoneIntro, zoneClearLines, ZONE_NAMES, ZONE_BACKGROUNDS,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -32,6 +33,7 @@ import {
 
 const PLAYER_ART = 'orthodox-sword';
 const SAVE_KEY = 'temp-game.meta.v1';
+const RUN_KEY = 'temp-game.run.v1'; // 판 중간 저장
 const STATUS_INFO = {
   strength: { glyph: '勢', name: '기세', tip: '공격 피해 +' },
   vulnerable: { glyph: '傷', name: '내상', tip: '받는 피해 1.5배, 남은 턴 ' },
@@ -72,6 +74,33 @@ function saveMeta() {
   }
 }
 
+// 판 중간 저장: 전투 밖 화면에 들어설 때마다 (전투 중 새로고침하면 그 전투를 처음부터)
+function saveRun() {
+  if (!run || run.phase === 'victory' || run.phase === 'defeat') return;
+  try {
+    window.localStorage.setItem(RUN_KEY, serializeRun(run));
+  } catch {
+    // 저장이 막힌 환경
+  }
+}
+
+function loadRun() {
+  try {
+    const text = window.localStorage.getItem(RUN_KEY);
+    return text ? parseRun(text) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearRun() {
+  try {
+    window.localStorage.removeItem(RUN_KEY);
+  } catch {
+    // 무시
+  }
+}
+
 // ── 화면 크기 맞추기 ─────────────────────────
 function fit() {
   const s = Math.min(window.innerWidth / 960, window.innerHeight / 540);
@@ -101,9 +130,23 @@ function showTitle() {
   scene.reset();
   scene.setBackground(meta.prologueDone ? 'arena' : 'inn');
   setScreen('title');
+  const saved = meta.prologueDone ? loadRun() : null;
   renderTitle(meta, {
+    saved: saved ? { zone: ZONE_NAMES[saved.zone], hp: saved.hp, maxHp: saved.maxHp } : null,
+    onContinue: () => {
+      hideFlow();
+      run = saved;
+      show();
+    },
     onStart: () => {
       hideFlow();
+      if (saved) {
+        // 이어하지 않고 새로 시작하면 그 생은 포기한 것으로 (쓰러짐으로 기록, 기억은 없음)
+        saved.phase = 'defeat';
+        recordRunEnd(meta, saved);
+        saveMeta();
+        clearRun();
+      }
       if (meta.prologueDone) beginLife();
       else playPrologue();
     },
@@ -111,6 +154,7 @@ function showTitle() {
     onReset: () => {
       meta = createMeta();
       saveMeta();
+      clearRun();
       showTitle();
     },
   });
@@ -174,9 +218,15 @@ async function beginLife() {
     hideFlow();
     run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories });
     run.art = artKey;
-    setZone('제1구역 · 후기지수 비무대회');
+    applyZoneLook();
     startZone();
   });
+}
+
+// 구역에 맞는 이름과 배경
+function applyZoneLook() {
+  setZone(ZONE_NAMES[run.zone]);
+  scene.setBackground(ZONE_BACKGROUNDS[run.zone]);
 }
 
 async function startZone() {
@@ -200,6 +250,8 @@ function collectClues() {
 // ── 한 판 흐름 ─────────────────────────
 async function show() {
   collectClues();
+  saveRun();
+  applyZoneLook();
   renderRunInfo();
   closePanel();
   if (run.phase !== 'map') hideMap();
@@ -218,10 +270,22 @@ async function show() {
       const b = startEncounter(run);
       const intro = battleIntro(enemyId, known);
       if (intro) {
-        await scene.setEnemy(b.enemy.art);
+        // "쾅―" 으로 시작하는 줄이 있으면 그 순간 적이 들이닥침
+        const burst = intro.findIndex((l) => l.text.startsWith('쾅'));
+        scene.clearEnemy();
         scene.reset();
         setScreen('story');
-        await playDialogue(intro);
+        if (burst > 0) {
+          await playDialogue(intro.slice(0, burst));
+          await scene.setEnemy(b.enemy.art);
+          scene.reset();
+          scene.shake(8);
+          await playDialogue(intro.slice(burst));
+        } else {
+          await scene.setEnemy(b.enemy.art);
+          scene.reset();
+          await playDialogue(intro);
+        }
       }
       const tierLabel = { elite: '고수 · ', boss: '두목 · ' }[b.enemy.tier] ?? '';
       const result = await runBattle(b, { title: `${tierLabel}${b.enemy.title} ${b.enemy.name}`, boss: b.enemy.tier === 'boss' });
@@ -267,7 +331,7 @@ async function show() {
         await scene.setEnemy(`npc-${ev.npc}`);
         scene.reset();
         setScreen('story');
-        await playDialogue(npcIntro(ev.npc, n, meta));
+        await playDialogue(npcIntro(ev.intro ?? ev.npc, n, meta));
         scene.clearEnemy();
       }
       setScreen('panel');
@@ -280,11 +344,23 @@ async function show() {
     case 'defeat':
       await onDeath();
       break;
+    case 'zoneClear':
+      // 구역 돌파 → 다음 구역 (마지막 구역 뒤에는 그날 밤의 객잔)
+      setScreen('story');
+      await playDialogue(zoneClearLines(run.zone));
+      advanceZone(run);
+      applyZoneLook();
+      saveRun();
+      if (run.phase === 'map') {
+        showBanner(ZONE_NAMES[run.zone], '#f2c14e', 1800);
+        await playDialogue(zoneIntro(run.zone, meta));
+      }
+      show();
+      break;
     case 'victory':
+      clearRun();
       recordRunEnd(meta, run);
       saveMeta();
-      setScreen('story');
-      await playDialogue(ZONE1_CLEAR);
       setScreen('panel');
       renderEnd(run, showTitle);
       break;
@@ -294,6 +370,7 @@ async function show() {
 }
 
 async function onDeath() {
+  clearRun();
   recordRunEnd(meta, run);
   saveMeta();
   setScreen('story');

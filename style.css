@@ -1026,3 +1026,5 @@ button.item-face:disabled { cursor: default; }
 .shop-body .shop-item { gap: 4px; }
 .shop-body .item-row.shop .item-face { min-height: 0; width: 140px; padding: 7px 8px 6px; gap: 2px; }
 .shop-body .item-row.shop .item-face .ig { font-size: 24px; }
+.record .end-stats { flex-wrap: wrap; justify-content: center; gap: 10px 22px; }
+.title-actions .btn small { display: block; font-size: 11px; opacity: .8; font-weight: 600; }
