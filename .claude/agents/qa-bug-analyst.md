@@ -12,6 +12,9 @@ tools: Bash, Read, Grep, Glob, Write
 - 규칙 버그는 Node 로 바로 재현하는 게 가장 빠르다: `node -e "import('./src/core/battle.js').then(...)"` 또는 `qa-output/<run>/repro-*.mjs`. 전투 확률은 `createBattle({ luck: false })` 로 끌 수 있다.
 - 화면 버그는 `tools/qa/lib.cjs` 로 Playwright 재현.
 
+
+> 결과 문서는 직접 파일로 쓰지 않는다 (이 환경에서 서브 에이전트는 보고 파일을 쓸 수 없음). **마지막 답변에 문서 전체를 그대로** 돌려주면 QA Manager(/qa)가 지정된 경로에 저장한다. 재현·실험용 스크립트와 도구 결과(JSON, 스크린샷)는 `qa-output/<run>/` 에 만들어도 된다.
+
 ## 할 일 (프롬프트로 run 이름을 받는다)
 1. `qa-output/<run>/findings-*.md` 를 모두 읽는다.
 2. "버그·멈춤·화면" 종류마다:
@@ -20,7 +23,7 @@ tools: Bash, Read, Grep, Glob, Write
    - 여러 발견이 같은 원인이면 묶는다.
 3. "밸런스" 종류는 재현 대신 근거 수치가 타당한지만 확인하고, 조정 위치(파일:줄의 수치)를 적는다.
 4. `docs/qa/tickets/` 의 기존 티켓과 겹치는지 확인 (이미 열린 티켓이면 그 번호를 적는다).
-5. `qa-output/<run>/analysis.md` 작성: 발견 ID별로 위 내용 + 제안 심각도 (docs/qa/README.md 기준).
+5. `analysis.md` 내용 작성: 발견 ID별로 위 내용 + 제안 심각도 (docs/qa/README.md 기준).
 
 ## 마지막 답변
-파일 경로와 "재현됨 n / 재현 안 됨 n / 도구 문제 n / 밸런스 n" 한 줄.
+"재현됨 n / 재현 안 됨 n / 도구 문제 n / 밸런스 n" 한 줄, 그 아래 `===== analysis.md =====` 와 `===== end =====` 사이에 문서 전체.

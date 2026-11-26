@@ -6,6 +6,7 @@ description: 백일회귀(temp-game) QA 한 회차를 돌린다 (QA Manager). �
 # QA Manager — QA 한 회차 진행
 
 너(메인 세션)가 QA Manager 다. 서브 에이전트는 다른 에이전트를 부를 수 없으므로 **진행 순서와 판단은 네가 맡는다.**
+또 이 환경에서 서브 에이전트는 보고 파일을 쓸 수 없다. 각 에이전트는 문서 전체를 답변에 `===== <파일> =====` … `===== end =====` 로 돌려주고, **너가 그 내용을 그대로 저장한다** (findings/analysis → `qa-output/<run>/`, 보고서·티켓 → `docs/qa/`).
 형식과 심각도 기준: `docs/qa/README.md`.
 
 ## 0. 준비
@@ -16,19 +17,19 @@ description: 백일회귀(temp-game) QA 한 회차를 돌린다 (QA Manager). �
 
 ## 1. 점검 (동시에)
 Agent 도구로 아래 셋을 **한 응답에서 동시에** 실행한다 (subagent_type 은 이름 그대로, 백그라운드):
-- `qa-functional` — 프롬프트: "run 이름은 <run>. 지시대로 기능 QA 를 수행하고 qa-output/<run>/findings-functional.md 를 작성해."
-- `qa-exploratory` — 프롬프트: "run 이름은 <run>. 몽키 시드 <목록>, 각 300걸음. 극단 상황 점검까지 하고 qa-output/<run>/findings-exploratory.md 를 작성해."
-- `qa-balance` — 프롬프트: "run 이름은 <run>. 봇 <n>판. qa-output/<run>/findings-balance.md 를 작성해."
-- 기다리는 동안 결과를 미리 짐작해 말하지 않는다. 셋 다 끝나면 다음으로.
+- `qa-functional` — 프롬프트: "run 이름은 <run>. 지시대로 기능 QA 를 수행하고 findings-functional.md 내용을 돌려줘."
+- `qa-exploratory` — 프롬프트: "run 이름은 <run>. 몽키 시드 <목록>, 각 300걸음. 극단 상황 점검까지 하고 findings-exploratory.md 내용을 돌려줘."
+- `qa-balance` — 프롬프트: "run 이름은 <run>. 봇 <n>판. findings-balance.md 내용을 돌려줘."
+- 기다리는 동안 결과를 미리 짐작해 말하지 않는다. 하나씩 끝날 때마다 답변의 문서를 `qa-output/<run>/findings-<역할>.md` 로 저장. 셋 다 끝나면 다음으로.
 - 어느 에이전트가 실패하거나 파일을 안 남겼으면, 같은 프롬프트로 한 번만 다시 시도. 그래도 안 되면 보고서에 "미실시"로 남긴다.
 
 ## 2. 분석
 - `qa-output/<run>/findings-*.md` 가 하나라도 있으면 `qa-bug-analyst` 실행 (백그라운드 아님, 결과를 기다림).
-  프롬프트: "run 이름은 <run>. findings 를 모두 분석해서 qa-output/<run>/analysis.md 를 작성해."
+  프롬프트: "run 이름은 <run>. qa-output/<run>/findings-*.md 를 모두 분석해서 analysis.md 내용을 돌려줘." → 답변의 문서를 `qa-output/<run>/analysis.md` 로 저장.
 - 발견 사항이 0건이면 분석은 건너뛴다.
 
 ## 3. 보고
-- `qa-reporter` 실행. 프롬프트: "run 이름은 <run>. 보고서와 티켓을 작성해."
+- `qa-reporter` 실행. 프롬프트: "run 이름은 <run>. 보고서와 티켓 내용을 돌려줘." → 답변의 `===== FILE: <경로> =====` 블록을 각 경로에 저장하고, APPEND 줄은 해당 티켓의 처리 기록 아래에 덧붙인다.
 - 끝나면 `docs/qa/reports/<run>.md` 를 직접 읽고 확인: 티켓 형식이 README 와 맞는지, 근거 없는 티켓이 없는지. 문제가 있으면 직접 고친다 (게임 코드는 건드리지 않음).
 
 ## 4. 마무리

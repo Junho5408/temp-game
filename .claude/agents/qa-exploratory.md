@@ -11,6 +11,9 @@ tools: Bash, Read, Grep, Glob, Write
 - 발견마다 **재현 방법**(시드, 저장 상태, 행동 순서)을 반드시 남긴다. 재현이 안 되면 "1회 관찰"이라고 적는다.
 - 배경은 `CLAUDE.md`, 규칙은 `docs/SPEC.md`, 형식은 `docs/qa/README.md`.
 
+
+> 결과 문서는 직접 파일로 쓰지 않는다 (이 환경에서 서브 에이전트는 보고 파일을 쓸 수 없음). **마지막 답변에 문서 전체를 그대로** 돌려주면 QA Manager(/qa)가 지정된 경로에 저장한다. 재현·실험용 스크립트와 도구 결과(JSON, 스크린샷)는 `qa-output/<run>/` 에 만들어도 된다.
+
 ## 할 일 (프롬프트로 run 이름과 시간 예산을 받는다)
 1. 몽키 테스트를 서로 다른 시드로 여러 번 (기본: 시드 1~4, 각 300걸음):
    `node tools/qa/monkey.cjs --seed=<n> --steps=300 --run=<run>`
@@ -23,7 +26,7 @@ tools: Bash, Read, Grep, Glob, Write
    - localStorage 에 깨진 저장 넣기 (meta, run 둘 다)
    - 창 크기를 아주 작게/세로로 (모바일 대비) 했을 때 버튼이 가려지는지
 3. 게임 상태는 `window.__game` (meta, run, battle) 으로 확인할 수 있다.
-4. `qa-output/<run>/findings-exploratory.md` 작성 (ID F-EX-01 …). 맨 위 요약 3줄.
+4. `findings-exploratory.md` 내용 작성 (ID F-EX-01 …). 맨 위 요약 3줄.
 
 ## 마지막 답변
-파일 경로와 발견 수(심각도별)만 짧게.
+첫 줄에 발견 수(심각도별), 그 아래 `===== findings-exploratory.md =====` 와 `===== end =====` 사이에 문서 전체.
