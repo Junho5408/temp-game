@@ -5,6 +5,10 @@
 
 예:
     python3 tools/prepare_sprite.py docs/reference/orthodox-sword-raw.webp orthodox-sword
+    python3 tools/prepare_sprite.py docs/reference/demonic-sword-raw.webp demonic-sword --despill all
+
+--despill edge (기본): 윤곽선 근처의 초록 번짐만 지움. 초록 옷이 있는 캐릭터용
+--despill all: 그림 전체의 초록빛을 지움. 초록 옷이 없고 반투명 연기·기운 이펙트가 있는 캐릭터용
 
 하는 일:
 1. 초록 배경을 투명하게 지움 (가장자리는 반투명으로 부드럽게)
@@ -43,12 +47,20 @@ def edge_band(alpha, width=4):
     return grown
 
 
-def despill(rgb, alpha):
-    """가장자리에 남은 초록 번짐만 지움. 안쪽의 초록 옷 색은 그대로 둠."""
+def despill(rgb, alpha, mode='edge'):
+    """초록 번짐 제거. edge: 가장자리만 (초록 옷 보존) / all: 그림 전체."""
     out = rgb.copy()
     r, g, b = out[..., 0], out[..., 1], out[..., 2]
     limit = np.maximum(r, b)
-    spill = (g > limit) & edge_band(alpha)
+    spill = g > limit
+    if mode == 'edge':
+        spill &= edge_band(alpha)
+    else:
+        # 반투명 연기처럼 배경과 섞인 색: 초록을 빨강·파랑의 중간값으로 눌러
+        # 올리브색 대신 원래 색(붉은 기운 등)에 가깝게 되돌림
+        low = np.minimum(r, b)
+        out[..., 1] = np.where(spill, low + (limit - low) * 0.5, g)
+        return out
     out[..., 1] = np.where(spill, limit + (g - limit) * 0.15, g)
     return out
 
@@ -97,13 +109,14 @@ def main():
     ap.add_argument('name')
     ap.add_argument('--height', type=int, default=640)
     ap.add_argument('--pad', type=int, default=8)
+    ap.add_argument('--despill', choices=['edge', 'all'], default='edge')
     args = ap.parse_args()
 
     img = Image.open(args.src).convert('RGB')
     rgb = np.asarray(img).astype(np.float32)
     alpha = chroma_alpha(rgb)
     alpha = keep_main_components(alpha)
-    rgb = despill(rgb, alpha)
+    rgb = despill(rgb, alpha, args.despill)
 
     ys, xs = np.where(alpha > 0.05)
     x0, x1 = xs.min(), xs.max() + 1
@@ -111,9 +124,10 @@ def main():
     rgba = np.dstack([np.clip(rgb, 0, 255), alpha * 255]).astype(np.uint8)
     crop = Image.fromarray(rgba, 'RGBA').crop((x0, y0, x1, y1))
 
-    # 발 위치: 맨 아래 6% 줄에서 보이는 픽셀들의 가로 범위 가운데
+    # 발 위치: 맨 아래 12% 줄에서 보이는 픽셀들의 가로 범위 가운데
+    # (한 발이 더 높이 있는 자세도 두 발을 모두 잡도록 범위를 넉넉히)
     a = np.asarray(crop)[..., 3] > 128
-    band = a[int(a.shape[0] * 0.94):, :]
+    band = a[int(a.shape[0] * 0.88):, :]
     cols = np.where(band.any(axis=0))[0]
     foot_x = (cols.min() + cols.max()) / 2 / a.shape[1]
 

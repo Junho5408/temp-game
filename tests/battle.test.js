@@ -160,7 +160,7 @@ test('아무것도 안 하고 버티면 결국 패배 (무한 루프 없음)', (
 });
 
 test('기본 덱과 단순한 전략으로 두 적 모두 이길 수 있음 (간단 밸런스 확인)', () => {
-  for (const enemyId of Object.keys(ENEMIES)) {
+  for (const enemyId of Object.keys(ENEMIES).filter((id) => ENEMIES[id].tier === 'normal')) {
     for (let seed = 1; seed <= 20; seed++) {
       const s = createBattle({ enemyId, seed });
       startPlayerTurn(s);

@@ -33,7 +33,12 @@ const NOTES = {
 const SPRITES = {
   'orthodox-sword': { image: 'assets/characters/orthodox-sword.webp', footX: 0.4073 },
   'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.5286 },
+  'orthodox-assassin': { image: 'assets/characters/orthodox-assassin.webp', footX: 0.5028 },
+  'demonic-sword': { image: 'assets/characters/demonic-sword.webp', footX: 0.4371 },
+  'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5465 },
   'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
+  'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
+  'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.5143 },
 };
 
 // 공격 이펙트 색 (검기/권경/암기)

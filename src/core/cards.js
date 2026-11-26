@@ -1,36 +1,112 @@
-// 카드 정의
+// 카드 정의 (검객)
 // type: attack(초식) / defense(호신강기) / skill(심법·보법)
-// 효과 필드: damage(피해), hits(타수, 기본 1), block(호신강기), draw(카드 뽑기)
+// rarity: starter(시작 덱 전용) / common(일반) / uncommon(고급) / rare(희귀)
+// 효과 필드
+//   damage, hits   피해 (타수, 기본 1)
+//   block          호신강기
+//   draw           카드 뽑기
+//   energy         내공 회복
+//   strength       기세 (이번 전투 동안 공격 피해 +n)
+//   vulnerable     상대에게 내상 n턴 (받는 피해 1.5배)
+//   weak           상대에게 기혈 흐트러짐 n턴 (주는 피해 0.75배)
+// upgrade: 연마(+)했을 때 바뀌는 값
+
 export const CARDS = {
+  // ── 시작 덱 ─────────────────
   strike: {
-    id: 'strike',
-    name: '기본 검법',
-    type: 'attack',
-    glyph: '劍',
-    cost: 1,
-    damage: 6,
-    desc: '피해 6',
+    name: '기본 검법', type: 'attack', rarity: 'starter', glyph: '劍',
+    cost: 1, damage: 6,
+    upgrade: { damage: 9 },
   },
   guard: {
-    id: 'guard',
-    name: '호신강기',
-    type: 'defense',
-    glyph: '氣',
-    cost: 1,
-    block: 5,
-    desc: '호신강기 5',
+    name: '호신강기', type: 'defense', rarity: 'starter', glyph: '氣',
+    cost: 1, block: 5,
+    upgrade: { block: 8 },
   },
   yusu: {
-    id: 'yusu',
-    name: '유수검',
-    type: 'attack',
-    glyph: '流',
-    cost: 2,
-    damage: 9,
-    block: 4,
-    desc: '피해 9\n호신강기 4',
+    name: '유수검', type: 'attack', rarity: 'starter', glyph: '流',
+    cost: 2, damage: 9, block: 4,
+    upgrade: { damage: 12, block: 6 },
+  },
+
+  // ── 일반 ─────────────────
+  quick: {
+    name: '쾌검', type: 'attack', rarity: 'common', glyph: '快',
+    cost: 0, damage: 4,
+    upgrade: { damage: 6 },
+  },
+  chain: {
+    name: '연환검', type: 'attack', rarity: 'common', glyph: '連',
+    cost: 1, damage: 4, hits: 2,
+    upgrade: { damage: 5 },
+  },
+  rend: {
+    name: '파쇄검', type: 'attack', rarity: 'common', glyph: '破',
+    cost: 1, damage: 6, vulnerable: 2,
+    upgrade: { damage: 8, vulnerable: 3 },
+  },
+  sway: {
+    name: '흘려베기', type: 'attack', rarity: 'common', glyph: '斜',
+    cost: 1, damage: 5, weak: 2,
+    upgrade: { damage: 7, weak: 3 },
+  },
+  footwork: {
+    name: '보법', type: 'defense', rarity: 'common', glyph: '步',
+    cost: 1, block: 6, draw: 1,
+    upgrade: { block: 9 },
+  },
+  focus: {
+    name: '검기 집중', type: 'skill', rarity: 'common', glyph: '集',
+    cost: 1, draw: 2,
+    upgrade: { draw: 3 },
+  },
+
+  // ── 고급 ─────────────────
+  flash: {
+    name: '일섬', type: 'attack', rarity: 'uncommon', glyph: '閃',
+    cost: 2, damage: 15,
+    upgrade: { damage: 20 },
+  },
+  counter: {
+    name: '역류검', type: 'attack', rarity: 'uncommon', glyph: '逆',
+    cost: 1, damage: 5, block: 5,
+    upgrade: { damage: 7, block: 7 },
+  },
+  whirl: {
+    name: '회선검', type: 'attack', rarity: 'uncommon', glyph: '旋',
+    cost: 2, damage: 4, hits: 3,
+    upgrade: { damage: 6 },
+  },
+  breathe: {
+    name: '운기행공', type: 'skill', rarity: 'uncommon', glyph: '運',
+    cost: 1, strength: 2,
+    upgrade: { strength: 3 },
+  },
+  gather: {
+    name: '기 모으기', type: 'skill', rarity: 'uncommon', glyph: '聚',
+    cost: 0, energy: 1,
+    upgrade: { energy: 1, draw: 1 },
+  },
+
+  // ── 희귀 ─────────────────
+  heavenWind: {
+    name: '천풍검', type: 'attack', rarity: 'rare', glyph: '天',
+    cost: 3, damage: 28,
+    upgrade: { damage: 36 },
+  },
+  swordRain: {
+    name: '검우', type: 'attack', rarity: 'rare', glyph: '雨',
+    cost: 2, damage: 3, hits: 5,
+    upgrade: { damage: 4 },
+  },
+  stillMind: {
+    name: '무념무상', type: 'defense', rarity: 'rare', glyph: '無',
+    cost: 2, block: 14, strength: 1,
+    upgrade: { block: 18, strength: 2 },
   },
 };
+
+for (const [id, c] of Object.entries(CARDS)) c.id = id;
 
 // 검객 시작 덱: 기본 검법 5 + 호신강기 4 + 특수 초식 1
 export const STARTER_DECK = [
@@ -39,6 +115,35 @@ export const STARTER_DECK = [
   'yusu',
 ];
 
-export function describeCard(id) {
-  return CARDS[id].desc;
+export const RARITY_LABEL = { starter: '기본', common: '일반', uncommon: '고급', rare: '희귀' };
+export const TYPE_LABEL = { attack: '초식', defense: '호신강기', skill: '심법' };
+
+// 카드 한 장(인스턴스)의 실제 수치: 연마했으면 upgrade 값을 덮어씀
+export function cardStats(card) {
+  const base = CARDS[card.id];
+  const stats = card.upgraded ? { ...base, ...base.upgrade } : { ...base };
+  stats.upgraded = !!card.upgraded;
+  stats.displayName = card.upgraded ? `${base.name}+` : base.name;
+  stats.desc = describe(stats);
+  return stats;
+}
+
+export function describe(c) {
+  const lines = [];
+  if (c.damage) lines.push(c.hits > 1 ? `피해 ${c.damage} × ${c.hits}` : `피해 ${c.damage}`);
+  if (c.block) lines.push(`호신강기 ${c.block}`);
+  if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
+  if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
+  if (c.strength) lines.push(`기세 +${c.strength}`);
+  if (c.energy) lines.push(`내공 +${c.energy}`);
+  if (c.draw) lines.push(`카드 ${c.draw}장 뽑기`);
+  return lines.join('\n');
+}
+
+export function canUpgrade(card) {
+  return !card.upgraded && !!CARDS[card.id].upgrade;
+}
+
+export function cardsByRarity(rarity) {
+  return Object.values(CARDS).filter((c) => c.rarity === rarity).map((c) => c.id);
 }

@@ -1,13 +1,21 @@
 // 전투 규칙 (화면과 무관한 순수 로직)
 // 화면은 state.events 를 읽어 연출하고 비운다.
-import { CARDS, STARTER_DECK } from './cards.js';
+//
+// 상태 효과
+//   기세(strength)        공격 피해 +n (전투 내내 유지)
+//   내상(vulnerable)      받는 피해 1.5배, 남은 턴 수
+//   기혈 흐트러짐(weak)    주는 피해 0.75배, 남은 턴 수
+//   내상/기혈 흐트러짐은 그 캐릭터의 차례가 끝날 때 1씩 줄어듦
+import { STARTER_DECK, cardStats } from './cards.js';
 import { ENEMIES } from './enemies.js';
 import { createRng, shuffle } from './rng.js';
 
 export const HAND_SIZE = 5;
 export const MAX_HAND = 10;
 export const MAX_ENERGY = 3;
-export const PLAYER_MAX_HP = 50;
+export const PLAYER_MAX_HP = 60;
+
+const newStatus = () => ({ strength: 0, vulnerable: 0, weak: 0 });
 
 export function createBattle({
   enemyId,
@@ -19,21 +27,28 @@ export function createBattle({
   const def = ENEMIES[enemyId];
   if (!def) throw new Error(`알 수 없는 적: ${enemyId}`);
   const rng = createRng(seed);
-  const cards = deck.map((id, i) => ({ uid: i + 1, id }));
+  // 덱은 카드 id 문자열 또는 { uid, id, upgraded } 객체
+  const cards = deck.map((c, i) => (typeof c === 'string'
+    ? { uid: i + 1, id: c, upgraded: false }
+    : { uid: c.uid ?? i + 1, id: c.id, upgraded: !!c.upgraded }));
 
   return {
     rng,
     turn: 0,
     phase: 'start', // start → player → enemy → player ... → won | lost
-    player: { hp: playerHp, maxHp: playerMaxHp, block: 0, energy: 0, maxEnergy: MAX_ENERGY },
+    player: {
+      hp: playerHp, maxHp: playerMaxHp, block: 0, energy: 0, maxEnergy: MAX_ENERGY, status: newStatus(),
+    },
     enemy: {
       id: def.id,
       name: def.name,
       title: def.title,
       art: def.art,
+      tier: def.tier,
       hp: def.maxHp,
       maxHp: def.maxHp,
       block: 0,
+      status: newStatus(),
       patternIndex: 0,
       intent: def.pattern[0],
     },
@@ -71,6 +86,14 @@ export function startPlayerTurn(s) {
   emit(s, { type: 'turnStart', turn: s.turn });
 }
 
+// 상태 효과를 반영한 한 타 피해
+export function computeDamage(attacker, defender, base) {
+  let dmg = base + attacker.status.strength;
+  if (attacker.status.weak > 0) dmg = Math.floor(dmg * 0.75);
+  if (defender.status.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
+  return Math.max(0, dmg);
+}
+
 function applyDamage(s, targetKey, amount) {
   const t = s[targetKey];
   const blocked = Math.min(t.block, amount);
@@ -83,6 +106,16 @@ function applyDamage(s, targetKey, amount) {
 function gainBlock(s, targetKey, amount) {
   s[targetKey].block += amount;
   emit(s, { type: 'block', target: targetKey, amount });
+}
+
+function addStatus(s, targetKey, kind, amount) {
+  s[targetKey].status[kind] += amount;
+  emit(s, { type: 'status', target: targetKey, kind, amount });
+}
+
+function tickStatus(unit) {
+  if (unit.status.vulnerable > 0) unit.status.vulnerable -= 1;
+  if (unit.status.weak > 0) unit.status.weak -= 1;
 }
 
 function checkEnd(s) {
@@ -98,7 +131,7 @@ function checkEnd(s) {
 export function canPlay(s, uid) {
   if (s.phase !== 'player') return false;
   const card = s.hand.find((c) => c.uid === uid);
-  return !!card && CARDS[card.id].cost <= s.player.energy;
+  return !!card && cardStats(card).cost <= s.player.energy;
 }
 
 // 카드 사용. 성공하면 true.
@@ -106,20 +139,28 @@ export function playCard(s, uid) {
   if (!canPlay(s, uid)) return false;
   const idx = s.hand.findIndex((c) => c.uid === uid);
   const card = s.hand[idx];
-  const def = CARDS[card.id];
+  const c = cardStats(card);
 
-  s.player.energy -= def.cost;
+  s.player.energy -= c.cost;
   s.hand.splice(idx, 1);
-  emit(s, { type: 'play', card: card.id });
+  emit(s, { type: 'play', card: card.id, attack: !!c.damage });
 
-  if (def.block) gainBlock(s, 'player', def.block);
-  if (def.damage) {
-    const hits = def.hits ?? 1;
-    for (let h = 0; h < hits && s.enemy.hp > 0; h++) applyDamage(s, 'enemy', def.damage);
+  if (c.block) gainBlock(s, 'player', c.block);
+  if (c.strength) addStatus(s, 'player', 'strength', c.strength);
+  if (c.damage) {
+    const hits = c.hits ?? 1;
+    for (let h = 0; h < hits && s.enemy.hp > 0; h++) {
+      applyDamage(s, 'enemy', computeDamage(s.player, s.enemy, c.damage));
+    }
   }
-  if (def.draw) drawCards(s, def.draw);
-
+  if (s.enemy.hp > 0) {
+    if (c.vulnerable) addStatus(s, 'enemy', 'vulnerable', c.vulnerable);
+    if (c.weak) addStatus(s, 'enemy', 'weak', c.weak);
+  }
+  if (c.energy) s.player.energy += c.energy;
   s.discard.push(card);
+  if (c.draw) drawCards(s, c.draw);
+
   checkEnd(s);
   return true;
 }
@@ -129,6 +170,7 @@ export function endPlayerTurn(s) {
   if (s.phase !== 'player') return false;
   s.discard.push(...s.hand);
   s.hand = [];
+  tickStatus(s.player);
   s.phase = 'enemy';
   return true;
 }
@@ -142,10 +184,18 @@ export function runEnemyTurn(s) {
   emit(s, { type: 'enemyAct', name: act.name });
 
   if (act.block) gainBlock(s, 'enemy', act.block);
+  if (act.strength) addStatus(s, 'enemy', 'strength', act.strength);
   if (act.damage) {
     const hits = act.hits ?? 1;
-    for (let h = 0; h < hits && s.player.hp > 0; h++) applyDamage(s, 'player', act.damage);
+    for (let h = 0; h < hits && s.player.hp > 0; h++) {
+      applyDamage(s, 'player', computeDamage(e, s.player, act.damage));
+    }
   }
+  if (s.player.hp > 0) {
+    if (act.weak) addStatus(s, 'player', 'weak', act.weak);
+    if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);
+  }
+  tickStatus(e);
 
   const pattern = ENEMIES[e.id].pattern;
   e.patternIndex = (e.patternIndex + 1) % pattern.length;
@@ -154,6 +204,16 @@ export function runEnemyTurn(s) {
   checkEnd(s);
   if (s.phase === 'enemy') startPlayerTurn(s);
   return true;
+}
+
+// 화면에 보여줄 적의 다음 행동 (상태 효과 반영한 실제 피해)
+export function intentPreview(s) {
+  const it = s.enemy.intent;
+  return {
+    ...it,
+    damage: it.damage ? computeDamage(s.enemy, s.player, it.damage) : 0,
+    hits: it.hits ?? 1,
+  };
 }
 
 export function takeEvents(s) {

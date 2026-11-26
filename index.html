@@ -10,38 +10,46 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="stage">
+  <div id="stage" data-screen="map">
     <canvas id="scene"></canvas>
 
+    <!-- 전투 화면 -->
+    <div class="battle-ui">
+      <div id="intent" class="intent"></div>
+
+      <div id="enemy-info" class="unit-info"></div>
+      <div id="player-info" class="unit-info"></div>
+
+      <div id="energy" title="내공"><span id="energy-value">3/3</span><small>내공</small></div>
+      <div id="hand"></div>
+
+      <div id="piles">
+        <span id="draw-count" title="뽑을 패">뽑을 패 10</span>
+        <span id="discard-count" title="버린 패">버린 패 0</span>
+      </div>
+      <button id="end-turn" type="button">턴 종료</button>
+    </div>
+
+    <!-- 지도 -->
+    <div id="map-screen" hidden></div>
+
+    <!-- 위쪽 정보 (모든 화면 공통) -->
     <div id="topbar">
       <span class="zone">제1구역 · 후기지수 비무대회</span>
-      <span id="turn-label">제 1 턴</span>
+      <span class="run-info">
+        <span id="run-hp" title="체력">❤ 60/60</span>
+        <span id="run-gold" title="은자">銀 60</span>
+        <button id="deck-button" type="button" title="덱 보기">덱 10</button>
+        <span id="turn-label"></span>
+      </span>
     </div>
-
-    <div id="intent" class="intent"></div>
-
-    <div id="enemy-info" class="unit-info"></div>
-    <div id="player-info" class="unit-info"></div>
-
-    <div id="energy" title="내공"><span id="energy-value">3/3</span><small>내공</small></div>
-    <div id="hand"></div>
-
-    <div id="piles">
-      <span id="draw-count" title="뽑을 패">뽑을 패 10</span>
-      <span id="discard-count" title="버린 패">버린 패 0</span>
-    </div>
-    <button id="end-turn" type="button">턴 종료</button>
 
     <div id="popups"></div>
     <div id="banner"></div>
 
-    <div id="result" hidden>
-      <div class="result-box">
-        <h2 id="result-title"></h2>
-        <p id="result-text"></p>
-        <button id="restart" type="button">다시 하기</button>
-      </div>
-    </div>
+    <!-- 보상 · 운기조식 · 객잔 · 기연 · 결과 -->
+    <div id="panel" hidden></div>
+    <div id="deck-modal" hidden></div>
   </div>
   <script type="module" src="src/main.js"></script>
 </body>

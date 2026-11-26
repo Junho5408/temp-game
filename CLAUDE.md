@@ -5,8 +5,8 @@
 - 상세 기획: docs/SPEC.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 1단계 완료 (그림·모션·카드 디자인 포함) → 2단계 계획 승인 대기 (PLAN.md 2-A)
-- 다음 할 일: 2-A 승인받고 시작. 2-A용 적 그림 5장 요청 중 (PLAN.md 표)
+- 진행 중: 2-A 완료 (1구역 한 판: 지도·보상·운기조식·객잔·기연·두목) → 사용자 플레이 피드백 대기
+- 다음 할 일: 피드백 반영(특히 난이도) 후 2-B(2·3구역) 계획 보여주고 승인받기
 
 ## 작업 규칙
 - 각 단계 시작 전 계획을 먼저 보여주고 승인받기
@@ -21,3 +21,5 @@
 - 그림은 사용자가 이미지 생성 도구로 만들어 제공, 원본은 docs/reference/
 - 테스트: `npm test` (src/core 규칙 테스트, Node 기본 테스트 러너)
 - 게임 규칙은 src/core 에만 두고 화면 코드(src/ui, src/main.js)와 섞지 않기
+- 규칙 파일: battle.js(전투) run.js(한 판) map.js(지도) events.js(기연) cards.js enemies.js
+- 새 그림 처리: `python3 tools/prepare_sprite.py <원본> <세력-계열> [--despill all]` 후 src/ui/characters.js 의 SPRITES 에 footX 등록

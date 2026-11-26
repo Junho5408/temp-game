@@ -89,6 +89,19 @@ export async function createScene(canvas, { player }) {
     units.enemy = await makeUnit(artKey, -1, fallbackImg);
   }
 
+  function clearEnemy() {
+    units.enemy = null;
+  }
+
+  // 새 전투 시작: 쓰러짐 등 이전 동작 상태를 지움
+  function reset() {
+    for (const u of Object.values(units)) {
+      if (u) u.anim = { attack: -1e9, hit: -1e9, guard: -1e9, death: 0 };
+    }
+    fx.length = 0;
+    sparks.length = 0;
+  }
+
   // ── 동작 ─────────────────────────
   function attack(who) {
     const u = units[who];
@@ -453,7 +466,7 @@ export async function createScene(canvas, { player }) {
     }
   }
 
-  return { setEnemy, attack, hit, guard, die, shake, draw };
+  return { setEnemy, clearEnemy, reset, attack, hit, guard, die, shake, draw };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.

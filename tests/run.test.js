@@ -1,0 +1,225 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { generateMap, ROWS, allNodes } from '../src/core/map.js';
+import {
+  createRun, availableNodes, enterNode, startEncounter, finishBattle, chooseReward,
+  restHeal, restUpgrade, buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent,
+  START_GOLD,
+} from '../src/core/run.js';
+import {
+  startPlayerTurn, playCard, endPlayerTurn, runEnemyTurn, intentPreview,
+} from '../src/core/battle.js';
+import { cardStats } from '../src/core/cards.js';
+import { EVENTS } from '../src/core/events.js';
+
+// ── 지도 ─────────────────────────
+test('지도 규칙: 층 구성, 막힌 칸 없음, 필수 칸 존재 (여러 시드)', () => {
+  for (let seed = 1; seed <= 200; seed++) {
+    const map = generateMap(seed);
+    assert.equal(map.rows.length, ROWS + 1);
+    assert.ok(map.rows[0].every((n) => n.type === 'battle'), '0층은 전투');
+    assert.ok(map.rows[ROWS - 1].every((n) => n.type === 'rest'), '두목 앞은 운기조식');
+    assert.equal(map.rows[ROWS][0].type, 'boss');
+    const nodes = allNodes(map);
+    assert.ok(nodes.some((n) => n.type === 'shop'), `seed ${seed}: 객잔 없음`);
+    assert.ok(nodes.some((n) => n.type === 'elite'), `seed ${seed}: 고수 없음`);
+    assert.ok(map.rows[1].every((n) => n.type !== 'elite'), '고수는 2층부터');
+    for (let r = 0; r < ROWS; r++) {
+      for (const n of map.rows[r]) assert.ok(n.next.length > 0, `seed ${seed}: ${n.id} 나가는 길 없음`);
+    }
+    for (let r = 1; r <= ROWS; r++) {
+      for (const n of map.rows[r]) {
+        assert.ok(map.rows[r - 1].some((p) => p.next.includes(n.id)), `seed ${seed}: ${n.id} 들어오는 길 없음`);
+      }
+    }
+  }
+});
+
+test('같은 시드면 같은 지도', () => {
+  assert.deepEqual(generateMap(42), generateMap(42));
+});
+
+// ── 진행 ─────────────────────────
+test('새 판: 시작 덱 10장, 은자, 첫 층에서 출발', () => {
+  const run = createRun({ seed: 3 });
+  assert.equal(run.deck.length, 10);
+  assert.equal(run.gold, START_GOLD);
+  assert.deepEqual(availableNodes(run).map((n) => n.row), [0, 0, 0]);
+});
+
+test('갈 수 없는 칸은 선택 불가, 이동 후에는 연결된 칸만', () => {
+  const run = createRun({ seed: 3 });
+  assert.equal(enterNode(run, '2-0'), false);
+  const first = availableNodes(run)[0];
+  assert.ok(enterNode(run, first.id));
+  assert.equal(run.phase, 'battle');
+  assert.deepEqual(availableNodes(run), []); // 전투 중에는 이동 불가
+});
+
+function autoBattle(battle) {
+  startPlayerTurn(battle);
+  let guard = 0;
+  while (battle.phase === 'player' && guard++ < 200) {
+    const attacking = intentPreview(battle).damage > 0;
+    let played = true;
+    while (played && battle.phase === 'player') {
+      played = false;
+      const order = [...battle.hand].sort((a, b) => score(b, attacking) - score(a, attacking));
+      for (const c of order) {
+        if (playCard(battle, c.uid)) { played = true; break; }
+      }
+    }
+    if (battle.phase !== 'player') break;
+    endPlayerTurn(battle);
+    runEnemyTurn(battle);
+  }
+}
+
+function score(card, attacking) {
+  const c = cardStats(card);
+  let v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8;
+  v += (c.block ?? 0) * (attacking ? 1.4 : 0.3);
+  return v / Math.max(1, c.cost);
+}
+
+test('전투 승리 → 은자와 비급 3장 보상 → 고르면 덱에 추가', () => {
+  const run = createRun({ seed: 5 });
+  enterNode(run, availableNodes(run)[0].id);
+  const battle = startEncounter(run);
+  autoBattle(battle);
+  assert.equal(battle.phase, 'won');
+  const goldBefore = run.gold;
+  finishBattle(run, battle);
+  assert.equal(run.phase, 'reward');
+  assert.ok(run.gold > goldBefore);
+  assert.equal(run.reward.cards.length, 3);
+  assert.equal(new Set(run.reward.cards).size, 3);
+  chooseReward(run, 0);
+  assert.equal(run.deck.length, 11);
+  assert.equal(run.phase, 'map');
+  assert.equal(run.hp, battle.player.hp); // 체력 유지
+});
+
+test('보상 건너뛰기', () => {
+  const run = createRun({ seed: 5 });
+  enterNode(run, availableNodes(run)[0].id);
+  const battle = startEncounter(run);
+  autoBattle(battle);
+  finishBattle(run, battle);
+  chooseReward(run, null);
+  assert.equal(run.deck.length, 10);
+});
+
+test('운기조식: 회복(최대 체력 30%) 또는 연마', () => {
+  const run = createRun({ seed: 1 });
+  run.phase = 'rest';
+  run.hp = 20;
+  assert.equal(restHeal(run), 18);
+  assert.equal(run.phase, 'map');
+  run.phase = 'rest';
+  const card = run.deck[0];
+  assert.ok(restUpgrade(run, card.uid));
+  assert.equal(card.upgraded, true);
+  run.phase = 'rest';
+  assert.equal(restUpgrade(run, card.uid), false); // 이미 연마됨
+});
+
+function forceShop(run) {
+  run.phase = 'map';
+  run.position = null;
+  // 객잔 칸이 나올 때까지 지도 직접 조작 대신, 객잔 생성 경로를 그대로 쓰려고 칸 타입을 바꿈
+  const node = availableNodes(run)[0];
+  node.type = 'shop';
+  enterNode(run, node.id);
+}
+
+test('객잔: 은자가 있으면 구매, 부족하면 실패, 제거는 한 번만 + 비용 증가', () => {
+  const run = createRun({ seed: 9 });
+  forceShop(run);
+  assert.equal(run.phase, 'shop');
+  assert.equal(run.shop.items.length, 5);
+  run.gold = 1000;
+  assert.ok(buyCard(run, 0));
+  assert.equal(buyCard(run, 0), false); // 이미 팔림
+  assert.equal(run.deck.length, 11);
+  const cost = run.removeCost;
+  assert.ok(removeCard(run, run.deck[0].uid));
+  assert.equal(run.deck.length, 10);
+  assert.equal(run.removeCost, cost + 25);
+  assert.equal(removeCard(run, run.deck[0].uid), false);
+  run.gold = 0;
+  assert.equal(buyCard(run, 1), false);
+  assert.ok(leaveShop(run));
+  assert.equal(run.phase, 'map');
+});
+
+test('기연: 모든 선택지가 오류 없이 결과를 돌려줌', () => {
+  for (const [id, ev] of Object.entries(EVENTS)) {
+    ev.options.forEach((_, i) => {
+      const run = createRun({ seed: 11 + i });
+      run.gold = 100;
+      run.phase = 'event';
+      run.event = { id, result: null };
+      const text = chooseEventOption(run, i);
+      assert.ok(typeof text === 'string' && text.length > 0, `${id}/${i}`);
+      assert.ok(run.hp >= 1);
+      assert.ok(leaveEvent(run));
+    });
+  }
+});
+
+test('기연: 은자가 부족하면 해당 선택지 불가', () => {
+  const run = createRun({ seed: 2 });
+  run.gold = 0;
+  run.phase = 'event';
+  run.event = { id: 'herbSeller', result: null };
+  assert.equal(chooseEventOption(run, 0), null);
+});
+
+// ── 한 판 전체 자동 진행 (밸런스 확인) ─────────────────────────
+function autoRun(seed) {
+  const run = createRun({ seed });
+  let steps = 0;
+  while (!['victory', 'defeat'].includes(run.phase) && steps++ < 100) {
+    if (run.phase === 'map') {
+      const opts = availableNodes(run);
+      // 단순한 선택: 체력이 낮으면 휴식/객잔 쪽, 아니면 아무거나
+      const pref = run.hp < run.maxHp * 0.4 ? ['rest', 'shop', 'event', 'battle', 'elite', 'boss'] : ['battle', 'event', 'elite', 'shop', 'rest', 'boss'];
+      opts.sort((a, b) => pref.indexOf(a.type) - pref.indexOf(b.type));
+      enterNode(run, opts[0].id);
+    } else if (run.phase === 'battle') {
+      const b = startEncounter(run);
+      autoBattle(b);
+      finishBattle(run, b);
+    } else if (run.phase === 'reward') {
+      chooseReward(run, 0);
+    } else if (run.phase === 'rest') {
+      if (run.hp < run.maxHp * 0.7) restHeal(run);
+      else restUpgrade(run, run.deck.find((c) => !c.upgraded).uid);
+    } else if (run.phase === 'shop') {
+      const i = run.shop.items.findIndex((it) => it.price <= run.gold);
+      if (i >= 0) buyCard(run, i);
+      leaveShop(run);
+    } else if (run.phase === 'event') {
+      const ev = EVENTS[run.event.id];
+      const i = ev.options.findIndex((o) => !o.disabled?.(run));
+      chooseEventOption(run, i);
+      leaveEvent(run);
+    }
+  }
+  return run;
+}
+
+test('자동 플레이로 한 판이 끝까지 진행됨 + 승률이 너무 높거나 낮지 않음', () => {
+  let wins = 0;
+  const N = 60;
+  for (let seed = 1; seed <= N; seed++) {
+    const run = autoRun(seed);
+    assert.ok(['victory', 'defeat'].includes(run.phase), `seed ${seed}: ${run.phase}에서 멈춤`);
+    if (run.phase === 'victory') wins++;
+  }
+  const rate = wins / N;
+  console.log(`  자동 플레이 승률: ${(rate * 100).toFixed(0)}% (${wins}/${N})`);
+  // 단순한 봇 기준. 사람은 이보다 잘함 → 봇 승률은 25~85% 사이가 적당
+  assert.ok(rate >= 0.25 && rate <= 0.85, `승률 ${rate}`);
+});
