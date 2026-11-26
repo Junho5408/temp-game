@@ -8,13 +8,13 @@ import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js
 import { cardStats } from './core/cards.js';
 import {
   createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
-  memoryCandidates, rememberCard, validateLoadout, addClue, meetNpc,
+  memoryCandidates, validateLoadout, addClue, setPendingMemory, resolvePendingMemory,
 } from './core/meta.js';
 import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
   createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade,
-  buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, advanceZone, serializeRun, parseRun,
+  buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, advanceZone, serializeRun, parseRun, meetEventNpc,
 } from './core/run.js';
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
@@ -130,6 +130,11 @@ function showTitle() {
   scene.reset();
   scene.setBackground(meta.prologueDone ? 'arena' : 'inn');
   setScreen('title');
+  if (meta.pendingMemory) {
+    // 쓰러진 뒤 기억을 고르기 전에 나갔던 경우
+    pickMemoryAndRegress();
+    return;
+  }
   const saved = meta.prologueDone ? loadRun() : null;
   renderTitle(meta, {
     saved: saved ? { zone: ZONE_NAMES[saved.zone], hp: saved.hp, maxHp: saved.maxHp } : null,
@@ -204,18 +209,19 @@ async function playPrologue() {
 // ── 한 생의 시작: 회귀 → 세력 선택 → 지도 ─────────────────────────
 async function beginLife() {
   setZone('백 일 전');
-  startNewRun(meta);
-  saveMeta();
+  // 회차는 세력을 골라 판을 실제로 시작할 때 올림 (선택 화면에서 새로고침해도 늘지 않게) — BUG-003
   battle = null;
   scene.setBackground('arena');
   scene.clearEnemy();
   scene.reset();
   setScreen('story');
-  await playDialogue(wakeLines(meta.runs));
+  await playDialogue(wakeLines(meta.runs + 1));
   setScreen('title');
   renderSelect(meta, (artKey, memories) => {
-    if (!validateLoadout(meta, memories)) return;
+    if (!validateLoadout(meta, memories, 1)) return;
     hideFlow();
+    startNewRun(meta);
+    saveMeta();
     run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories });
     run.art = artKey;
     applyZoneLook();
@@ -248,7 +254,22 @@ function collectClues() {
 }
 
 // ── 한 판 흐름 ─────────────────────────
+// 안전망: 판 진행 중 예상치 못한 오류가 나면 (손상된 저장 등) 이 생을 끝내고 타이틀로 — BUG-004
 async function show() {
+  try {
+    await showStep();
+  } catch (err) {
+    console.error('판 진행 오류', err);
+    clearRun();
+    run = null;
+    battle = null;
+    hideFlow();
+    showTitle();
+    showBanner('저장이 손상되어 이번 생을 이어갈 수 없다', '#ff9a9a', 2600);
+  }
+}
+
+async function showStep() {
   collectClues();
   saveRun();
   applyZoneLook();
@@ -289,13 +310,23 @@ async function show() {
       }
       const tierLabel = { elite: '고수 · ', boss: '두목 · ' }[b.enemy.tier] ?? '';
       const result = await runBattle(b, { title: `${tierLabel}${b.enemy.title} ${b.enemy.name}`, boss: b.enemy.tier === 'boss' });
+      // 승리를 먼저 확정·저장한 뒤 대사 (대사 중 새로고침해도 다시 싸우지 않게) — BUG-001
+      finishBattle(run, b);
+      battle = null;
+      collectClues();
+      saveRun();
+      if (run.phase === 'victory') {
+        // 최종 결전 승리: 엔딩 대사 전에 기록 (엔딩 중 새로고침해도 다시 싸우지 않게)
+        clearRun();
+        recordRunEnd(meta, run);
+        saveMeta();
+        run.recorded = true;
+      }
       const outro = result === 'won' ? battleOutro(enemyId, known) : null;
       if (outro) {
         setScreen('story');
         await playDialogue(outro);
       }
-      finishBattle(run, b);
-      battle = null;
       show();
       break;
     }
@@ -325,9 +356,10 @@ async function show() {
     case 'event': {
       const ev = EVENTS[run.event.id];
       if (ev.npc && !run.event.introDone) {
-        run.event.introDone = true;
-        const n = meetNpc(meta, ev.npc);
+        // 만남을 판·기록에 함께 저장한 뒤 대사 (새로고침해도 한 번만 셈) — BUG-005
+        const n = meetEventNpc(run, meta);
         saveMeta();
+        saveRun();
         await scene.setEnemy(`npc-${ev.npc}`);
         scene.reset();
         setScreen('story');
@@ -358,9 +390,11 @@ async function show() {
       show();
       break;
     case 'victory':
-      clearRun();
-      recordRunEnd(meta, run);
-      saveMeta();
+      if (!run.recorded) {
+        clearRun();
+        recordRunEnd(meta, run);
+        saveMeta();
+      }
       setScreen('panel');
       renderEnd(run, showTitle);
       break;
@@ -370,22 +404,28 @@ async function show() {
 }
 
 async function onDeath() {
+  // 고를 기억 후보까지 먼저 저장 (죽음 대사 중 새로고침해도 다시 고르게) — BUG-002
   clearRun();
   recordRunEnd(meta, run);
+  setPendingMemory(meta, memoryCandidates(run));
   saveMeta();
   setScreen('story');
   await playDialogue(deathLines(run.lastEnemyName ?? '적'));
+  run = null;
+  await pickMemoryAndRegress();
+}
+
+// 기억할 무공 고르기 → 회귀 → 새 생
+async function pickMemoryAndRegress() {
   setScreen('title');
-  const candidates = memoryCandidates(run);
   await new Promise((resolve) => {
-    renderMemoryPick(candidates, meta, (id) => {
-      if (id) rememberCard(meta, id);
+    renderMemoryPick(meta.pendingMemory ?? [], meta, (id) => {
+      resolvePendingMemory(meta, id);
       saveMeta();
       resolve();
     });
   });
   hideFlow();
-  run = null;
   renderRunInfo();
   await playRegression();
   beginLife();
@@ -671,7 +711,17 @@ async function onEndTurn() {
 
 $('end-turn').addEventListener('click', onEndTurn);
 
+// 창·대사가 떠 있으면 전투 키 입력을 막음 (Esc 는 덱 창 닫기) — BUG-006
+function inputBlocked() {
+  return !$('deck-modal').hidden || !$('dialogue').hidden || !$('panel').hidden || !$('flow').hidden;
+}
+
 window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('deck-modal').hidden) {
+    $('deck-modal').hidden = true;
+    return;
+  }
+  if (inputBlocked()) return;
   if (!battle || stage.dataset.screen !== 'battle') return;
   if (e.key >= '1' && e.key <= '9') {
     const card = battle.hand[Number(e.key) - 1];

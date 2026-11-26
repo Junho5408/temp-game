@@ -97,7 +97,7 @@ const OPEN = new Set(['orthodox-sword']); // 지금 열린 조합
 export function renderSelect(meta, onDepart) {
   const el = overlay();
   el.classList.add('flow-panel');
-  const slots = memorySlots(meta);
+  const slots = memorySlots(meta, 1); // 곧 시작할 판 기준
   const chosen = new Set(meta.memories.slice(0, slots));
   let pick = 'orthodox-sword';
 

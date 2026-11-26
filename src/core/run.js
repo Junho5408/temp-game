@@ -93,18 +93,52 @@ export function serializeRun(run) {
   return JSON.stringify({ v: RUN_SAVE_VERSION, ...data });
 }
 
-// 깨졌거나 버전이 다르면 null
+const PHASES = ['map', 'battle', 'reward', 'treasure', 'rest', 'shop', 'event', 'zoneClear'];
+const finiteNum = (v, min = 0) => typeof v === 'number' && Number.isFinite(v) && v >= min;
+
+// 깨졌거나 버전이 다르면 null. 모르는 행낭 물품·보물은 버리고(업데이트 대비), 빠진 목록은 빈 목록으로
 export function parseRun(text) {
   try {
     const data = JSON.parse(text);
-    if (!data || data.v !== RUN_SAVE_VERSION || !Array.isArray(data.deck) || !data.map) return null;
-    if (!data.deck.every((c) => CARDS[c.id])) return null;
+    if (!data || data.v !== RUN_SAVE_VERSION || !Array.isArray(data.deck) || data.deck.length === 0) return null;
+    if (!data.deck.every((c) => c && CARDS[c.id])) return null;
+    if (!Array.isArray(data.map?.rows) || data.map.rows.length === 0) return null;
+    if (!Number.isInteger(data.zone) || data.zone < 0 || data.zone > ZONE_COUNT) return null;
+    if (!finiteNum(data.hp) || !finiteNum(data.maxHp, 1) || !finiteNum(data.gold) || !finiteNum(data.seed, -Infinity)) return null;
+    if (!PHASES.includes(data.phase)) return null;
     const { v, ...run } = data;
+    for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents']) {
+      if (!Array.isArray(run[key])) run[key] = [];
+    }
+    run.bag = run.bag.filter((id) => CONSUMABLES[id]).slice(0, BAG_SIZE);
+    run.treasures = run.treasures.filter((id) => TREASURES[id]);
+    if (!Number.isInteger(run.rngCount) || run.rngCount < 0) run.rngCount = 0;
+    // 단계별로 꼭 필요한 데이터
+    const need = {
+      battle: () => ENEMIES[run.encounter?.enemyId],
+      event: () => EVENTS[run.event?.id],
+      reward: () => Array.isArray(run.reward?.cards) && run.reward.cards.every((id) => CARDS[id]),
+      treasure: () => Array.isArray(run.treasureChoice) && run.treasureChoice.every((id) => TREASURES[id]),
+      shop: () => Array.isArray(run.shop?.items),
+    }[run.phase];
+    if (need && !need()) return null;
     attachRng(run);
     return run;
   } catch {
     return null;
   }
+}
+
+// 이야기 기연의 인물과 만남: 판(introDone·metCount)과 회귀 기록(met)을 함께 갱신. 같은 만남은 한 번만 셈
+export function meetEventNpc(run, meta) {
+  const ev = run.event && EVENTS[run.event.id];
+  if (!ev?.npc) return null;
+  if (!run.event.introDone) {
+    run.event.introDone = true;
+    meta.met[ev.npc] = (meta.met[ev.npc] ?? 0) + 1;
+    run.event.metCount = meta.met[ev.npc];
+  }
+  return run.event.metCount;
 }
 
 export function zonePools(run) {

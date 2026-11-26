@@ -98,7 +98,8 @@ async function startLife(page) {
         const name = await page.textContent('#enemy-info .name').catch(() => '');
         if (name !== lastEnemy) { battles++; lastEnemy = name; }
         const card = await page.$('#hand .card:not(.disabled)');
-        if (card && !(await page.isDisabled('#end-turn'))) { await card.click(); await page.waitForTimeout(500); } else if (!(await page.isDisabled('#end-turn'))) { await page.click('#end-turn'); await page.waitForTimeout(1800); } else await page.waitForTimeout(300);
+        // 상태를 읽은 뒤 대사가 끼어들 수 있으므로 클릭 실패는 다음 걸음에서 다시 판단
+        if (card && !(await page.isDisabled('#end-turn'))) { await card.click({ timeout: 2000 }).catch(() => {}); await page.waitForTimeout(500); } else if (!(await page.isDisabled('#end-turn'))) { await page.click('#end-turn', { timeout: 2000 }).catch(() => {}); await page.waitForTimeout(1800); } else await page.waitForTimeout(300);
         continue;
       }
       await page.waitForTimeout(250);
@@ -106,7 +107,8 @@ async function startLife(page) {
     expect(await page.isVisible('#flow .select-grid'), '세력 선택 화면에 도착하지 못함');
     expect(battles === 2, `튜토리얼 전투 수 ${battles} (기대 2)`);
     const meta = await page.evaluate(() => window.__game.meta);
-    expect(meta.prologueDone && meta.runs === 1, `기록 이상: ${JSON.stringify(meta)}`);
+    // 회차는 세력을 골라 출발할 때 오름 (BUG-003) → 선택 화면에서는 아직 0
+    expect(meta.prologueDone && meta.runs === 0, `기록 이상: ${JSON.stringify(meta)}`);
   });
 
   await check('F03', '출발 → 구역 시작 대사 → 지도', page, errors, dir, async () => {
@@ -116,6 +118,8 @@ async function startLife(page) {
     const st = await state(page);
     expect(st.screen === 'map' && st.phase === 'map', `지도가 아님: ${JSON.stringify(st)}`);
     expect((await page.$$('.map-node.available')).length > 0, '갈 수 있는 칸이 없음');
+    const runs = await page.evaluate(() => window.__game.meta.runs);
+    expect(runs === 1, `출발 뒤 회차 ${runs} (기대 1)`);
   });
 
   await check('F04', '일반 전투: 카드 사용 → 턴 종료 → 적 행동 → 다음 턴', page, errors, dir, async () => {
