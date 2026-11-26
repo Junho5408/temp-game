@@ -1,6 +1,7 @@
 // 기연 (지도의 ? 칸): 선택지가 있는 짧은 사건
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
+import { CONSUMABLES } from './items.js';
 
 function heal(run, n) {
   const before = run.hp;
@@ -14,18 +15,18 @@ function damage(run, n) {
 
 export const EVENTS = {
   fallenManual: {
-    title: '떨어진 비급',
+    title: '떨어진 무공서',
     text: '비무대 뒤편 수풀 속에 낡은 책 한 권이 떨어져 있다.\n누군가 일부러 숨겨 둔 것 같기도 하다.',
     options: [
       {
         label: '집어 든다',
-        hint: '고급 비급 1장 얻음 · 체력 -6',
+        hint: '고급 무공 1장 얻음 · 체력 -6',
         effect(run, rng, api) {
           const pool = cardsByRarity('uncommon');
           const id = pool[Math.floor(rng() * pool.length)];
           api.addCard(id);
           damage(run, 6);
-          return `숨어 있던 암기에 손을 베였지만, 『${CARDS[id].name}』 비급을 손에 넣었다.`;
+          return `숨어 있던 암기에 손을 베였지만, 『${CARDS[id].name}』 무공서를 손에 넣었다.`;
         },
       },
       {
@@ -107,17 +108,28 @@ export const EVENTS = {
   },
   herbSeller: {
     title: '약초 파는 노파',
-    text: '등이 굽은 노파가 바구니 가득 약초를 팔고 있다.\n"기혈을 보하는 귀한 것이라오."',
+    text: '등이 굽은 노파가 바구니 가득 약을 팔고 있다.\n"상처엔 금창약, 몸을 보하는 덴 소환단이라오. 소환단은 한 번 먹으면 평생 가지."',
     options: [
       {
-        label: '산다',
-        hint: '은자 -30 · 최대 체력 +5, 체력 +5',
-        disabled: (run) => run.gold < 30,
-        effect(run) {
-          run.gold -= 30;
-          run.maxHp += 5;
-          heal(run, 5);
-          return '쌉쌀한 약초를 씹자 단전이 따뜻해졌다. 최대 체력이 5 늘었다.';
+        label: '소환단을 산다',
+        hint: '은자 -45 · 보물(영약) 소환단: 최대 체력 +10',
+        disabled: (run) => run.gold < 45 || run.treasures.includes('soHwan'),
+        effect(run, rng, api) {
+          run.gold -= 45;
+          api.addTreasure('soHwan');
+          return '쌉쌀한 환약을 삼키자 단전이 뜨거워졌다. 최대 체력이 10 늘었다.';
+        },
+      },
+      {
+        label: '금창약을 산다',
+        hint: '은자 -25 · 행낭에 금창약 2개 (자리만큼)',
+        disabled: (run) => run.gold < 25,
+        effect(run, rng, api) {
+          run.gold -= 25;
+          const got = [api.addItem('geumchang'), api.addItem('geumchang')].filter(Boolean).length;
+          return got
+            ? `금창약 ${got}개를 행낭에 넣었다.`
+            : '값은 치렀는데 행낭이 가득 차서 넣을 데가 없다… 노파가 혀를 찼다.';
         },
       },
       {
@@ -125,6 +137,36 @@ export const EVENTS = {
         hint: '아무 일도 없음',
         effect() {
           return '"아쉽구려." 노파는 다음 손님을 찾아 떠났다.';
+        },
+      },
+    ],
+  },
+  bundle: {
+    title: '수상한 보따리',
+    text: '비무대 아래 그늘에 주인 없는 보따리가 놓여 있다.\n누군가 급히 두고 간 것 같다.',
+    options: [
+      {
+        label: '열어 본다',
+        hint: '행낭 물품 2개 · 함정일 수도',
+        effect(run, rng, api) {
+          const names = [];
+          for (let i = 0; i < 2; i++) {
+            const id = api.randomItem();
+            if (api.addItem(id)) names.push(CONSUMABLES[id].name);
+          }
+          let text = names.length ? `${names.join(', ')}을(를) 챙겼다.` : '쓸 만한 게 있었지만 행낭이 가득 찼다.';
+          if (rng() < 0.35) {
+            damage(run, 7);
+            text = `매듭에 숨겨진 독침에 찔렸다! 체력 -7.\n그래도 ${text}`;
+          }
+          return text;
+        },
+      },
+      {
+        label: '손대지 않는다',
+        hint: '아무 일도 없음',
+        effect() {
+          return '남의 물건에 손댈 이유는 없다.';
         },
       },
     ],

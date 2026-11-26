@@ -24,8 +24,13 @@
 //   - charge: 필살기. 예고된 턴에 breakAt 이상 피해를 주면 파기(破氣) → 몸이 굳음
 //   - phase2: 체력이 일정 이하가 되면 패턴·특성이 바뀜 (두목)
 //   - 특성(traits): enemies.js 의 TRAITS 참고
+//
+// 아이템 (items.js)
+//   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
+//   - 보물(treasures): 전투 내내 자동 적용
 import { STARTER_DECK, cardStats } from './cards.js';
 import { ENEMIES, POINT_MAX } from './enemies.js';
+import { CONSUMABLES } from './items.js';
 import { createRng, shuffle } from './rng.js';
 
 export const HAND_SIZE = 5;
@@ -55,6 +60,8 @@ export function createBattle({
   playerMaxHp = PLAYER_MAX_HP,
   scale = { hp: 1, strength: 0 },
   luck = true,
+  bag = [],
+  treasures = [],
 } = {}) {
   const def = ENEMIES[enemyId];
   if (!def) throw new Error(`알 수 없는 적: ${enemyId}`);
@@ -71,8 +78,16 @@ export function createBattle({
     turn: 0,
     phase: 'start', // start → player → enemy → player ... → won | lost
     turnAttacks: 0, // 이번 턴에 쓴 초식 수 (연계)
+    bag: [...bag], // 행낭 물품 id
+    treasures: new Set(treasures), // 보물 id
     player: {
-      hp: playerHp, maxHp: playerMaxHp, energy: 0, maxEnergy: MAX_ENERGY, status: newStatus(), missStreak: 0,
+      hp: playerHp,
+      maxHp: playerMaxHp,
+      energy: 0,
+      maxEnergy: MAX_ENERGY + (treasures.includes('daeHwan') ? 1 : 0),
+      status: newStatus(),
+      missStreak: 0,
+      shield: treasures.includes('silkArmor'), // 천잠보의: 첫 일격 무효
     },
     enemy: {
       id: def.id,
@@ -106,6 +121,14 @@ export function createBattle({
   return s;
 }
 
+const owns = (s, id) => s.treasures?.has(id);
+
+// 보물 효과로 상태가 붙을 때 (연출용 이벤트에 보물 id 를 같이 실음)
+function treasureStatus(s, id, kind, amount) {
+  emit(s, { type: 'treasure', id });
+  addStatus(s, 'player', kind, amount);
+}
+
 function emit(s, event) {
   s.events.push(event);
 }
@@ -135,6 +158,11 @@ export function startPlayerTurn(s) {
   s.enemy.ironUsed = false;
   emit(s, { type: 'turnStart', turn: s.turn });
   if (tickPoison(s, 'player')) return;
+  if (s.turn === 1) {
+    if (owns(s, 'stoneMilk')) treasureStatus(s, 'stoneMilk', 'strength', 1);
+    if (owns(s, 'farSight')) treasureStatus(s, 'farSight', 'insight', 1);
+  }
+  if (owns(s, 'taiji')) treasureStatus(s, 'taiji', 'evasion', 1);
   p.energy = p.maxEnergy;
   drawCards(s, HAND_SIZE);
   s.phase = 'player';
@@ -190,6 +218,10 @@ function rollCrit(s, chancePct) {
 }
 
 function addStatus(s, targetKey, kind, amount) {
+  if (targetKey === 'player' && kind === 'poison' && owns(s, 'poisonProof')) {
+    emit(s, { type: 'treasure', id: 'poisonProof' });
+    return;
+  }
   s[targetKey].status[kind] += amount;
   emit(s, { type: 'status', target: targetKey, kind, amount });
 }
@@ -303,7 +335,10 @@ export function playCard(s, uid) {
     const insight = p.status.insight > 0;
     if (insight) p.status.insight -= 1;
     const hits = cardHits(s, c);
-    const base = cardBaseDamage(s, c);
+    let base = cardBaseDamage(s, c);
+    if (owns(s, 'chainArt') && comboActive(s)) base += 2;
+    if (owns(s, 'drunkenFist')) base += p.missStreak * 3;
+    const critChance = PLAYER_CRIT + (c.crit ?? 0) + (owns(s, 'blueSteel') ? 10 : 0);
     let landed = 0;
     for (let h = 0; h < hits && e.hp > 0; h++) {
       if (!roll(s, insight || c.sure ? 100 : playerHitChance(s, c))) {
@@ -313,7 +348,7 @@ export function playCard(s, uid) {
       }
       p.missStreak = 0;
       landed += 1;
-      const crit = insight || rollCrit(s, PLAYER_CRIT + (c.crit ?? 0));
+      const crit = insight || rollCrit(s, critChance);
       let dmg = computeDamage(p, e, base);
       if (crit) dmg = Math.floor(dmg * CRIT_MULT);
       let guarded = false;
@@ -329,7 +364,7 @@ export function playCard(s, uid) {
     if (e.hp > 0 && landed > 0) {
       if (c.vulnerable) addStatus(s, 'enemy', 'vulnerable', c.vulnerable);
       if (c.weak) addStatus(s, 'enemy', 'weak', c.weak);
-      if (c.point) addPoint(s, c.point);
+      if (c.point) addPoint(s, c.point + (owns(s, 'meridianChart') ? 3 : 0));
     }
     // 반격 자세: 초식 한 장마다 되받아침
     if (e.hp > 0 && e.status.counter > 0) {
@@ -338,14 +373,53 @@ export function playCard(s, uid) {
       emit(s, { type: 'damage', target: 'player', amount: dmg, counter: true });
     }
     s.turnAttacks += 1;
-  } else {
-    if (c.point) addPoint(s, c.point);
+  } else if (c.point) {
+    addPoint(s, c.point + (owns(s, 'meridianChart') ? 3 : 0));
   }
   if (c.insight) addStatus(s, 'player', 'insight', c.insight);
   if (c.energy) p.energy += c.energy;
   s.discard.push(card);
   if (c.draw) drawCards(s, c.draw);
 
+  checkEnd(s);
+  return true;
+}
+
+// 행낭 물품 사용 (내 차례, 내공 안 씀). 성공하면 true
+export function useItem(s, index) {
+  if (s.phase !== 'player') return false;
+  const id = s.bag[index];
+  const it = CONSUMABLES[id];
+  if (!it) return false;
+  s.bag.splice(index, 1);
+  const p = s.player;
+  const e = s.enemy;
+  emit(s, { type: 'item', id });
+  if (it.heal) {
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + it.heal);
+    emit(s, { type: 'heal', target: 'player', amount: p.hp - before });
+  }
+  if (it.cleanse) {
+    p.status.poison = 0;
+    p.status.vulnerable = 0;
+    p.status.weak = 0;
+    emit(s, { type: 'status', target: 'player', kind: 'cleanse', amount: 0 });
+  }
+  if (it.evasion) addStatus(s, 'player', 'evasion', it.evasion);
+  if (it.energy) p.energy += it.energy;
+  if (it.draw) drawCards(s, it.draw);
+  if (it.damage) {
+    let dmg = it.damage;
+    if (e.status.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
+    e.hp = Math.max(0, e.hp - dmg);
+    emit(s, { type: 'damage', target: 'enemy', amount: dmg, item: true });
+    afterEnemyHurt(s, dmg);
+  }
+  if (e.hp > 0) {
+    if (it.poison) addStatus(s, 'enemy', 'poison', it.poison);
+    if (it.point) addPoint(s, it.point);
+  }
   checkEnd(s);
   return true;
 }
@@ -403,8 +477,13 @@ export function runEnemyTurn(s) {
           emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
           continue;
         }
+        if (p.shield) {
+          p.shield = false;
+          emit(s, { type: 'shield', target: 'player' });
+          continue;
+        }
         landed += 1;
-        const crit = rollCrit(s, e.crit);
+        const crit = !owns(s, 'mirror') && rollCrit(s, e.crit);
         let dmg = computeDamage(e, p, act.damage);
         if (crit) dmg = Math.floor(dmg * CRIT_MULT);
         p.hp = Math.max(0, p.hp - dmg);

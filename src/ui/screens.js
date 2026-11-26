@@ -3,7 +3,10 @@
 import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/cards.js';
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
-import { availableNodes } from '../core/run.js';
+import { availableNodes, canBuy } from '../core/run.js';
+import {
+  BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND,
+} from '../core/items.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,6 +23,21 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
     <span class="art">${c.glyph}</span>
     <span class="desc">${c.desc}</span>
     <span class="ctype">${TYPE_LABEL[c.type]} · ${RARITY_LABEL[c.rarity]}</span>`;
+  return el;
+}
+
+// 아이템 한 칸: kind = 'item'(행낭 물품, 일시적) | 'treasure'(보물, 영구적)
+export function itemFace(kind, id, { tag = 'div' } = {}) {
+  const it = kind === 'item' ? CONSUMABLES[id] : TREASURES[id];
+  const el = document.createElement(tag);
+  if (tag === 'button') el.type = 'button';
+  el.className = `item-face ${kind}${kind === 'treasure' ? ` ${it.kind}` : ''}`;
+  const label = kind === 'item' ? '행낭 · 한 번 쓰고 사라짐' : `보물 · ${TREASURE_KIND[it.kind]} · 영구`;
+  el.innerHTML = `
+    <span class="ig">${it.glyph}</span>
+    <span class="iname">${it.name}</span>
+    <span class="idesc">${it.desc}</span>
+    <span class="ikind">${label}</span>`;
   return el;
 }
 
@@ -122,7 +140,14 @@ export function hideMap() {
 
 // ── 승리 보상 ─────────────────────────
 export function renderReward(run, onChoose) {
-  const { body, actions } = openPanel('승리', `은자 <b class="gold">+${run.reward.gold}냥</b> · 비급 한 권을 골라 덱에 넣으시오`);
+  const r = run.reward;
+  let itemLine = '';
+  if (r.item) {
+    itemLine = r.itemKept
+      ? ` · 행낭에 <b class="item-name">${CONSUMABLES[r.item].name}</b>을(를) 챙겼다`
+      : ` · <b class="item-name">${CONSUMABLES[r.item].name}</b>이(가) 있었지만 행낭이 가득 찼다`;
+  }
+  const { body, actions } = openPanel('승리', `은자 <b class="gold">+${r.gold}냥</b>${itemLine}<br>무공 하나를 골라 익히시오`);
   body.classList.add('card-row');
   run.reward.cards.forEach((id, i) => {
     const el = cardFace({ id }, { tag: 'button' });
@@ -130,6 +155,18 @@ export function renderReward(run, onChoose) {
     body.appendChild(el);
   });
   actions.appendChild(button('건너뛰기', () => onChoose(null), 'ghost'));
+}
+
+// ── 고수 보상: 보물 고르기 ─────────────────────────
+export function renderTreasure(run, onPick) {
+  const { body, actions } = openPanel('보물', '고수가 지니고 있던 것들이다. 하나를 챙기시오 (판이 끝날 때까지 효과가 이어짐)');
+  body.classList.add('item-row');
+  run.treasureChoice.forEach((id, i) => {
+    const el = itemFace('treasure', id, { tag: 'button' });
+    el.addEventListener('click', () => onPick(i));
+    body.appendChild(el);
+  });
+  actions.appendChild(button('건너뛰기', () => onPick(null), 'ghost'));
 }
 
 // ── 운기조식 ─────────────────────────
@@ -160,21 +197,30 @@ function pickCard(run, title, cards, faceOpts, onPick, onBack) {
 
 // ── 객잔 ─────────────────────────
 export function renderShop(run, { onBuy, onRemove, onLeave }) {
-  const { body, actions } = openPanel('객잔', `가진 은자 <b class="gold">${run.gold}냥</b> · 떠돌이 무인들이 비급을 팔고 있다`);
-  body.classList.add('card-row', 'shop');
+  const { body, actions } = openPanel('객잔', `가진 은자 <b class="gold">${run.gold}냥</b> · 무공을 가르치는 떠돌이, 행낭 물품과 보물을 파는 장사꾼`);
+  body.classList.add('shop-body');
+  const cardRow = document.createElement('div');
+  cardRow.className = 'card-row shop';
+  const goodsRow = document.createElement('div');
+  goodsRow.className = 'item-row shop';
+  body.append(cardRow, goodsRow);
   run.shop.items.forEach((item, i) => {
     const wrap = document.createElement('div');
     wrap.className = 'shop-item';
-    const el = cardFace({ id: item.id }, { tag: 'button' });
-    const cant = item.sold || run.gold < item.price;
+    const el = item.kind === 'card' || !item.kind
+      ? cardFace({ id: item.id }, { tag: 'button' })
+      : itemFace(item.kind, item.id, { tag: 'button' });
+    const cant = !canBuy(run, i);
     el.disabled = cant;
     if (item.sold) wrap.classList.add('sold');
     el.addEventListener('click', () => onBuy(i));
     const price = document.createElement('div');
     price.className = `price${run.gold < item.price && !item.sold ? ' short' : ''}`;
-    price.textContent = item.sold ? '팔림' : `${item.price}냥`;
+    price.textContent = item.sold ? '팔림'
+      : item.kind === 'item' && run.bag.length >= BAG_SIZE ? `${item.price}냥 · 행낭 가득`
+        : `${item.price}냥`;
     wrap.append(el, price);
-    body.appendChild(wrap);
+    (item.kind === 'card' || !item.kind ? cardRow : goodsRow).appendChild(wrap);
   });
   const canRemove = !run.shop.removed && run.gold >= run.removeCost && run.deck.length > 5;
   const rm = button(`카드 제거 <small>${run.shop.removed ? '이번엔 끝' : `${run.removeCost}냥`}</small>`, () => {

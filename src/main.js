@@ -2,8 +2,9 @@
 // 규칙은 src/core 에만 있고, 여기서는 상태를 그리고 입력을 전달함.
 import {
   createBattle, startPlayerTurn, playCard, canPlay, endPlayerTurn, runEnemyTurn, takeEvents, intentPreview,
-  playerHitChance, playerEvasion, comboActive,
+  playerHitChance, playerEvasion, comboActive, useItem,
 } from './core/battle.js';
+import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js';
 import { cardStats } from './core/cards.js';
 import {
   createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
@@ -12,7 +13,7 @@ import {
 import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
-  createRun, enterNode, startEncounter, finishBattle, chooseReward, restHeal, restUpgrade,
+  createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade,
   buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent,
 } from './core/run.js';
 import {
@@ -25,7 +26,7 @@ import {
 } from './ui/flow.js';
 import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import {
-  cardFace, renderMap, hideMap, renderReward, renderRest, renderShop, renderEvent, renderEnd,
+  cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
   openDeck, closePanel,
 } from './ui/screens.js';
 
@@ -234,6 +235,10 @@ async function show() {
       show();
       break;
     }
+    case 'treasure':
+      setScreen('panel');
+      renderTreasure(run, (i) => { chooseTreasure(run, i); show(); });
+      break;
     case 'reward':
       setScreen('panel');
       renderReward(run, (i) => { chooseReward(run, i); show(); });
@@ -312,7 +317,17 @@ async function onDeath() {
 function renderRunInfo() {
   const info = document.querySelector('.run-info');
   info.hidden = !run;
+  $('treasures').hidden = !run;
   if (!run) return;
+  $('treasures').innerHTML = run.treasures.map((id) => {
+    const t = TREASURES[id];
+    return `<span class="tr-chip ${t.kind}" title="${t.name} (${TREASURE_KIND[t.kind]}·영구): ${t.desc}">${t.glyph}</span>`;
+  }).join('');
+  const bag = battle && run.phase === 'battle' ? battle.bag : run.bag;
+  $('bag-top').innerHTML = `囊 ${bag.length}/${BAG_SIZE}`;
+  $('bag-top').title = bag.length
+    ? `행낭: ${bag.map((id) => `${CONSUMABLES[id].name}(${CONSUMABLES[id].desc})`).join(', ')}`
+    : '행낭이 비었다 (전투 중에 한 번 쓰는 물품)';
   const hp = battle && run.phase === 'battle' ? battle.player.hp : run.hp;
   $('run-hp').textContent = `❤ ${hp}/${run.maxHp}`;
   $('run-gold').textContent = `銀 ${run.gold}`;
@@ -379,6 +394,7 @@ function renderControls() {
   $('draw-count').textContent = `뽑을 패 ${s.drawPile.length}`;
   $('discard-count').textContent = `버린 패 ${s.discard.length}`;
   $('end-turn').disabled = busy || s.phase !== 'player';
+  renderBag();
   renderHand();
 }
 
@@ -446,6 +462,41 @@ function renderIntent() {
   const brk = it.charge
     ? `<span class="break">파기 ${Math.min(it.breakProgress, it.breakAt)} / ${it.breakAt}</span>` : '';
   el.innerHTML = `<span class="label">${label}</span>${parts.join(' &nbsp;')}${brk}`;
+}
+
+// 행낭: 전투 중 한 번 쓰는 물품 (내공 안 씀)
+function renderBag() {
+  const el = $('bag');
+  const s = battle;
+  el.replaceChildren();
+  for (let i = 0; i < BAG_SIZE; i++) {
+    const id = s.bag[i];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `bag-slot${id ? '' : ' empty'}`;
+    if (id) {
+      const it = CONSUMABLES[id];
+      b.innerHTML = `<span>${it.glyph}</span><small>${it.name}</small>`;
+      b.title = `${it.name}: ${it.desc} (눌러서 사용)`;
+      b.disabled = busy || s.phase !== 'player';
+      b.addEventListener('click', () => onItem(i));
+    } else {
+      b.disabled = true;
+    }
+    el.appendChild(b);
+  }
+}
+
+async function onItem(index) {
+  if (busy || !battle || battle.phase !== 'player') return;
+  if (!useItem(battle, index)) return;
+  busy = true;
+  renderControls();
+  await playEvents(takeEvents(battle));
+  if (!battleCtx) return;
+  busy = false;
+  if (battle.phase === 'player') render();
+  checkInterrupt();
 }
 
 function renderHand() {
@@ -556,6 +607,7 @@ window.addEventListener('keydown', (e) => {
 
 // ── 연출 ─────────────────────────
 const STATUS_POPUP = {
+  cleanse: '해독',
   strength: '기세', vulnerable: '내상', weak: '흐트러짐', poison: '중독', evasion: '경공', insight: '간파', counter: '반격 자세', point: '점혈',
 };
 
@@ -603,6 +655,21 @@ async function playEvents(events) {
         await wait(360);
         break;
       }
+      case 'item': {
+        const it = CONSUMABLES[ev.id];
+        showBanner(`${it.name} · ${it.desc}`, '#e8dcc0', 1000);
+        await wait(250);
+        break;
+      }
+      case 'treasure':
+        popup('player', TREASURES[ev.id].name, 'treasure', -90);
+        await wait(150);
+        break;
+      case 'shield':
+        await wait(scene.attack('enemy'));
+        popup('player', '衣 천잠보의 — 막았다!', 'treasure');
+        await wait(350);
+        break;
       case 'heal':
         popup(ev.target, `+${ev.amount}`, 'heal', -40);
         renderStatus();
@@ -634,7 +701,7 @@ async function playEvents(events) {
         break;
       case 'status':
         if (ev.kind === 'strength') scene.buff(ev.target);
-        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) ? '+' : ''}${ev.kind === 'insight' ? '' : ev.amount}`, `st-${ev.kind}`, -50);
+        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) ? '+' : ''}${['insight', 'cleanse'].includes(ev.kind) ? '' : ev.amount}`, `st-${ev.kind}`, -50);
         renderStatus();
         await wait(180);
         break;

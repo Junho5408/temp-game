@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { generateMap, ROWS, allNodes } from '../src/core/map.js';
 import {
   createRun, availableNodes, enterNode, startEncounter, finishBattle, chooseReward,
-  restHeal, restUpgrade, buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent,
+  restHeal, restUpgrade, buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, chooseTreasure,
   START_GOLD,
 } from '../src/core/run.js';
 import {
@@ -142,7 +142,8 @@ test('객잔: 은자가 있으면 구매, 부족하면 실패, 제거는 한 번
   const run = createRun({ seed: 9 });
   forceShop(run);
   assert.equal(run.phase, 'shop');
-  assert.equal(run.shop.items.length, 5);
+  assert.equal(run.shop.items.length, 8); // 무공 5 + 행낭 물품 2 + 보물 1
+  assert.deepEqual(run.shop.items.map((it) => it.kind), ['card', 'card', 'card', 'card', 'card', 'item', 'item', 'treasure']);
   run.gold = 1000;
   assert.ok(buyCard(run, 0));
   assert.equal(buyCard(run, 0), false); // 이미 팔림
@@ -196,6 +197,8 @@ function autoRun(seed) {
       const b = startEncounter(run);
       autoBattle(b);
       finishBattle(run, b);
+    } else if (run.phase === 'treasure') {
+      chooseTreasure(run, 0);
     } else if (run.phase === 'reward') {
       chooseReward(run, 0);
     } else if (run.phase === 'rest') {

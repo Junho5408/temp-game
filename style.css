@@ -945,3 +945,84 @@ button.card:disabled { cursor: not-allowed; filter: grayscale(.5) brightness(.55
 .popup.st-insight { color: #ffd34d; font-size: 20px; }
 .popup.st-counter { color: #ff8a7a; font-size: 20px; }
 .popup.st-point { color: #9cd7ff; font-size: 20px; }
+
+/* ── 2-D 행낭(일시적) · 보물(영구적) ─────────────────── */
+#treasures { display: flex; gap: 4px; margin-left: 14px; margin-right: auto; }
+.tr-chip {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900;
+  color: #fff3d6;
+  border: 1px solid #000;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d8a94a, #7a5418);
+  box-shadow: 0 0 0 1px #e8c46a55;
+  cursor: help;
+  text-shadow: none;
+}
+.tr-chip.art { background: radial-gradient(circle at 35% 30%, #6a8fd0, #24406e); }
+.tr-chip.gear { background: radial-gradient(circle at 35% 30%, #9aa3ad, #3e454e); }
+#bag-top { font-size: 14px; color: #d9cfbd; cursor: help; }
+
+#bag {
+  position: absolute;
+  left: 22px;
+  bottom: 146px;
+  display: flex;
+  gap: 5px;
+}
+.bag-slot {
+  width: 44px; height: 46px;
+  padding: 2px 0 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1px solid #6b5a3a;
+  border-radius: 5px;
+  background: linear-gradient(#2a2620, #15130f);
+  color: #f1e4c8;
+  font-family: var(--serif);
+  cursor: pointer;
+}
+.bag-slot span { font-size: 18px; font-weight: 900; line-height: 1; }
+.bag-slot small { font-size: 9px; margin-top: 2px; white-space: nowrap; opacity: .85; }
+.bag-slot:hover:not(:disabled) { border-color: #e8c46a; box-shadow: 0 0 10px rgba(232, 196, 106, .45); }
+.bag-slot.empty { border-style: dashed; opacity: .35; cursor: default; }
+.bag-slot:disabled:not(.empty) { opacity: .6; cursor: default; }
+
+.item-row { display: flex; gap: 14px; justify-content: center; align-items: flex-end; padding-top: 6px; }
+.item-face {
+  width: 150px; min-height: 118px;
+  padding: 10px 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 2px solid #000;
+  border-radius: 6px;
+  background: linear-gradient(170deg, #2a2620, #14120e 75%);
+  outline: 1px solid #6b5a3a;
+  color: var(--bone);
+  font-family: var(--serif);
+  text-align: center;
+}
+.item-face.treasure { outline-color: #c9a24a; background: linear-gradient(170deg, #34291a, #16110a 75%); }
+.item-face.treasure.art { outline-color: #6a8fd0; background: linear-gradient(170deg, #1e2a3e, #0f141e 75%); }
+.item-face.treasure.gear { outline-color: #9aa3ad; background: linear-gradient(170deg, #2a2e34, #121417 75%); }
+.item-face .ig { font-size: 30px; font-weight: 900; line-height: 1.1; color: #f2d9a0; }
+.item-face.art .ig { color: #b8cff5; }
+.item-face.gear .ig { color: #dfe4ea; }
+.item-face .iname { font-size: 15px; font-weight: 900; }
+.item-face .idesc { font-family: var(--sans); font-size: 11.5px; line-height: 1.35; opacity: .92; flex: 1; }
+.item-face .ikind { font-family: var(--sans); font-size: 10px; color: #b9a77e; }
+.item-face.treasure .ikind { color: #e8c46a; }
+button.item-face { cursor: pointer; }
+button.item-face:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,.5), 0 0 14px rgba(232,196,106,.35); }
+button.item-face:disabled { cursor: default; }
+.shop-body { display: flex; flex-direction: column; gap: 10px; }
+.shop-body .card-row.shop { gap: 12px; }
+.shop-body .item-row.shop .item-face { min-height: 104px; }
+.item-name { color: #f2d9a0; }
+.popup.treasure { color: #f2d9a0; font-size: 17px; }
+
+/* 객잔: 무공 5 + 물품·보물 3 이 한 화면에 들어가도록 */
+.shop-body .card-row.shop .card { zoom: .8; }
+.shop-body .card-row.shop .price, .shop-body .item-row.shop .price { font-size: 13px; }
+.shop-body .shop-item { gap: 4px; }
+.shop-body .item-row.shop .item-face { min-height: 0; width: 140px; padding: 7px 8px 6px; gap: 2px; }
+.shop-body .item-row.shop .item-face .ig { font-size: 24px; }

@@ -5,6 +5,9 @@ import { CARDS, STARTER_DECK, canUpgrade, cardsByRarity } from './cards.js';
 import { ENEMIES, POOLS } from './enemies.js';
 import { EVENTS, EVENT_IDS } from './events.js';
 import { findNode, generateMap } from './map.js';
+import {
+  BAG_SIZE, CONSUMABLES, TREASURES, consumablesByRarity, treasuresByRarity,
+} from './items.js';
 import { createRng } from './rng.js';
 
 export const START_GOLD = 60;
@@ -24,6 +27,12 @@ const REWARD_WEIGHTS = {
 };
 const GOLD_REWARD = { normal: [12, 20], elite: [28, 36] };
 const PRICE = { common: [45, 55], uncommon: [70, 85], rare: [135, 155] };
+const ITEM_PRICE = { common: [28, 36], uncommon: [45, 55], rare: [70, 80] };
+const TREASURE_PRICE = { common: [100, 120], uncommon: [135, 155], rare: [175, 195] };
+const ITEM_WEIGHTS = [['common', 65], ['uncommon', 28], ['rare', 7]];
+const TREASURE_WEIGHTS = [['common', 45], ['uncommon', 40], ['rare', 15]];
+export const ITEM_DROP_CHANCE = { normal: 0.35, elite: 0.6 };
+export const SNOW_LOTUS_HEAL = 6;
 
 // extraCards: 회귀하며 기억한 무공 (시작 덱에 추가)
 export function createRun({ seed = 1, extraCards = [] } = {}) {
@@ -46,6 +55,9 @@ export function createRun({ seed = 1, extraCards = [] } = {}) {
     removeCost: REMOVE_COST_START,
     lastEnemy: null,
     seenEvents: [],
+    bag: [], // 행낭 물품 (일시적, 최대 BAG_SIZE)
+    treasures: [], // 보물 (영구적)
+    treasureChoice: null, // 고수를 이긴 뒤 고를 보물 후보
     cluesFound: [], // 이번 판에서 알아낸 단서 id (화면 쪽이 회귀 기록에 옮겨 담음)
     battlesWon: 0,
   };
@@ -126,6 +138,48 @@ function pickEvent(run, row) {
   return pool[Math.floor(run.rng() * pool.length)];
 }
 
+// ── 아이템 ─────────────────────────
+// 행낭에 넣기. 가득 차면 false
+export function addItem(run, id) {
+  if (!CONSUMABLES[id] || run.bag.length >= BAG_SIZE) return false;
+  run.bag.push(id);
+  return true;
+}
+
+export function discardItem(run, index) {
+  if (index < 0 || index >= run.bag.length) return false;
+  run.bag.splice(index, 1);
+  return true;
+}
+
+// 보물 얻기 (같은 보물은 하나만). 소환단은 얻는 즉시 몸에 적용
+export function addTreasure(run, id) {
+  if (!TREASURES[id] || run.treasures.includes(id)) return false;
+  run.treasures.push(id);
+  if (id === 'soHwan') {
+    run.maxHp += 10;
+    run.hp = Math.min(run.maxHp, run.hp + 10);
+  }
+  return true;
+}
+
+function rollItem(run) {
+  const pool = consumablesByRarity(pickWeighted(run.rng, ITEM_WEIGHTS));
+  return pool[Math.floor(run.rng() * pool.length)];
+}
+
+// 아직 없는 보물 n개 (두목 전용 제외)
+function rollTreasures(run, n) {
+  const picked = [];
+  let guard = 0;
+  while (picked.length < n && guard++ < 100) {
+    const pool = treasuresByRarity(pickWeighted(run.rng, TREASURE_WEIGHTS))
+      .filter((id) => !run.treasures.includes(id) && !picked.includes(id));
+    if (pool.length) picked.push(pool[Math.floor(run.rng() * pool.length)]);
+  }
+  return picked;
+}
+
 // ── 전투 ─────────────────────────
 export function startEncounter(run) {
   return createBattle({
@@ -135,6 +189,8 @@ export function startEncounter(run) {
     playerHp: run.hp,
     playerMaxHp: run.maxHp,
     scale: run.encounter.scale,
+    bag: run.bag,
+    treasures: run.treasures,
   });
 }
 
@@ -146,6 +202,8 @@ export function finishBattle(run, battle) {
   }
   if (battle.phase !== 'won') throw new Error('전투가 끝나지 않음');
   run.hp = battle.player.hp;
+  run.bag = [...battle.bag]; // 쓴 물품은 사라짐
+  if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
   run.battlesWon += 1;
   const tier = run.encounter.tier;
   const clue = ENEMIES[run.encounter.enemyId].clue;
@@ -157,8 +215,36 @@ export function finishBattle(run, battle) {
   }
   const gold = randInt(run.rng, GOLD_REWARD[tier]);
   run.gold += gold;
-  run.reward = { gold, cards: rollCards(run, REWARD_WEIGHTS[tier], 3) };
+  // 행낭 물품은 확률로 떨어지고, 자리가 있으면 바로 챙김
+  let item = null;
+  let itemKept = false;
+  if (run.rng() < ITEM_DROP_CHANCE[tier]) {
+    item = rollItem(run);
+    itemKept = addItem(run, item);
+  }
+  run.reward = { gold, cards: rollCards(run, REWARD_WEIGHTS[tier], 3), item, itemKept };
+  // 고수를 이기면 보물 셋 중 하나를 먼저 고름
+  if (tier === 'elite') {
+    run.treasureChoice = rollTreasures(run, 3);
+    if (run.treasureChoice.length) {
+      run.phase = 'treasure';
+      return;
+    }
+  }
   run.phase = 'reward';
+}
+
+// 고수 보상: 보물 고르기 (index = null 이면 건너뜀) → 무공 보상으로
+export function chooseTreasure(run, index) {
+  if (run.phase !== 'treasure') return false;
+  if (index !== null && index !== undefined) {
+    const id = run.treasureChoice[index];
+    if (!id) return false;
+    addTreasure(run, id);
+  }
+  run.treasureChoice = null;
+  run.phase = 'reward';
+  return true;
 }
 
 function rollCards(run, weights, n) {
@@ -204,24 +290,42 @@ export function restUpgrade(run, uid) {
 }
 
 // ── 객잔 ─────────────────────────
+// 객잔 진열: 무공 5 + 행낭 물품 2 + 보물 1
 function makeShop(run) {
   const items = [];
   const plan = ['common', 'common', 'uncommon', 'uncommon', 'rare'];
   for (const rarity of plan) {
     const pool = cardsByRarity(rarity).filter((id) => !items.some((it) => it.id === id));
     const id = pool[Math.floor(run.rng() * pool.length)];
-    items.push({ id, price: randInt(run.rng, PRICE[rarity]), sold: false });
+    items.push({ kind: 'card', id, price: randInt(run.rng, PRICE[rarity]), sold: false });
   }
+  for (let i = 0; i < 2; i++) {
+    let id = rollItem(run);
+    if (items.some((it) => it.id === id)) id = rollItem(run);
+    items.push({ kind: 'item', id, price: randInt(run.rng, ITEM_PRICE[CONSUMABLES[id].rarity]), sold: false });
+  }
+  const [tid] = rollTreasures(run, 1);
+  if (tid) items.push({ kind: 'treasure', id: tid, price: randInt(run.rng, TREASURE_PRICE[TREASURES[tid].rarity]), sold: false });
   return { items, removed: false };
 }
 
-export function buyCard(run, index) {
-  if (run.phase !== 'shop') return false;
-  const item = run.shop.items[index];
+export function canBuy(run, index) {
+  const item = run.shop?.items[index];
   if (!item || item.sold || run.gold < item.price) return false;
+  if (item.kind === 'item' && run.bag.length >= BAG_SIZE) return false;
+  if (item.kind === 'treasure' && run.treasures.includes(item.id)) return false;
+  return true;
+}
+
+// 객잔에서 사기 (무공·행낭 물품·보물 공용)
+export function buyCard(run, index) {
+  if (run.phase !== 'shop' || !canBuy(run, index)) return false;
+  const item = run.shop.items[index];
   run.gold -= item.price;
   item.sold = true;
-  addCard(run, item.id);
+  if (item.kind === 'item') addItem(run, item.id);
+  else if (item.kind === 'treasure') addTreasure(run, item.id);
+  else addCard(run, item.id);
   return true;
 }
 
@@ -260,6 +364,9 @@ export function chooseEventOption(run, index) {
     addClue: (id) => {
       if (!run.cluesFound.includes(id)) run.cluesFound.push(id);
     },
+    addItem: (id) => addItem(run, id),
+    addTreasure: (id) => addTreasure(run, id),
+    randomItem: () => rollItem(run),
   };
   run.event.result = option.effect(run, run.rng, api);
   return run.event.result;
