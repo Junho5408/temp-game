@@ -7,11 +7,15 @@ export const SPEAKERS = {
   me: { name: '나', art: 'orthodox-sword' },
   narr: { name: '' },
   boki: { name: '복이', glyph: '福' }, // 그림 없음: 한자 인장으로 표시
-  juno: { name: '주노', glyph: '酒' }, // 그림 추가 예정
+  juno: { name: '주노', art: 'npc-juno' },
   thug: { name: '왕삼', art: 'unorthodox-fist' },
   assassin: { name: '혈영대원', art: 'demonic-assassin' },
   gwimyeon: { name: '귀면', art: 'demonic-assassin' },
-  sooha: { name: '흰 옷의 사내', glyph: '白' }, // 진소하 (아직 이름 모름)
+  sooha: { name: '흰 옷의 사내', art: 'npc-sooha' }, // 진소하 (아직 이름 모름)
+  clerk: { name: '맹 서기', glyph: '盟' },
+  oneEye: { name: '독안귀', art: 'unorthodox-assassin' },
+  masked: { name: '무명', art: 'demonic-assassin' },
+  spy: { name: '연무혁', art: 'demonic-sword' },
 };
 
 // ── 프롤로그 ─────────────────────────
@@ -106,9 +110,166 @@ export function deathLines(enemyName) {
   ];
 }
 
+// ── 단서 (회귀해도 남음) ─────────────────────────
+export const CLUES = {
+  mask: { title: '귀면 가면 = 혈영대', text: '그날 밤 자객들이 쓴 뿔 달린 귀면 가면은 마교 혈영대의 표식이다.' },
+  envoy: { title: '흰 옷의 사내 = 무림맹', text: '나 대신 살아 나간 흰 옷의 사내는 무림맹의 패를 지니고 있었다.' },
+  note: { title: '백 일 뒤, 청운객잔', text: '객잔 습격은 백 일 전부터 계획된 일이다. 노린 것은 흰 옷의 밀사와 그가 가진 밀서.' },
+};
+
+// ── 1구역 · 후기지수 비무대회 ─────────────────────────
+// 구역 시작: 처음 / 그 뒤
+export function zone1Start(meta) {
+  if (meta.runs <= 1) {
+    return [
+      { who: 'narr', text: '무림맹이 주최하는 후기지수 비무대회.\n이름을 알리려는 젊은 고수들이 구름처럼 모여들었다.' },
+      { who: 'me', text: '(백 일 뒤, 그 객잔. 그때까지 할 수 있는 건 강해지는 것뿐이다.)', thought: true },
+      { who: 'clerk', text: '다음! 이름과 소속은?' },
+      { who: 'me', text: '…없다. 그냥 떠돌이다.' },
+      { who: 'clerk', text: '(한숨) "무명 소속 무명씨"라고 적겠소. 다음!' },
+    ];
+  }
+  const lines = [
+    { who: 'clerk', text: '다음! 이름과 소속은?' },
+    { who: 'me', text: '…무명. 떠돌이.' },
+    { who: 'clerk', text: '어째 낯익은 얼굴인데… 우리 어디서 본 적 있소?' },
+    { who: 'me', text: `(${meta.runs}번은 봤을 거다.)`, thought: true },
+  ];
+  if (meta.clues.includes('note')) lines.push({ who: 'me', text: '(연무혁. 이번에도 결승에서 기다리고 있겠지.)', thought: true });
+  return lines;
+}
+
+// 고수·두목 전투 전 (known = 그 적의 단서를 이미 알고 있음)
+export function battleIntro(enemyId, known) {
+  switch (enemyId) {
+    case 'oneEye':
+      return [
+        { who: 'narr', text: '외눈의 사내가 비도를 손끝에서 굴리며 히죽 웃는다.' },
+        { who: 'oneEye', text: '흰 옷이라… 피 묻히기 딱 좋겠군.' },
+      ];
+    case 'masked':
+      return known
+        ? [
+          { who: 'narr', text: '복면객이 천천히 가면을 고쳐 쓴다.' },
+          { who: 'me', text: '혈영대. 이번엔 처음부터 알고 있다.' },
+        ]
+        : [
+          { who: 'narr', text: '복면객이 천천히 가면을 고쳐 쓴다. 뿔 달린 귀면 가면.' },
+          { who: 'me', text: '(저 가면… 어디서 봤더라. 등줄기가 서늘하다.)', thought: true },
+        ];
+    case 'spy':
+      return known
+        ? [
+          { who: 'narr', text: '결승 비무대. 연무혁이 부채를 접으며 올라선다.' },
+          { who: 'spy', text: '무명 소속 무명씨라… 여기까지 올라올 줄은 몰랐소.' },
+          { who: 'me', text: '쪽지는 잘 간직하고 있나.' },
+          { who: 'spy', text: '…! 무슨 소리를―' },
+          { who: 'me', text: '말은 끝나고 하자.' },
+        ]
+        : [
+          { who: 'narr', text: '결승 비무대. 우승 후보 연무혁이 부채를 접으며 올라선다.\n관중석이 떠나갈 듯 함성이 터진다.' },
+          { who: 'spy', text: '무명 소속 무명씨라… 재미있군. 여기까지 올라올 줄은 몰랐소.' },
+          { who: 'me', text: '(웃고 있는데 눈이 웃지 않는다. 저건 정파의 눈빛이 아니다.)', thought: true },
+          { who: 'spy', text: '마지막 비무요. 손속에 사정은 두지 않겠소.' },
+        ];
+    default:
+      return null;
+  }
+}
+
+// 고수·두목을 쓰러뜨린 뒤 (known = 이번에 얻기 전부터 알던 단서)
+export function battleOutro(enemyId, known) {
+  switch (enemyId) {
+    case 'masked':
+      return known
+        ? [
+          { who: 'masked', text: '크윽… 혈영대는… 네 얼굴을 기억할 것이다…' },
+          { who: 'me', text: '기억하는 쪽은 나다.' },
+        ]
+        : [
+          { who: 'narr', text: '쓰러진 복면객의 가면이 비무대 바닥을 구른다.' },
+          { who: 'me', text: '그 가면…! 그날 밤 객잔에 들이닥친 놈들과 같은…' },
+          { who: 'masked', text: '…혈영대의 일에… 끼어들지 마라…' },
+          { who: 'me', text: '(혈영대. 마교의 살수 집단. 그놈들이 나를 죽였다.)', thought: true },
+          { who: 'narr', text: '― 단서: 귀면 가면 = 마교 혈영대 ―' },
+        ];
+    case 'spy':
+      return known
+        ? [
+          { who: 'spy', text: '…어떻게… 내 초식을… 전부…' },
+          { who: 'me', text: '몇 번 맞아 봤거든.' },
+          { who: 'narr', text: '품에서 떨어진 쪽지에는 이미 아는 글귀가 적혀 있었다.\n『백 일 뒤, 청운객잔.』' },
+        ]
+        : [
+          { who: 'spy', text: '크헉… 이 내가… 이름도 없는 놈에게…' },
+          { who: 'narr', text: '쓰러진 연무혁의 품에서 접힌 쪽지 한 장이 떨어졌다.' },
+          { who: 'narr', text: '『백 일 뒤, 청운객잔.\n흰 옷의 밀사. 밀서를 회수할 것.』' },
+          { who: 'me', text: '…백 일 뒤. 그날 밤이다.' },
+          { who: 'me', text: '우연이 아니었어. 그날의 습격은 처음부터 계획된 거다.' },
+          { who: 'narr', text: '― 단서: 백 일 뒤, 청운객잔 ―' },
+        ];
+    default:
+      return null;
+  }
+}
+
+// 이야기 기연 앞 대사 (n = 이번 포함 만난 횟수, 회차를 넘어 누적)
+export function npcIntro(npc, n, meta) {
+  if (npc === 'juno') {
+    if (n === 1) {
+      return [
+        { who: 'narr', text: '비무대 뒤편 술독 옆에, 낯익은 노인이 드러누워 있다.' },
+        { who: 'me', text: '(…객잔의 그 노인이다. 백 일 전인데 왜 여기에?)', thought: true },
+        { who: 'juno', text: '(딸꾹) 응? 자네… 어디서 본 것 같은데… 꿈에서였나?' },
+        { who: 'me', text: '…흰 옷은 비 오는 날 입지 말라고 하셨죠.' },
+        { who: 'juno', text: '내가? 허허, 좋은 말을 했구먼. 근데 오늘은 해가 쨍쨍한데?' },
+      ];
+    }
+    if (n === 2) {
+      return [
+        { who: 'juno', text: '또 그 얼굴이군. 이상하지, 자네만 보면 술이 확 깨는 기분이야.' },
+        { who: 'me', text: '(이 노인… 정말 기억하는 건가?)', thought: true },
+        { who: 'juno', text: '표정을 보니 한 번 크게 데였구먼. 앉게, 앉아.' },
+      ];
+    }
+    const pool = [
+      [
+        { who: 'juno', text: '(딸꾹) 왔나. 이번엔 몇 번째지? …아니, 대답하지 말게. 숫자는 술맛을 버려.' },
+        { who: 'me', text: '…정말 아시는 겁니까.' },
+        { who: 'juno', text: '늙은이가 아는 건 술 익는 냄새뿐일세. 허허.' },
+      ],
+      [
+        { who: 'juno', text: '자네 검, 지난번보다 조금 덜 정직해졌군. 좋아, 좋아.' },
+        { who: 'me', text: '(지난번…?)', thought: true },
+      ],
+      [
+        { who: 'juno', text: '백 일이란 건 말이야, 술 한 독 익히기에 딱 좋은 시간이지.' },
+        { who: 'me', text: '…그 말, 무슨 뜻입니까.' },
+        { who: 'juno', text: '뜻은 무슨. 술 얘기지. (딸꾹)' },
+      ],
+    ];
+    return pool[n % pool.length];
+  }
+  if (npc === 'sooha') {
+    if (meta.clues.includes('envoy')) {
+      return [
+        { who: 'narr', text: '관중석 끝, 흰 옷의 사내가 서둘러 자리를 뜬다.' },
+        { who: 'me', text: '(무림맹의 그 사내다. 이번 생에서도 아무것도 모르는 얼굴이군.)', thought: true },
+      ];
+    }
+    return [
+      { who: 'narr', text: '관중석 끝, 흰 옷에 검을 찬 사내가 서둘러 자리를 뜬다.' },
+      { who: 'me', text: '(흰 옷… 검… 그날 밤 뒷문으로 빠져나가던 그 사내?!)', thought: true },
+      { who: 'sooha', text: '……' },
+      { who: 'narr', text: '눈이 마주치자, 사내는 품속의 무언가를 감싸 쥐고 몸을 돌렸다.' },
+    ];
+  }
+  return [];
+}
+
 // ── 1구역 돌파 (아직 2구역이 없을 때) ─────────────────────────
 export const ZONE1_CLEAR = [
-  { who: 'me', text: '우승 후보라던 연무혁이… 마교의 첩자였다니.' },
-  { who: 'me', text: '그날 밤의 일은 우연이 아니다. 누군가 오래전부터 준비한 판이다.' },
+  { who: 'narr', text: '비무대회는 주인 없는 우승으로 끝났다.\n누구도 무명씨의 이름을 기억하지 못했다.' },
+  { who: 'me', text: '혈영대, 흰 옷의 밀사, 그리고 밀서. 실마리는 무림맹으로 이어진다.' },
   { who: 'narr', text: '― 2구역 "무림맹 사파 토벌"은 다음 이야기에서 ―' },
 ];

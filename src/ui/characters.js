@@ -63,3 +63,23 @@ for (const [fid, f] of Object.entries(FACTIONS)) {
 }
 
 export const DESIGN_IDS = Object.keys(DESIGNS);
+
+// ── 이야기 인물 (세력·계열 밖) ─────────────────────────
+// 그림 원본: docs/reference/npc-*-raw.webp → tools/prepare_sprite.py <원본> npc-<id>
+const NPCS = {
+  'npc-juno': {
+    title: '주노(酒老)', note: '늘 취해 있는 노고수. 회차가 바뀌어도 나를 알아보는 듯하다',
+    cls: 'fist', color: '#a08a6a', sprite: { image: 'assets/characters/npc-juno.webp', footX: 0.5025 },
+  },
+  'npc-sooha': {
+    title: '진소하', note: '무림맹 밀사. 나와 똑같이 흰 옷에 검을 찼다',
+    cls: 'sword', color: '#3e7cc8', sprite: { image: 'assets/characters/npc-sooha.webp', footX: 0.5111 },
+  },
+};
+for (const [key, n] of Object.entries(NPCS)) {
+  DESIGNS[key] = {
+    key, faction: 'npc', cls: n.cls, title: n.title, note: n.note,
+    portrait: n.sprite.image, sprite: n.sprite, factionColor: n.color, fxColor: '#e8dcc0',
+  };
+}
+export const NPC_IDS = Object.keys(NPCS);

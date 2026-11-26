@@ -37,24 +37,15 @@ export const EVENTS = {
       },
     ],
   },
-  drunkMaster: {
-    title: '취한 노고수',
-    text: '객잔 앞에서 술에 취한 노인이 손짓한다.\n"젊은이, 나와 내기 한 판 어떤가? 이기면 은자를 주지."',
+  // ── 이야기 기연: 판마다 조건이 맞으면 먼저 나옴. 앞뒤 대사는 src/story/script.js ──
+  juno: {
+    story: true,
+    npc: 'juno',
+    title: '술독 옆의 노인',
+    text: '노인이 호리병을 흔들며 실눈을 뜬다.\n"마침 술이 떨어져 가던 참인데 말이야…"',
     options: [
       {
-        label: '내기에 응한다',
-        hint: '절반 확률로 은자 +60, 아니면 체력 -10',
-        effect(run, rng) {
-          if (rng() < 0.5) {
-            run.gold += 60;
-            return '노인의 허점을 찔렀다. "허허, 제법이군!" 은자 60냥을 얻었다.';
-          }
-          damage(run, 10);
-          return '노인의 지팡이가 번개처럼 날아왔다. 체력을 10 잃었다.';
-        },
-      },
-      {
-        label: '술을 한 잔 대접한다',
+        label: '술을 한 잔 따라 드린다',
         hint: '은자 -20 · 무작위 카드 1장 연마',
         disabled: (run) => run.gold < 20,
         effect(run, rng) {
@@ -63,14 +54,53 @@ export const EVENTS = {
           if (options.length === 0) return '노인은 술만 마시고 코를 골았다.';
           const card = options[Math.floor(rng() * options.length)];
           card.upgraded = true;
-          return `노인이 취중에 한 수를 일러 주었다. 『${CARDS[card.id].name}』이(가) 연마되었다.`;
+          return `"검끝이 너무 정직해. 한 번 속이고 들어가게." 취중에 한 말이었지만, 『${CARDS[card.id].name}』이(가) 연마되었다.`;
         },
       },
       {
-        label: '지나간다',
-        hint: '아무 일도 없음',
-        effect() {
-          return '노인은 혀를 차며 다시 술잔을 들었다.';
+        label: '그날 밤에 대해 묻는다',
+        hint: '체력 +14',
+        effect(run) {
+          const healed = heal(run, 14);
+          return `노인은 대답 대신 호리병을 내밀었다. "목부터 축이게. 얼굴이 송장 같구먼."\n이상하게 몸이 따뜻해졌다. 체력을 ${healed} 회복했다.`;
+        },
+      },
+      {
+        label: '내기 한 판 청한다',
+        hint: '절반 확률로 은자 +60, 아니면 체력 -10',
+        effect(run, rng) {
+          if (rng() < 0.5) {
+            run.gold += 60;
+            return '노인의 허점을 찔렀다. "허허, 제법이군! 전에도 이렇게 졌던 것 같은데?" 은자 60냥을 얻었다.';
+          }
+          damage(run, 10);
+          return '지팡이가 번개처럼 정강이를 때렸다. "아직 멀었네." 체력을 10 잃었다.';
+        },
+      },
+    ],
+  },
+  sooha: {
+    story: true,
+    npc: 'sooha',
+    minRow: 5, // 대회 중반 이후
+    title: '흰 옷의 사내',
+    text: '사내는 인파 속으로 빠르게 멀어지고 있다.\n품속에 무언가를 소중히 감싸 쥔 채.',
+    options: [
+      {
+        label: '뒤를 쫓는다',
+        hint: '체력 -6 · 단서를 얻을지도',
+        effect(run, rng, api) {
+          damage(run, 6);
+          api.addClue('envoy');
+          return '골목 끝에서 사내가 돌아서며 검을 반쯤 뽑았다. 칼등에 손등을 맞았다.\n사내는 품에서 패 하나를 내보였다. 무림맹의 패였다.\n"맹의 일이오. 물러나시오." 그는 그대로 사라졌다.';
+        },
+      },
+      {
+        label: '내버려 둔다',
+        hint: '체력 +6',
+        effect(run) {
+          heal(run, 6);
+          return '지금 쫓아 봐야 얻을 것은 없다. 숨을 고르고 다음 비무를 준비했다.';
         },
       },
     ],

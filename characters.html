@@ -29,8 +29,10 @@
   <h1>캐릭터 도감</h1>
   <p class="sub">세력 3 × 계열 3 · 전신 그림이 준비된 캐릭터는 전투용 그림, 나머지는 스타일 참고 샘플</p>
   <div class="grid" id="grid"></div>
+  <h1 style="margin-top:28px">이야기 인물</h1>
+  <div class="grid npc" id="npc"></div>
   <script type="module">
-    import { DESIGNS, FACTIONS, CLASSES } from './src/ui/characters.js';
+    import { DESIGNS, FACTIONS, CLASSES, NPC_IDS } from './src/ui/characters.js';
     const grid = document.getElementById('grid');
     grid.append(document.createElement('div'));
     for (const c of Object.values(CLASSES)) {
@@ -49,6 +51,14 @@
         cell.innerHTML = `${img}<div class="t">${d.title}</div><div class="n">${d.note}</div>`;
         grid.append(cell);
       }
+    }
+    const npc = document.getElementById('npc');
+    npc.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    for (const key of NPC_IDS) {
+      const d = DESIGNS[key];
+      const cell = document.createElement('div'); cell.className = 'cell';
+      cell.innerHTML = `<img class="full" src="${d.sprite.image}" alt="${d.title}"><div class="t">${d.title}</div><div class="n">${d.note}</div>`;
+      npc.append(cell);
     }
   </script>
 </body>

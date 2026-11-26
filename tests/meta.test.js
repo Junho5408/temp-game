@@ -95,3 +95,13 @@ test('프롤로그 적은 지도에 나오지 않고 전투는 정상 동작', (
     assert.ok(b.enemy.hp > 0);
   }
 });
+
+test('이야기 인물 만난 횟수는 회차를 넘어 누적되고 저장됨', async () => {
+  const { meetNpc } = await import('../src/core/meta.js');
+  const meta = createMeta();
+  assert.equal(meetNpc(meta, 'juno'), 1);
+  assert.equal(meetNpc(meta, 'juno'), 2);
+  const back = parseMeta(serializeMeta(meta));
+  assert.equal(back.met.juno, 2);
+  assert.deepEqual(parseMeta(JSON.stringify({ ...createMeta(), met: undefined })).met, {});
+});

@@ -6,15 +6,17 @@ import {
 import { cardStats } from './core/cards.js';
 import {
   createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
-  memoryCandidates, rememberCard, validateLoadout,
+  memoryCandidates, rememberCard, validateLoadout, addClue, meetNpc,
 } from './core/meta.js';
+import { ENEMIES } from './core/enemies.js';
+import { EVENTS } from './core/events.js';
 import {
   createRun, enterNode, startEncounter, finishBattle, chooseReward, restHeal, restUpgrade,
   buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent,
 } from './core/run.js';
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
-  wakeLines, deathLines, ZONE1_CLEAR,
+  wakeLines, deathLines, ZONE1_CLEAR, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -166,12 +168,31 @@ async function beginLife() {
     run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories });
     run.art = artKey;
     setZone('제1구역 · 후기지수 비무대회');
-    show();
+    startZone();
   });
+}
+
+async function startZone() {
+  renderRunInfo();
+  setScreen('story');
+  await playDialogue(zone1Start(meta));
+  show();
+}
+
+// 이번 판에서 알아낸 단서를 회귀 기록에 옮기고 바로 저장 (죽어도 남음)
+function collectClues() {
+  if (!run) return;
+  for (const id of run.cluesFound) {
+    if (addClue(meta, id)) {
+      saveMeta();
+      showBanner(`단서 · ${CLUES[id]?.title ?? id}`, '#9cc4ff', 2200);
+    }
+  }
 }
 
 // ── 한 판 흐름 ─────────────────────────
 async function show() {
+  collectClues();
   renderRunInfo();
   closePanel();
   if (run.phase !== 'map') hideMap();
@@ -184,9 +205,24 @@ async function show() {
       });
       break;
     case 'battle': {
+      const enemyId = run.encounter.enemyId;
+      const clue = ENEMIES[enemyId].clue;
+      const known = !!clue && meta.clues.includes(clue);
       const b = startEncounter(run);
+      const intro = battleIntro(enemyId, known);
+      if (intro) {
+        await scene.setEnemy(b.enemy.art);
+        scene.reset();
+        setScreen('story');
+        await playDialogue(intro);
+      }
       const tierLabel = { elite: '고수 · ', boss: '두목 · ' }[b.enemy.tier] ?? '';
-      await runBattle(b, { title: `${tierLabel}${b.enemy.title} ${b.enemy.name}`, boss: b.enemy.tier === 'boss' });
+      const result = await runBattle(b, { title: `${tierLabel}${b.enemy.title} ${b.enemy.name}`, boss: b.enemy.tier === 'boss' });
+      const outro = result === 'won' ? battleOutro(enemyId, known) : null;
+      if (outro) {
+        setScreen('story');
+        await playDialogue(outro);
+      }
       finishBattle(run, b);
       battle = null;
       show();
@@ -211,13 +247,25 @@ async function show() {
         onLeave: () => { leaveShop(run); show(); },
       });
       break;
-    case 'event':
+    case 'event': {
+      const ev = EVENTS[run.event.id];
+      if (ev.npc && !run.event.introDone) {
+        run.event.introDone = true;
+        const n = meetNpc(meta, ev.npc);
+        saveMeta();
+        await scene.setEnemy(`npc-${ev.npc}`);
+        scene.reset();
+        setScreen('story');
+        await playDialogue(npcIntro(ev.npc, n, meta));
+        scene.clearEnemy();
+      }
       setScreen('panel');
       renderEvent(run, {
         onChoose: (i) => { chooseEventOption(run, i); show(); },
         onLeave: () => { leaveEvent(run); show(); },
       });
       break;
+    }
     case 'defeat':
       await onDeath();
       break;

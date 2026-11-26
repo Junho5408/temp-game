@@ -1,6 +1,7 @@
 // 판 바깥의 흐름 화면: 타이틀, 기록, 세력·계열 선택, 무공 기억, 회귀 연출
 import { CARDS } from '../core/cards.js';
 import { memorySlots } from '../core/meta.js';
+import { CLUES } from '../story/script.js';
 import { CLASSES, DESIGNS, FACTIONS } from './characters.js';
 import { cardFace } from './screens.js';
 
@@ -67,11 +68,13 @@ export function renderRecord(meta, onBack) {
       <h3>기억한 무공</h3>
       <div class="card-grid small"></div>
       <h3>알아낸 단서</h3>
-      <p class="panel-sub">${meta.clues.length ? meta.clues.join(', ') : '아직 없다. 그날 밤의 일은 여전히 안개 속이다.'}</p>
+      ${meta.clues.length
+    ? `<ul class="clue-list">${meta.clues.map((id) => `<li><b>${CLUES[id]?.title ?? id}</b><span>${CLUES[id]?.text ?? ''}</span></li>`).join('')}</ul>`
+    : '<p class="panel-sub">아직 없다. 그날 밤의 일은 여전히 안개 속이다.</p>'}
       <div class="panel-actions"></div>
     </div>`;
   const grid = el.querySelector('.card-grid');
-  if (meta.memories.length === 0) grid.innerHTML = '<p class="panel-sub">아직 없다. 죽음은 아무것도 남기지 않았다.</p>';
+  if (meta.memories.length === 0) grid.outerHTML = '<p class="panel-sub">아직 없다. 죽음은 아무것도 남기지 않았다.</p>';
   for (const id of meta.memories) grid.appendChild(cardFace({ id }));
   el.querySelector('.panel-actions').appendChild(btn('돌아가기', onBack, 'ghost'));
 }

@@ -46,6 +46,7 @@ export function createRun({ seed = 1, extraCards = [] } = {}) {
     removeCost: REMOVE_COST_START,
     lastEnemy: null,
     seenEvents: [],
+    cluesFound: [], // 이번 판에서 알아낸 단서 id (화면 쪽이 회귀 기록에 옮겨 담음)
     battlesWon: 0,
   };
   for (const id of STARTER_DECK) addCard(run, id);
@@ -107,14 +108,22 @@ export function enterNode(run, id) {
     run.shop = makeShop(run);
     run.phase = 'shop';
   } else if (node.type === 'event') {
-    const fresh = EVENT_IDS.filter((e) => !run.seenEvents.includes(e));
-    const pool = fresh.length ? fresh : EVENT_IDS;
-    const eventId = pool[Math.floor(run.rng() * pool.length)];
+    const eventId = pickEvent(run, node.row);
     run.seenEvents.push(eventId);
     run.event = { id: eventId, result: null };
     run.phase = 'event';
   }
   return true;
+}
+
+// 이야기 기연(주노, 흰 옷의 사내)은 조건이 맞으면 그 판에서 먼저 한 번씩 나오고, 나머지는 무작위
+function pickEvent(run, row) {
+  const story = EVENT_IDS.find((e) => EVENTS[e].story && !run.seenEvents.includes(e) && row >= (EVENTS[e].minRow ?? 0));
+  if (story) return story;
+  const normal = EVENT_IDS.filter((e) => !EVENTS[e].story);
+  const fresh = normal.filter((e) => !run.seenEvents.includes(e));
+  const pool = fresh.length ? fresh : normal;
+  return pool[Math.floor(run.rng() * pool.length)];
 }
 
 // ── 전투 ─────────────────────────
@@ -139,6 +148,8 @@ export function finishBattle(run, battle) {
   run.hp = battle.player.hp;
   run.battlesWon += 1;
   const tier = run.encounter.tier;
+  const clue = ENEMIES[run.encounter.enemyId].clue;
+  if (clue && !run.cluesFound.includes(clue)) run.cluesFound.push(clue);
   run.encounter = null;
   if (tier === 'boss') {
     run.phase = 'victory';
@@ -245,6 +256,9 @@ export function chooseEventOption(run, index) {
       if (i < 0 || run.deck.length <= 5) return false;
       run.deck.splice(i, 1);
       return true;
+    },
+    addClue: (id) => {
+      if (!run.cluesFound.includes(id)) run.cluesFound.push(id);
     },
   };
   run.event.result = option.effect(run, run.rng, api);

@@ -231,3 +231,44 @@ test('자동 플레이로 한 판이 끝까지 진행됨 + 승률이 너무 높�
   assert.ok(rate >= 0.12 && rate <= 0.6, `승률 ${rate}`);
   assert.ok(earlyDeaths <= N * 0.05, `초반에 너무 많이 쓰러짐: ${earlyDeaths}`);
 });
+
+// ── 3-C: 이야기 기연 · 단서 ─────────────────────────
+test('이야기 기연: 첫 기연은 주노, 흰 옷의 사내는 6층(row 5)부터', () => {
+  const run = createRun({ seed: 5 });
+  run.seenEvents = ['juno'];
+  run.map.rows[0][0].type = 'event'; // 1층: 흰 옷의 사내는 아직
+  assert.ok(enterNode(run, run.map.rows[0][0].id));
+  assert.ok(!EVENTS[run.event.id].story);
+
+  const fresh = createRun({ seed: 5 });
+  fresh.map.rows[0][0].type = 'event';
+  assert.ok(enterNode(fresh, fresh.map.rows[0][0].id));
+  assert.equal(fresh.event.id, 'juno');
+});
+
+test('이야기 기연은 한 판에 한 번, 이후에는 일반 기연만', () => {
+  const run = createRun({ seed: 6 });
+  run.seenEvents = ['juno', 'sooha'];
+  run.map.rows[0][0].type = 'event';
+  assert.ok(enterNode(run, run.map.rows[0][0].id));
+  assert.ok(!EVENTS[run.event.id].story);
+});
+
+test('흰 옷의 사내를 쫓으면 단서 envoy', () => {
+  const run = createRun({ seed: 7 });
+  run.phase = 'event';
+  run.event = { id: 'sooha', result: null };
+  chooseEventOption(run, 0);
+  assert.deepEqual(run.cluesFound, ['envoy']);
+});
+
+test('복면객 무명을 쓰러뜨리면 단서 mask', () => {
+  const run = createRun({ seed: 8 });
+  run.encounter = { enemyId: 'masked', tier: 'elite', scale: { hp: 1, strength: 0 } };
+  run.phase = 'battle';
+  const b = startEncounter(run);
+  b.enemy.hp = 0;
+  b.phase = 'won';
+  finishBattle(run, b);
+  assert.deepEqual(run.cluesFound, ['mask']);
+});

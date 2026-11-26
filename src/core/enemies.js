@@ -56,6 +56,7 @@ export const ENEMIES = {
   },
   masked: {
     name: '무명', title: '정체불명의 복면객', art: 'demonic-assassin', tier: 'elite',
+    clue: 'mask', // 쓰러뜨리면 얻는 단서
     maxHp: 64,
     pattern: [
       { name: '혈기 개방', strength: 2 },
@@ -67,7 +68,8 @@ export const ENEMIES = {
 
   // ── 두목 ─────────────────
   spy: {
-    name: '연무혁', title: '우승 후보 · 정체는 마교 첩자', art: 'demonic-sword', tier: 'boss',
+    name: '연무혁', title: '비무대회 우승 후보', art: 'demonic-sword', tier: 'boss',
+    clue: 'note',
     maxHp: 150,
     pattern: [
       { name: '혈마심법', strength: 2 },

@@ -18,6 +18,7 @@ export function createMeta() {
     memories: [], // 기억한 무공 id (중복 없음)
     clues: [], // 알아낸 단서 id
     bestFloor: 0,
+    met: {}, // 이야기 인물을 만난 횟수 (회차를 넘어 누적) { juno: 2, ... }
   };
 }
 
@@ -28,6 +29,7 @@ export function parseMeta(text) {
     if (!data || data.version !== META_VERSION) return createMeta();
     const meta = { ...createMeta(), ...data };
     meta.memories = meta.memories.filter((id) => CARDS[id]);
+    meta.met = { ...(data.met ?? {}) };
     return meta;
   } catch {
     return createMeta();
@@ -84,4 +86,10 @@ export function addClue(meta, id) {
 export function validateLoadout(meta, ids) {
   if (ids.length > memorySlots(meta)) return false;
   return ids.every((id) => meta.memories.includes(id)) && new Set(ids).size === ids.length;
+}
+
+// 이야기 인물과 만남: 만난 횟수(이번 포함)를 돌려줌 → 회차마다 다른 대사
+export function meetNpc(meta, id) {
+  meta.met[id] = (meta.met[id] ?? 0) + 1;
+  return meta.met[id];
 }
