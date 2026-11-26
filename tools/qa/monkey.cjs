@@ -74,7 +74,10 @@ const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
           '#dialogue:not([hidden]) .dlg-box, #dialogue:not([hidden]) .dlg-skip, #flow:not([hidden]) button:not(:disabled), #panel:not([hidden]) button:not(:disabled), #deck-modal:not([hidden]) button, #map-screen:not([hidden]) .map-node.available, #stage[data-screen="battle"] #hand .card:not(.disabled), #stage[data-screen="battle"] #end-turn:not(:disabled), #stage[data-screen="battle"] #bag .bag-slot:not(:disabled), #deck-button',
           (els) => {
             document.querySelectorAll('[data-mk]').forEach((e) => e.removeAttribute('data-mk'));
-            return els.filter((e) => e.offsetParent !== null).map((e, i) => {
+            // 덱 보기 창이 열려 있으면 그 안의 버튼만 (뒤에 가려진 것은 사람도 못 누름)
+            const modal = document.getElementById('deck-modal');
+            const visible = els.filter((e) => e.offsetParent !== null && (modal.hidden || modal.contains(e)));
+            return visible.map((e, i) => {
             e.dataset.mk = String(i);
               return { i, label: (e.innerText || e.className).replace(/\s+/g, ' ').slice(0, 40), id: e.id, cls: e.className };
             });
