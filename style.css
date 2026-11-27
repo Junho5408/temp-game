@@ -1107,3 +1107,41 @@ button.item-face:disabled { cursor: default; }
 
 #fade { position: absolute; inset: 0; background: #06070a; opacity: 0; pointer-events: none; transition: opacity .22s; z-index: 7; }
 #fade.on { opacity: 1; }
+
+/* ── 5-A 모바일 ─────────────────── */
+html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#stage { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+
+/* 세로로 든 좁은 화면이면 회전 안내 */
+#rotate { display: none; }
+@media (orientation: portrait) and (max-width: 820px) {
+  #rotate {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    background: #120d18; color: #f1dfb2; font-family: var(--serif); text-align: center; padding: 24px;
+  }
+  #rotate p { font-size: 22px; font-weight: 900; margin: 14px 0 0; }
+  #rotate small { font-size: 13px; opacity: .7; }
+  .rotate-phone {
+    width: 46px; height: 80px; border: 3px solid #e8c46a; border-radius: 8px;
+    animation: rotate-hint 2s ease-in-out infinite;
+  }
+}
+@keyframes rotate-hint {
+  0%, 20% { transform: rotate(0); }
+  50%, 80% { transform: rotate(-90deg); }
+  100% { transform: rotate(0); }
+}
+
+/* 탭·길게 누르기로 보는 설명 (BUG-014) */
+#touch-tip {
+  position: absolute; z-index: 20; transform: translate(-50%, -100%);
+  max-width: 300px; padding: 7px 11px;
+  background: rgba(14, 12, 10, .96); color: #f1e4c8;
+  border: 1px solid #c9a24a; border-radius: 5px;
+  font-size: 13px; line-height: 1.45; text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+#touch-tip[hidden] { display: none; }
+#touch-tip.below { transform: translate(-50%, 0); }

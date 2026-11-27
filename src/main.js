@@ -28,6 +28,7 @@ import {
 import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
 import { DESIGNS } from './ui/characters.js';
+import { installTouchTips } from './ui/touch.js';
 import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
   openDeck, closePanel,
@@ -109,7 +110,9 @@ function fit() {
   stage.style.setProperty('--scale', s.toFixed(4));
 }
 window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', () => setTimeout(fit, 150));
 fit();
+installTouchTips();
 
 function setZone(text) {
   document.querySelector('#topbar .zone').textContent = text;
@@ -621,6 +624,9 @@ function renderIntent() {
   const brk = it.charge
     ? `<span class="break">파기 ${Math.min(it.breakProgress, it.breakAt)} / ${it.breakAt}</span>` : '';
   el.innerHTML = `<span class="label">${label}</span>${parts.join(' &nbsp;')}${brk}`;
+  el.title = it.charge ? `필살기: 이번 내 차례에 피해를 ${it.breakAt} 이상 주면 끊고(파기) 굳힐 수 있다`
+    : it.counter ? `반격 자세: 다음 내 차례에 초식을 쓰면 카드마다 ${it.counter} 피해를 되받는다`
+      : '적이 다음 차례에 할 행동 (명중률은 내 경공에 따라 내려감)';
 }
 
 // 행낭: 전투 중 한 번 쓰는 물품 (내공 안 씀)
