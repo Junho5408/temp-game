@@ -5,9 +5,9 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 6단계 — 6-A·6-B 사파·6-C 마교·6-D 진엔딩·6-E 세력 무공 재설계 완료 → 마지막: 밸런스 + /qa
-- QA 티켓: BUG-001~025 모두 처리 (BUG-018 보류) — docs/qa/tickets/INDEX.md
-- 다음 할 일: 밸런스(세 루트 + 진엔딩 판, tools/qa/balance.mjs --faction= --true=1) → /qa 한 회차 (계획 docs/PLAN.md 6단계)
+- 진행 중: 6단계 완료 (6-A~6-E + 밸런스 + 최종 QA). 다음은 사용자와 정할 일 (그림 채우기 /art, 배포 등)
+- QA 티켓: BUG-001~037 모두 처리 — docs/qa/tickets/INDEX.md. 밸런스 기준은 새 봇 기준 1구역 35~45% (PROGRESS.md)
+- 다음 할 일: 그림 없는 인물(복이·혈공 장로 등) /art 반자동으로 채우기, GitHub Pages 켜기(사용자)
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
 - 무공은 세력마다 따로 (공용 0장, cards.js faction). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe), 마교 마기(magi/magiSpend)·혈투(desperate)·입마(curse → qiDeviation)
@@ -33,5 +33,5 @@
 - 테스트에서 확률을 끄려면 createBattle({ luck: false }), 규칙 확인용 적은 dummy / dummyMulti
 - QA: `/qa` (QA Manager) → 에이전트 .claude/agents/qa-*.md → 보고서 docs/qa/reports, 티켓 docs/qa/tickets → `/fix-bugs` 로 수정. 형식은 docs/qa/README.md, 도구 tools/qa/ (npm run qa:smoke / qa:monkey / qa:balance), 원자료 qa-output/(git 제외)
 - 스토리: `/story` (Story Director) 점검 · `/story write <요청>` 작성 · `/story fix` 수정 → 에이전트 .claude/agents/story-*.md (lore 설정 감수, reader 대사 감수, writer 작가, editor 보고) → 보고서 docs/story/reports, 티켓 docs/story/tickets/STORY-###, 초안 docs/story/drafts. 형식 docs/story/README.md, 대본 추출·기계 검사 `npm run story:dump -- --run=이름`
-- 그림: `/art <인물>` (Art Director) → 에이전트 .claude/agents/art-maker.md 가 Gemini 로 후보 생성·점검(tools/art/gemini.mjs, 키는 환경 네트워크 비밀 generativelanguage.googleapis.com · x-goog-api-key) → 사용자 승인 → 등록. 그림 규칙 docs/art/STYLE.md, 후보는 qa-output/<run>/art/
+- 그림: `/art 프롬프트 <인물>` → 사용자가 Gemini 웹에서 그려 올림 → `/art 넣기 <인물>` (반자동, 기본). API 결제가 있으면 `/art <인물>` 자동 생성(tools/art/gemini.mjs, 키는 환경 네트워크 비밀 generativelanguage.googleapis.com · x-goog-api-key, 무료 요금제는 이미지 한도 0). 에이전트 .claude/agents/art-maker.md → 사용자 승인 → 등록. 그림 규칙 docs/art/STYLE.md, 후보는 qa-output/<run>/art/
 - 새 그림 처리: `python3 tools/prepare_sprite.py <원본> <세력-계열 또는 npc-이름> [--despill all]` 후 src/ui/characters.js 의 SPRITES 에 footX 등록
