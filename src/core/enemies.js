@@ -572,7 +572,7 @@ Object.assign(ENEMIES, {
   },
   rivalProdigy: {
     name: '연화', title: '마교 서열 1위', art: 'boss-rival', tier: 'boss',
-    maxHp: 135, evasion: 10, traits: ['killer'],
+    maxHp: 145, evasion: 10, traits: ['killer'],
     pattern: [
       { name: '혈월참', damage: 6, hits: 2 },
       { name: '반격 자세', counter: 7 },
