@@ -47,7 +47,7 @@ Semi-realistic Korean wuxia game character illustration, bold clean ink outlines
 | npc-innkeeper (객잔 주인) | A nervous middle-aged innkeeper, round face with a thin mustache, sweating with shifty eyes, plain brown apron over a gray shirt, holding an abacus close to his chest, hunched timid stance. |
 
 > 2026-11-27 반자동으로 넣은 10명(복이·맹 서기·토벌대장·흑도 졸개·혈공 장로·마교 집사·연무혁·위극·무명·독안귀)의 설명은 `docs/art/prompts-20261127.md` 에 그대로 있음 (다시 그릴 때 그 블록을 씀)
-> 웹에서 받은 그림의 배경이 탁한 초록이면 `prepare_sprite.py … --bg-key` (모서리 색 기준으로 지움)
+> 웹에서 받은 그림의 배경이 탁한 초록이면 `prepare_sprite.py … --bg-key` (모서리 색 기준으로 지움). 붉은·보라 연기가 누렇게 남으면 `--fx-tint red|purple`
 
 ## 좋은 그림 점검표 (에이전트가 후보마다 확인)
 - [ ] 전신이 잘리지 않음 (발끝까지)

@@ -125,6 +125,26 @@ const NPCS = {
     title: '외눈 살수 독안귀', note: '꿰맨 흉터 눈, 독 바른 비도', cls: 'assassin', color: '#6a5a48',
     sprite: { image: 'assets/characters/elite-one-eye.webp', footX: 0.4381 },
   },
+  'elite-axe-lord': {
+    title: '도끼파 두목 마삼', note: '사파 1구역 고수. 배불뚝이, 손도끼 두 자루', cls: 'fist', color: '#a0603a',
+    sprite: { image: 'assets/characters/elite-axe-lord.webp', footX: 0.4386 },
+  },
+  'elite-heaven-demon': {
+    title: '마교 검각 장로 천마검귀', note: '정파 3구역 고수. 은발 노검객, 붉은 기운의 검은 검', cls: 'sword', color: '#8a1a2a',
+    sprite: { image: 'assets/characters/elite-heaven-demon.webp', footX: 0.2748 },
+  },
+  'elite-blood-wolf': {
+    title: '혈영대 부대주 혈랑', note: '3구역 고수. 늑대 털 깃, 귀면 가면을 허리에 참', cls: 'assassin', color: '#7a2a30',
+    sprite: { image: 'assets/characters/elite-blood-wolf.webp', footX: 0.4823 },
+  },
+  'elite-poison-king': {
+    title: '만독수 당철', note: '2구역 고수. 보라색으로 물든 독 손, 약병 주머니', cls: 'fist', color: '#7a5aa0',
+    sprite: { image: 'assets/characters/elite-poison-king.webp', footX: 0.4108 },
+  },
+  'elite-twin-blade': {
+    title: '녹림 행동대장 쌍도귀', note: '2구역 고수. 흉터투성이 팔, 대도 두 자루', cls: 'sword', color: '#8a6040',
+    sprite: { image: 'assets/characters/elite-twin-blade.webp', footX: 0.4996 },
+  },
   'npc-innkeeper': {
     title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a',
     sprite: { image: 'assets/characters/npc-innkeeper.webp', footX: 0.4919 },

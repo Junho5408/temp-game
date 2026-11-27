@@ -161,7 +161,7 @@ Object.assign(ENEMIES, {
     ],
   },
   twinBlade: {
-    name: '쌍도귀', title: '녹림 칠십이채 행동대장', art: 'unorthodox-sword', tier: 'elite',
+    name: '쌍도귀', title: '녹림 칠십이채 행동대장', art: 'elite-twin-blade', tier: 'elite',
     maxHp: 88, traits: ['killer'],
     pattern: [
       { name: '쌍도 난무', damage: 6, hits: 2 },
@@ -171,7 +171,7 @@ Object.assign(ENEMIES, {
     ],
   },
   poisonKing: {
-    name: '당철', title: '만독수', art: 'unorthodox-assassin', tier: 'elite',
+    name: '당철', title: '만독수', art: 'elite-poison-king', tier: 'elite',
     maxHp: 82, evasion: 15, traits: ['venom', 'feint'],
     pattern: [
       { name: '만독장', damage: 7, poison: 4 },
@@ -245,7 +245,7 @@ Object.assign(ENEMIES, {
     ],
   },
   bloodWolf: {
-    name: '혈랑', title: '혈영대 부대주', art: 'demonic-assassin', tier: 'elite',
+    name: '혈랑', title: '혈영대 부대주', art: 'elite-blood-wolf', tier: 'elite',
     maxHp: 86, evasion: 20, traits: ['feint', 'killer'],
     pattern: [
       { name: '혈랑 연참', damage: 5, hits: 3 },
@@ -255,7 +255,7 @@ Object.assign(ENEMIES, {
     ],
   },
   heavenDemon: {
-    name: '천마검귀', title: '마교 검각 장로', art: 'demonic-sword', tier: 'elite',
+    name: '천마검귀', title: '마교 검각 장로', art: 'elite-heaven-demon', tier: 'elite',
     maxHp: 115, traits: ['drain'],
     pattern: [
       { name: '천마검', damage: 14 },
@@ -382,7 +382,7 @@ Object.assign(ENEMIES, {
     ],
   },
   axeLord: {
-    name: '마삼', title: '도끼파 두목', art: 'unorthodox-fist', tier: 'elite',
+    name: '마삼', title: '도끼파 두목', art: 'elite-axe-lord', tier: 'elite',
     maxHp: 80, traits: ['ironBody', 'berserk'],
     pattern: [
       { name: '도끼 내려찍기', damage: 12 },
