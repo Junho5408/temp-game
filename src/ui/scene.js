@@ -89,6 +89,46 @@ export async function createScene(canvas, { player }) {
   let shakeUntil = 0;
   let shakePower = 0;
 
+  // ── 타격 멈춤(히트스톱): 동작 시계만 잠깐 멈춤 (흔들림·불티는 계속) ──
+  let freezeStart = 0;
+  let freezeEnd = 0;
+  let frozenAcc = 0;
+  let freezeCounted = true;
+  function clock() {
+    const n = performance.now();
+    if (n < freezeEnd) return freezeStart - frozenAcc;
+    if (!freezeCounted) {
+      frozenAcc += freezeEnd - freezeStart;
+      freezeCounted = true;
+    }
+    return n - frozenAcc;
+  }
+  function isFrozen() {
+    return performance.now() < freezeEnd;
+  }
+  function hitstop(ms) {
+    const n = performance.now();
+    if (n < freezeEnd) {
+      freezeEnd = Math.max(freezeEnd, n + ms);
+      return;
+    }
+    clock();
+    freezeStart = n;
+    freezeEnd = n + ms;
+    freezeCounted = false;
+  }
+  // 카메라: 맞는 쪽으로 살짝 당겼다 놓음
+  let cam = { at: -1e9, x: W / 2, y: H / 2, pow: 0 };
+  function punch(who, pow = 1) {
+    const c = CHEST[who];
+    cam = { at: performance.now(), x: c.x, y: c.y, pow: Math.min(1.6, pow) };
+  }
+  // 필살: 화면이 어두워지고 기를 모으는 속도선
+  let fin = { at: -1e9, who: 'player' };
+  function finisher(who) {
+    fin = { at: performance.now(), who };
+  }
+
   const fallbackImg = await loadImage(DESIGNS[player].sprite.image);
   const units = {
     player: await makeUnit(player, 1, fallbackImg),
@@ -110,32 +150,66 @@ export async function createScene(canvas, { player }) {
   // 새 전투 시작: 쓰러짐 등 이전 동작 상태를 지움
   function reset() {
     for (const u of Object.values(units)) {
-      if (u) u.anim = { attack: -1e9, hit: -1e9, buff: -1e9, dodge: -1e9, death: 0 };
+      if (u) u.anim = { attack: -1e9, hit: -1e9, buff: -1e9, dodge: -1e9, death: 0, hold: false, release: -1e9, strike: -1e9 };
     }
     fx.length = 0;
     sparks.length = 0;
   }
 
   // ── 동작 ─────────────────────────
-  function attack(who) {
+  // 공격: 계열마다 다른 동작 (검객 베고 지나감 / 권사 파고들어 내지름 / 살수 사라졌다 나타남)
+  // hold: 연타면 상대 앞에 머물러 strike 로 이어 치고 release 로 돌아옴
+  function attack(who, { hold = false } = {}) {
     const u = units[who];
     if (!u) return IMPACT_MS;
-    u.anim.attack = performance.now();
+    u.anim.attack = clock();
+    u.anim.hold = hold;
+    u.anim.release = -1e9;
+    u.anim.strike = -1e9;
     const target = who === 'player' ? 'enemy' : 'player';
     setTimeout(() => spawnAttackFx(u.cls, who, target), IMPACT_MS - 30);
     return IMPACT_MS;
   }
 
-  function hit(who, amount) {
+  const STRIKE_MS = 95;
+  function strike(who) {
+    const u = units[who];
+    if (!u) return STRIKE_MS;
+    u.anim.strike = clock();
+    const target = who === 'player' ? 'enemy' : 'player';
+    setTimeout(() => spawnAttackFx(u.cls, who, target, true), STRIKE_MS - 30);
+    return STRIKE_MS;
+  }
+
+  function release(who) {
+    const u = units[who];
+    if (!u || !u.anim.hold) return;
+    u.anim.hold = false;
+    u.anim.release = clock();
+  }
+
+  function hit(who, amount, { crit = false } = {}) {
     const u = units[who];
     if (!u) return;
-    u.anim.hit = performance.now();
+    u.anim.hit = clock();
+    u.anim.hitPow = Math.min(64, 18 + amount * 1.6) * (crit ? 1.3 : 1);
     const at = CHEST[who];
-    const n = Math.min(22, 8 + amount);
+    const away = who === 'enemy' ? 1 : -1; // 맞은 쪽 뒤로 튐
+    const now = clock();
+    const n = Math.min(24, 8 + amount);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = 2 + Math.random() * 5;
-      sparks.push({ x: at.x, y: at.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 1.5, life: 1, born: performance.now() });
+      sparks.push({ x: at.x, y: at.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 1.5, born: now });
+    }
+    // 피: 맞은 쪽 뒤로 뿌려짐 (피해가 클수록 많이)
+    const b = Math.min(26, Math.round(amount * 1.2));
+    for (let i = 0; i < b; i++) {
+      const a = (Math.random() - 0.5) * 1.4 - 0.35;
+      const sp = 3 + Math.random() * 6;
+      sparks.push({
+        x: at.x + away * 6, y: at.y - 4, vx: away * Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, born: now, blood: true, size: 1.5 + Math.random() * 2.5,
+      });
     }
     if (amount >= 8) shake(amount >= 11 ? 7 : 4);
   }
@@ -144,20 +218,20 @@ export async function createScene(canvas, { player }) {
   function dodge(who) {
     const u = units[who];
     if (!u) return;
-    u.anim.dodge = performance.now();
+    u.anim.dodge = clock();
   }
 
   // 기세를 끌어올릴 때: 몸에서 금빛 기운이 퍼짐
   function buff(who) {
     const u = units[who];
     if (!u) return;
-    u.anim.buff = performance.now();
+    u.anim.buff = clock();
   }
 
   function die(who) {
     const u = units[who];
     if (!u || u.anim.death) return;
-    u.anim.death = performance.now();
+    u.anim.death = clock();
   }
 
   function shake(power) {
@@ -165,18 +239,27 @@ export async function createScene(canvas, { player }) {
     shakeUntil = performance.now() + 260;
   }
 
-  function spawnAttackFx(cls, from, to) {
-    const now = performance.now();
+  function spawnAttackFx(cls, from, to, small = false) {
+    const now = clock();
     const at = CHEST[to];
     const dir = from === 'player' ? 1 : -1;
     const tint = units[from]?.fxColor ?? '#bcd6ff';
-    if (cls === 'fist') fx.push({ type: 'impact', x: at.x, y: at.y, born: now, color: tint, dir });
-    else if (cls === 'assassin') fx.push({ type: 'streaks', x: at.x, y: at.y, born: now, color: tint, dir });
-    else fx.push({ type: 'slash', x: at.x, y: at.y, born: now, color: tint, dir });
+    const flip = small && Math.random() < 0.5; // 연타는 위아래로 번갈아
+    if (cls === 'fist') {
+      fx.push({ type: 'impact', x: at.x + (small ? (Math.random() - 0.5) * 30 : 0), y: at.y + (small ? (Math.random() - 0.5) * 30 : 0), born: now, color: tint, dir, small });
+      if (!small) fx.push({ type: 'crack', x: FEET[to].x, y: FEET[to].y, born: now, color: tint, dir });
+    } else if (cls === 'assassin') {
+      fx.push({ type: 'streaks', x: at.x, y: at.y, born: now, color: tint, dir, small });
+      fx.push({ type: 'stab', x: at.x, y: at.y + (Math.random() - 0.5) * 20, born: now, color: tint, dir });
+    } else {
+      fx.push({ type: 'slash', x: at.x, y: at.y, born: now, color: tint, dir, flip, small });
+      if (!small) fx.push({ type: 'slash', x: at.x, y: at.y - 6, born: now + 50, color: '#ffffff', dir, flip: !flip, small: true, thin: true });
+    }
   }
 
   // ── 그리기 ─────────────────────────
   function draw(now, state) {
+    const t = clock(); // 동작 시계 (히트스톱 동안 멈춤)
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     let sx = 0;
     let sy = 0;
@@ -184,18 +267,57 @@ export async function createScene(canvas, { player }) {
       sx = (Math.random() - 0.5) * shakePower * 2;
       sy = (Math.random() - 0.5) * shakePower * 2;
     }
+    // 카메라 펀치: 맞는 쪽으로 살짝 확대했다 돌아옴
+    const ct = now - cam.at;
+    ctx.save();
+    if (ct >= 0 && ct < 260) {
+      const k = Math.sin((ct / 260) * Math.PI) * 0.045 * cam.pow;
+      ctx.translate(cam.x, cam.y);
+      ctx.scale(1 + k, 1 + k);
+      ctx.translate(-cam.x, -cam.y);
+    }
     ctx.drawImage(backgrounds[mode], 0, 0, W, H);
     if (mode === 'inn') drawInnLife(ctx, now);
     else drawFog(ctx, now);
+    drawFinisher(ctx, now);
     ctx.save();
     ctx.translate(sx, sy);
     // 뒤에 있는 적부터
-    if (units.enemy) drawUnit(ctx, units.enemy, 'enemy', now, state);
-    drawUnit(ctx, units.player, 'player', now, state);
-    drawFx(ctx, now);
-    drawSparks(ctx, now);
+    if (units.enemy) drawUnit(ctx, units.enemy, 'enemy', t, state);
+    drawUnit(ctx, units.player, 'player', t, state);
+    drawFx(ctx, t);
+    drawSparks(ctx, t);
+    ctx.restore();
     ctx.restore();
     if (mode !== 'inn') drawEmbers(ctx, now);
+  }
+
+  // 필살: 0.5초 동안 배경이 어두워지고, 쓰는 쪽 뒤로 속도선
+  const FIN_MS = 520;
+  function drawFinisher(g, now) {
+    const t = now - fin.at;
+    if (t < 0 || t > FIN_MS) return;
+    const p = t / FIN_MS;
+    const env = p < 0.2 ? p / 0.2 : p > 0.75 ? (1 - p) / 0.25 : 1;
+    g.save();
+    g.fillStyle = `rgba(4, 4, 8, ${0.72 * env})`;
+    g.fillRect(0, 0, W, H);
+    const c = CHEST[fin.who];
+    const dir = fin.who === 'player' ? 1 : -1;
+    g.globalCompositeOperation = 'lighter';
+    g.strokeStyle = `rgba(255, 220, 160, ${0.85 * env})`;
+    g.lineCap = 'round';
+    for (let i = 0; i < 26; i++) {
+      const y = c.y - 150 + ((i * 53 + Math.floor(now / 30) * 17) % 300);
+      const len = 80 + ((i * 37) % 160);
+      const x0 = c.x - dir * (60 + ((now / 2 + i * 41) % 420));
+      g.lineWidth = 1 + (i % 3);
+      g.beginPath();
+      g.moveTo(x0, y);
+      g.lineTo(x0 - dir * len, y);
+      g.stroke();
+    }
+    g.restore();
   }
 
   function drawUnit(g, u, who, now, state) {
@@ -207,6 +329,7 @@ export async function createScene(canvas, { player }) {
     let rot = Math.sin(now / 1300 + u.phase) * 0.006;
     let alpha = 1;
     let flash = null;
+    let flashA = 1;
     let ghost = 0;
 
     // 대기: 숨쉬기
@@ -214,39 +337,30 @@ export async function createScene(canvas, { player }) {
     let scaleY = 1 + breath * 0.012;
     let scaleX = 1 - breath * 0.005;
 
-    // 공격: 뒤로 당겼다가 → 돌진 → 잠깐 멈춤 → 복귀
+    // 공격: 계열마다 다른 동작 (attackPose)
     const at = now - a.attack;
-    if (at >= 0 && at < 600) {
-      const dashX = (other.x - feet.x) * 0.5;
-      const dashY = (other.y - feet.y) * 0.5;
-      let k;
-      if (at < 120) {
-        k = -0.08 * ease.out(at / 120);
-      } else if (at < IMPACT_MS) {
-        k = -0.08 + 1.08 * ease.in((at - 120) / (IMPACT_MS - 120));
-        ghost = 1;
-      } else if (at < 320) {
-        k = 1;
-      } else {
-        k = 1 - ease.inOut((at - 320) / 280);
-      }
-      x += dashX * k;
-      y += dashY * k;
-      rot += u.dir * 0.08 * Math.max(0, k);
-      if (k < 0) {
-        scaleY *= 1 + k * 0.4; // 웅크림
-      }
+    const pose = attackPose(u, at, now);
+    if (pose) {
+      x += (other.x - feet.x) * 0.5 * pose.k;
+      y += (other.y - feet.y) * 0.5 * pose.k;
+      rot += u.dir * pose.rot;
+      scaleX *= pose.sx;
+      scaleY *= pose.sy;
+      alpha *= pose.alpha;
+      if (pose.ghost) ghost = pose.ghost;
     }
 
-    // 피격: 뒤로 밀림 + 기울어짐 + 번쩍임
+    // 피격: 세기만큼 뒤로 밀림 + 젖혀짐 + 번쩍임
     const ht = now - a.hit;
-    if (ht >= 0 && ht < 450) {
-      const p = ht / 450;
-      const k = p < 0.2 ? ease.out(p / 0.2) : 1 - ease.inOut((p - 0.2) / 0.8);
-      x -= u.dir * 26 * k;
-      rot -= u.dir * 0.09 * k;
-      if (ht < 70) flash = u.flashWhite;
-      else if (ht < 240) flash = u.flashRed;
+    if (ht >= 0 && ht < 480) {
+      const p = ht / 480;
+      const k = p < 0.15 ? ease.out(p / 0.15) : 1 - ease.inOut((p - 0.15) / 0.85);
+      const pow = a.hitPow ?? 26;
+      x -= u.dir * pow * k;
+      rot -= u.dir * (0.05 + pow * 0.0025) * k;
+      scaleX *= 1 - 0.05 * k;
+      // 번쩍임은 짧고 옅게 (하얗게 → 붉게 → 사라짐)
+      if (ht < 70) { flash = u.flashWhite; flashA = 0.6 * (1 - ht / 70); } else if (ht < 230) { flash = u.flashRed; flashA = 0.55 * (1 - (ht - 70) / 160); }
     }
 
     // 회피: 뒤로 크게 비켜섰다가 돌아옴
@@ -300,7 +414,10 @@ export async function createScene(canvas, { player }) {
     g.save();
     g.globalAlpha = alpha;
     drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, u.image);
-    if (flash) drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, flash);
+    if (flash) {
+      g.globalAlpha = alpha * flashA;
+      drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, flash);
+    }
     g.restore();
 
     // 점혈·파기로 굳음: 머리 위를 도는 혈도 표시
@@ -319,6 +436,72 @@ export async function createScene(canvas, { player }) {
       }
       g.restore();
     }
+  }
+
+  // 공격 동작: k = 상대 쪽으로 간 정도(0 제자리, 1 상대 앞), rot·sx·sy·alpha·ghost
+  // 연타(hold)면 상대 앞에 머물고, strike 마다 짧게 내지름
+  const RETURN_MS = { sword: 270, fist: 240, assassin: 260 };
+  function attackPose(u, at, now) {
+    const a = u.anim;
+    const cls = u.cls === 'fist' || u.cls === 'assassin' ? u.cls : 'sword';
+    const stayEnd = a.hold ? Infinity : Math.max(IMPACT_MS + 90, a.release > a.attack ? a.release - a.attack : 0);
+    if (at < 0 || at > stayEnd + RETURN_MS[cls]) return null;
+    const P = { k: 0, rot: 0, sx: 1, sy: 1, alpha: 1, ghost: 0 };
+    if (cls === 'sword') {
+      // 몸을 낮춰 당김 → 크게 기울며 베고 지나감 → 돌아옴
+      if (at < 110) {
+        const q = ease.out(at / 110);
+        P.k = -0.12 * q; P.sy = 1 - 0.08 * q; P.sx = 1 + 0.04 * q; P.rot = -0.1 * q;
+      } else if (at < IMPACT_MS) {
+        const q = ease.in((at - 110) / (IMPACT_MS - 110));
+        P.k = -0.12 + 1.2 * q; P.rot = -0.1 + 0.32 * q; P.sx = 1 + 0.12 * q; P.sy = 1 - 0.04 * q; P.ghost = 1;
+      } else if (at < stayEnd) {
+        const q = ease.out(clamp01((at - IMPACT_MS) / 120));
+        P.k = 1.08 - 0.06 * q; P.rot = 0.22 - 0.12 * q; P.sx = 1.12 - 0.12 * q;
+      } else {
+        const q = ease.inOut((at - stayEnd) / RETURN_MS.sword);
+        P.k = 1.02 * (1 - q); P.rot = 0.1 * (1 - q);
+      }
+    } else if (cls === 'fist') {
+      // 파고들며 몸을 압축 → 폭발하듯 내지름(늘어남) → 돌아옴
+      if (at < 90) {
+        const q = ease.out(at / 90);
+        P.k = -0.05 * q; P.sx = 1 + 0.08 * q; P.sy = 1 - 0.1 * q;
+      } else if (at < IMPACT_MS) {
+        const q = ease.in((at - 90) / (IMPACT_MS - 90));
+        P.k = -0.05 + 0.92 * q; P.rot = 0.12 * q; P.sx = 1.08 - 0.08 * q; P.sy = 0.9 + 0.06 * q; P.ghost = 1;
+      } else if (at < stayEnd) {
+        const q = clamp01((at - IMPACT_MS) / 110);
+        const punchK = Math.sin(Math.min(1, q) * Math.PI);
+        P.k = 0.87 + 0.08 * punchK; P.rot = 0.12 - 0.06 * q; P.sx = 1 + 0.16 * punchK; P.sy = 1 - 0.08 * punchK;
+      } else {
+        const q = ease.inOut((at - stayEnd) / RETURN_MS.fist);
+        P.k = 0.87 * (1 - q); P.rot = 0.06 * (1 - q);
+      }
+    } else {
+      // 살수: 잔상만 남기고 사라짐 → 상대 바로 앞에 나타나 찌름 → 사라졌다 제자리에 나타남
+      if (at < 90) {
+        const q = at / 90;
+        P.alpha = 1 - q; P.k = -0.04 * q; P.sy = 1 - 0.05 * q; P.ghost = 2;
+      } else if (at < IMPACT_MS - 50) {
+        P.alpha = 0; P.k = 1.12;
+      } else if (at < stayEnd) {
+        const q = clamp01((at - (IMPACT_MS - 50)) / 50);
+        P.alpha = q; P.k = 1.12; P.rot = 0.16 * (1 - clamp01((at - IMPACT_MS) / 140)); P.sx = 1.06;
+      } else {
+        const r = at - stayEnd;
+        if (r < 100) { P.k = 1.12; P.alpha = 1 - r / 100; } else { P.k = 0; P.alpha = clamp01((r - 100) / (RETURN_MS.assassin - 100)); }
+      }
+    }
+    // 연타: 머문 채 짧게 내지름
+    const st = now - (a.strike ?? -1e9);
+    if (st >= 0 && st < 170) {
+      const j = Math.sin((st / 170) * Math.PI);
+      P.k += 0.07 * j;
+      P.rot += 0.1 * j * (cls === 'sword' ? (Math.floor(a.strike) % 2 ? 1 : -1) : 1);
+      P.sx *= 1 + 0.08 * j;
+    }
+    return P;
   }
 
   function drawBody(g, u, x, y, rot, sx, sy, img) {
@@ -369,8 +552,14 @@ export async function createScene(canvas, { player }) {
       }
       g.save();
       g.globalCompositeOperation = 'lighter';
+      if (t < 0) {
+        g.restore();
+        continue;
+      }
       if (f.type === 'slash') drawSlash(g, f, t);
       else if (f.type === 'impact') drawImpact(g, f, t);
+      else if (f.type === 'crack') drawCrack(g, f, t);
+      else if (f.type === 'stab') drawStab(g, f, t);
       else drawStreaks(g, f, t);
       g.restore();
     }
@@ -378,9 +567,14 @@ export async function createScene(canvas, { player }) {
 
   // 검기: 초승달 모양 궤적
   function drawSlash(g, f, t) {
-    const r = 92;
-    const start = f.dir > 0 ? -2.3 : -0.85;
-    const sweep = 2.3 * f.dir;
+    const r = f.small ? 74 : 104;
+    // 위에서 아래로 (flip 이면 아래에서 위로) 베는 초승달
+    let start = f.dir > 0 ? -2.3 : -0.85;
+    let sweep = 2.3 * f.dir;
+    if (f.flip) {
+      start = f.dir > 0 ? 2.3 : 0.85;
+      sweep = -2.3 * f.dir;
+    }
     const head = ease.out(clamp01(t / 150));
     const tail = ease.in(clamp01((t - 60) / 300));
     if (head <= tail) return;
@@ -392,7 +586,8 @@ export async function createScene(canvas, { player }) {
     g.lineCap = 'round';
     g.shadowColor = f.color;
     g.shadowBlur = 24;
-    for (const [w, col, al] of [[18, f.color, 0.55], [8, '#ffffff', 0.9]]) {
+    const layers = f.thin ? [[5, '#ffffff', 0.8]] : [[f.small ? 12 : 22, f.color, 0.6], [f.small ? 5 : 9, '#ffffff', 0.95]];
+    for (const [w, col, al] of layers) {
       g.strokeStyle = col;
       g.globalAlpha = al * fade;
       g.lineWidth = w;
@@ -404,7 +599,12 @@ export async function createScene(canvas, { player }) {
 
   // 권경: 퍼지는 충격파
   function drawImpact(g, f, t) {
-    const p = clamp01(t / 380);
+    const p = clamp01(t / (f.small ? 260 : 380));
+    if (f.small) {
+      g.translate(f.x, f.y);
+      g.scale(0.6, 0.6);
+      g.translate(-f.x, -f.y);
+    }
     g.strokeStyle = f.color;
     g.shadowColor = f.color;
     g.shadowBlur = 20;
@@ -430,6 +630,43 @@ export async function createScene(canvas, { player }) {
     }
   }
 
+  // 권경: 땅이 갈라지는 금
+  function drawCrack(g, f, t) {
+    const p = clamp01(t / 450);
+    g.globalCompositeOperation = 'source-over';
+    g.strokeStyle = `rgba(20, 14, 10, ${0.7 * (1 - p)})`;
+    g.lineWidth = 3;
+    g.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI + (i / 5) * Math.PI * 0.9 - 0.15;
+      const len = 30 + ((i * 29) % 40) * Math.min(1, t / 90);
+      g.moveTo(f.x, f.y);
+      g.lineTo(f.x + Math.cos(a) * len, f.y + Math.sin(a) * len * 0.25 + 2);
+    }
+    g.stroke();
+    g.globalCompositeOperation = 'lighter';
+    g.fillStyle = `rgba(200, 180, 150, ${0.35 * (1 - p)})`;
+    g.beginPath();
+    g.ellipse(f.x, f.y, 40 + p * 70, 10 + p * 12, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  // 살수: 날카로운 찌르기 섬광 (가로로 길게)
+  function drawStab(g, f, t) {
+    const p = clamp01(t / 200);
+    const len = 150 * ease.out(p);
+    g.globalAlpha = 1 - p;
+    g.shadowColor = f.color;
+    g.shadowBlur = 18;
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(f.x - f.dir * len * 0.7, f.y - 2);
+    g.lineTo(f.x + f.dir * len * 0.3, f.y);
+    g.lineTo(f.x - f.dir * len * 0.7, f.y + 2);
+    g.closePath();
+    g.fill();
+  }
+
   // 암기: 빠르게 꽂히는 여러 줄기
   function drawStreaks(g, f, t) {
     const p = clamp01(t / 300);
@@ -449,18 +686,32 @@ export async function createScene(canvas, { player }) {
   }
 
   function drawSparks(g, now) {
+    const frozen = isFrozen();
     g.save();
-    g.globalCompositeOperation = 'lighter';
     for (let i = sparks.length - 1; i >= 0; i--) {
       const s = sparks[i];
-      const t = (now - s.born) / 450;
+      const life = s.blood ? 620 : 450;
+      const t = (now - s.born) / life;
       if (t >= 1) {
         sparks.splice(i, 1);
         continue;
       }
-      s.x += s.vx;
-      s.y += s.vy;
-      s.vy += 0.25;
+      if (!frozen) {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += s.blood ? 0.42 : 0.25;
+        s.vx *= s.blood ? 0.96 : 1;
+      }
+      if (s.blood) {
+        // 피: 붉은 방울 (빛나지 않게 보통 합성)
+        g.globalCompositeOperation = 'source-over';
+        g.fillStyle = `rgba(${150 - t * 40}, 10, 16, ${0.95 * (1 - t * t)})`;
+        g.beginPath();
+        g.ellipse(s.x, s.y, s.size, s.size * 0.8, 0, 0, Math.PI * 2);
+        g.fill();
+        continue;
+      }
+      g.globalCompositeOperation = 'lighter';
       g.strokeStyle = `rgba(255, ${190 - t * 90}, ${110 - t * 80}, ${1 - t})`;
       g.lineWidth = 2.2;
       g.beginPath();
@@ -522,7 +773,9 @@ export async function createScene(canvas, { player }) {
     mode = name;
   }
 
-  return { setPlayer, setEnemy, clearEnemy, reset, attack, hit, dodge, buff, die, shake, draw, setBackground };
+  return {
+    setPlayer, setEnemy, clearEnemy, reset, attack, strike, release, hit, hitstop, punch, finisher, dodge, buff, die, shake, draw, setBackground,
+  };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.

@@ -596,7 +596,7 @@ export function playCard(s, uid) {
     for (let h = 0; h < hits && e.hp > 0; h++) {
       if (!roll(s, insight || c.sure ? 100 : playerHitChance(s, c))) {
         p.missStreak += 1;
-        emit(s, { type: 'miss', target: 'enemy' });
+        emit(s, { type: 'miss', target: 'enemy', hit: h, of: hits });
         continue;
       }
       p.missStreak = 0;
@@ -611,7 +611,7 @@ export function playCard(s, uid) {
         guarded = true;
       }
       e.hp = Math.max(0, e.hp - dmg);
-      emit(s, { type: 'damage', target: 'enemy', amount: dmg, crit, guarded });
+      emit(s, { type: 'damage', target: 'enemy', amount: dmg, crit, guarded, hit: h, of: hits });
       afterEnemyHurt(s, dmg);
       if (c.lifesteal && dmg > 0) {
         const before = p.hp;
@@ -852,7 +852,7 @@ function enemyAct(s, act) {
     const atk = { ...e, status: { ...e.status } };
     for (let h = 0; h < hits && p.hp > 0 && e.hp > 0 && !(e.phase2Done && !wasPhase2); h++) {
       if (!roll(s, enemyHitChance(s, act))) {
-        emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
+        emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0, hit: h, of: hits });
         riposte(s, true);
         continue;
       }
@@ -876,7 +876,7 @@ function enemyAct(s, act) {
       }
       if (!fullyGuarded) landed += 1;
       p.hp = Math.max(0, p.hp - dmg);
-      emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
+      emit(s, { type: 'damage', target: 'player', amount: dmg, crit, hit: h, of: hits });
       riposte(s, false);
       if (s.faction === 'demonic' && dmg > 0) addMagi(s, 1);
       if (has(e, 'drain') && dmg > 0) {

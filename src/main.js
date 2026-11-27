@@ -892,12 +892,63 @@ const STATUS_POPUP = {
   strength: '기세', vulnerable: '내상', weak: '흐트러짐', poison: '중독', evasion: '경공', insight: '간파', counter: '반격 자세', point: '점혈', riposte: '반격', guard: '호신',
 };
 
+// 연타 중인 쪽 (상대 앞에 머물러 있음) — 연타가 끝나면 돌아옴
+let engaged = null;
+function releaseHold() {
+  if (engaged) scene.release(engaged);
+  engaged = null;
+}
+// 연타의 다음 타인지 (같은 쪽이 이어 치는 중)
+function isFollowUp(ev, from) {
+  return (ev.of ?? 1) > 1 && ev.hit > 0 && engaged === from;
+}
+// 휘두르기: 첫 타는 계열 동작 전체, 연타 다음 타는 머문 채 짧게
+async function swing(ev, from) {
+  if (isFollowUp(ev, from)) {
+    swingSound(from, ev.item);
+    await wait(scene.strike(from));
+    return;
+  }
+  releaseHold();
+  swingSound(from, ev.item);
+  const multi = (ev.of ?? 1) > 1;
+  await wait(scene.attack(from, { hold: multi }));
+  if (multi) engaged = from;
+}
+function endOfSwing(ev, from, target) {
+  if (engaged === from && ((ev.hit ?? 0) >= (ev.of ?? 1) - 1 || battle[target].hp <= 0)) releaseHold();
+}
+// 맞는 순간: 피해만큼 화면을 잠깐 멈추고(히트스톱) 카메라를 당김
+async function impact(target, amount, crit) {
+  const stop = crit ? 120 : Math.min(95, 35 + amount * 2.5);
+  scene.hitstop(stop);
+  scene.punch(target, crit ? 1.6 : Math.min(1.2, 0.3 + amount / 14));
+  await wait(stop);
+}
+
 async function playEvents(events) {
   for (const ev of events) {
+    if (engaged && !((ev.type === 'damage' || ev.type === 'miss') && (ev.of ?? 1) > 1 && ev.hit > 0)) releaseHold();
     switch (ev.type) {
+      case 'play': {
+        // 큰 초식(내공 2 이상·희귀): 필살 연출 — 화면이 어두워지고 이름이 크게
+        const c = cardStats({ id: ev.card });
+        if (ev.attack && (c.cost >= 2 || c.rarity === 'rare')) {
+          sfx('buff');
+          scene.finisher('player');
+          showBanner(`— ${c.name} —`, '#ffd88a', 700);
+          await wait(380);
+        }
+        break;
+      }
       case 'enemyAct':
+        if (ev.charge) {
+          sfx('gong');
+          scene.finisher('enemy');
+        }
         showBanner(ev.name, ev.stunned ? '#9cd7ff' : '#ffb0a0', ev.stunned ? 1100 : 800);
         if (ev.stunned) await wait(700);
+        if (ev.charge) await wait(380);
         break;
       case 'damage': {
         if (ev.thrown || ev.riposte) {
@@ -933,36 +984,39 @@ async function playEvents(events) {
           await wait(450);
           break;
         }
-        // 타격마다 공격 모션 → 닿는 순간 피격 연출 (다단 공격은 여러 번 휘두름)
+        // 공격 동작(계열마다 다름) → 닿는 순간 히트스톱·카메라·피 (연타는 상대 앞에 머물러 이어 침)
         const from = ev.target === 'player' ? 'enemy' : 'player';
         if (ev.counter) popup(from, '반격!', 'st-counter', -60);
-        swingSound(from, ev.item);
-        await wait(scene.attack(from));
+        await swing(ev, from);
         if (ev.amount > 0) {
           sfx(ev.crit ? 'crit' : 'hit');
-          scene.hit(ev.target, ev.crit ? ev.amount + 6 : ev.amount);
+          scene.hit(ev.target, ev.crit ? ev.amount + 6 : ev.amount, { crit: ev.crit });
           if (ev.crit) {
             popup(ev.target, `치명! -${ev.amount}`, 'crit');
-            scene.shake(8);
+            scene.shake(9);
             flash('crit');
-            await wait(110);
           } else {
             popup(ev.target, `-${ev.amount}`, 'dmg');
           }
           if (ev.guarded) popup(ev.target, '鐵 철포삼', 'guard', -70);
+          await impact(ev.target, ev.amount, ev.crit);
         }
         renderStatus();
         if (battle[ev.target].hp <= 0) scene.die(ev.target);
-        await wait(300);
+        const more = (ev.of ?? 1) > 1 && ev.hit < ev.of - 1 && battle[ev.target].hp > 0;
+        endOfSwing(ev, from, ev.target);
+        await wait(more ? 90 : 300);
         break;
       }
       case 'miss': {
         const from = ev.target === 'player' ? 'enemy' : 'player';
-        await wait(scene.attack(from) - 60);
+        await swing(ev, from);
         sfx('miss');
         scene.dodge(ev.target);
         popup(ev.target, ev.target === 'player' ? '회피!' : '빗나감', 'miss');
-        await wait(360);
+        const more = (ev.of ?? 1) > 1 && ev.hit < ev.of - 1;
+        endOfSwing(ev, from, ev.target);
+        await wait(more ? 120 : 360);
         break;
       }
       case 'item': {
@@ -1096,6 +1150,7 @@ async function playEvents(events) {
         renderStatus();
         if (ev.type === 'won') bigWord('勝', '#f2c14e');
         else flash('lost');
+        releaseHold();
         await wait(900);
         endBattle(ev.type);
         return;
@@ -1103,6 +1158,7 @@ async function playEvents(events) {
         break;
     }
   }
+  releaseHold();
 }
 
 function swingSound(from, item = false) {
@@ -1207,6 +1263,7 @@ window.__game = {
   get meta() { return meta; },
   get run() { return run; },
   get battle() { return battle; },
+  render: () => render(), // QA·데모용: 손패를 바꾼 뒤 다시 그림
 };
 
 (async () => {
