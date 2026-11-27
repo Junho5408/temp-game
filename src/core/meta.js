@@ -20,6 +20,7 @@ export function createMeta() {
     bestFloor: 0,
     met: {}, // 이야기 인물을 만난 횟수 (회차를 넘어 누적) { juno: 2, ... }
     pendingMemory: null, // 쓰러진 뒤 아직 고르지 않은 기억 후보 (새로고침해도 다시 고르게)
+    pendingEnding: null, // 아직 끝까지 보지 못한 엔딩 { kind: 'true'|'normal', floor, battlesWon, deck, gold } — BUG-030
     routeStats: {}, // 세력별 { runs, bestZone, wins }
   };
 }
@@ -47,6 +48,10 @@ export function parseMeta(text) {
       if (Number.isInteger(v) && v > 0) meta.met[k] = v;
     }
     setPendingMemory(meta, strList(data.pendingMemory));
+    const pe = data.pendingEnding;
+    meta.pendingEnding = pe && typeof pe === 'object' && ['true', 'normal'].includes(pe.kind)
+      ? { kind: pe.kind, floor: count(pe.floor), battlesWon: count(pe.battlesWon), deck: count(pe.deck), gold: count(pe.gold) }
+      : null;
     for (const [f, st] of Object.entries(data.routeStats && typeof data.routeStats === 'object' ? data.routeStats : {})) {
       if (st && typeof st === 'object') meta.routeStats[f] = { runs: count(st.runs), bestZone: count(st.bestZone), wins: count(st.wins) };
     }
@@ -115,6 +120,16 @@ export function recordRunEnd(meta, run) {
   st.bestZone = Math.max(st.bestZone, run.zonesCleared ?? 0);
   if (run.phase === 'victory') st.wins += 1;
   meta.routeStats[f] = st;
+  if (run.phase === 'victory') {
+    meta.pendingEnding = {
+      kind: run.trueWin ? 'true' : 'normal', floor: runFloor(run), battlesWon: run.battlesWon ?? 0, deck: run.deck?.length ?? 0, gold: run.gold ?? 0,
+    };
+  }
+}
+
+// 엔딩 대사와 결과 화면을 끝까지 봤음
+export function clearPendingEnding(meta) {
+  meta.pendingEnding = null;
 }
 
 // 지금까지 오른 층 (구역마다 13층: 12층 + 두목)

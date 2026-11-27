@@ -112,7 +112,7 @@ export const TREASURES = {
   },
   poisonSac: {
     name: '독낭', glyph: '囊', kind: 'gear', rarity: 'uncommon', faction: 'unorthodox',
-    desc: '적에게 거는 중독 +2',
+    desc: '적에게 거는 중독 +1',
   },
   knifePouch: {
     name: '암기 주머니', glyph: '袋', kind: 'gear', rarity: 'common', faction: 'unorthodox',

@@ -407,9 +407,9 @@ export function isDebuffed(unit) {
   return unit.status.weak > 0 || unit.status.poison > 0 || unit.status.stun > 0;
 }
 
-// 적에게 거는 중독 (독낭이 있으면 +2)
+// 적에게 거는 중독 (독낭이 있으면 +1 — BUG-036)
 function poisonEnemy(s, n) {
-  addStatus(s, 'enemy', 'poison', n + (owns(s, 'poisonSac') ? 2 : 0));
+  addStatus(s, 'enemy', 'poison', n + (owns(s, 'poisonSac') ? 1 : 0));
 }
 
 export function cardHits(s, c) {

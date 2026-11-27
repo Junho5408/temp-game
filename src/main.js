@@ -7,7 +7,7 @@ import {
 import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js';
 import { cardStats, CARDS } from './core/cards.js';
 import {
-  createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
+  createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd, clearPendingEnding,
   memoryCandidates, validateLoadout, addClue, setPendingMemory, resolvePendingMemory,
 } from './core/meta.js';
 import { ENEMIES, TRAITS } from './core/enemies.js';
@@ -19,7 +19,7 @@ import {
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
   wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
-  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE,
+  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE, TRUE_ENDING, ENDING,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -125,6 +125,19 @@ function setScreen(name) {
 }
 
 // ── 타이틀 ─────────────────────────
+async function replayEnding() {
+  const pe = meta.pendingEnding;
+  scene.setBackground('inn');
+  setScreen('story');
+  await playDialogue(pe.kind === 'true' ? TRUE_ENDING : ENDING);
+  setScreen('panel');
+  renderEnd({
+    phase: 'victory', trueWin: pe.kind === 'true', floor: pe.floor, battlesWon: pe.battlesWon, deck: { length: pe.deck }, gold: pe.gold,
+  }, showTitle);
+  clearPendingEnding(meta);
+  saveMeta();
+}
+
 function showTitle() {
   run = null;
   battle = null;
@@ -140,6 +153,11 @@ function showTitle() {
   if (meta.pendingMemory) {
     // 쓰러진 뒤 기억을 고르기 전에 나갔던 경우
     pickMemoryAndRegress();
+    return;
+  }
+  if (meta.pendingEnding) {
+    // 엔딩 대사 중에 나갔던 경우: 엔딩을 다시 보여 줌 (BUG-030)
+    replayEnding();
     return;
   }
   const saved = meta.prologueDone ? loadRun() : null;
@@ -299,6 +317,20 @@ async function showStep() {
       });
       break;
     case 'battle': {
+      if (run.encounter.bridge) {
+        // 진엔딩: 귀면이 쓰러진 자리에 백리현이 걸어 들어옴 (새로고침해도 다시 — BUG-030)
+        setScreen('story');
+        const enter = TRUE_BRIDGE.findIndex((l) => l.who === 'narr');
+        await playDialogue(TRUE_BRIDGE.slice(0, enter + 1));
+        await scene.setEnemy(ENEMIES.baekri.art);
+        scene.reset();
+        sfx('door');
+        renderRunInfo(); // 숨을 고른 뒤의 체력 (BUG-031)
+        showBanner('숨을 고른다 · 체력 회복', '#9fe0a0', 1300);
+        await playDialogue(TRUE_BRIDGE.slice(enter + 1));
+        delete run.encounter.bridge;
+        saveRun();
+      }
       const enemyId = run.encounter.enemyId;
       const clue = ENEMIES[enemyId].clue;
       const known = !!clue && meta.clues.includes(clue);
@@ -337,20 +369,11 @@ async function showStep() {
         saveMeta();
         run.recorded = true;
       }
-      // 진엔딩 판: 귀면이 쓰러지면 일반 엔딩 대신 백리현이 나타나는 장면
+      // 진엔딩 판: 귀면이 쓰러지면 일반 엔딩 대신 백리현 등장 장면 (다음 전투 시작에서 — encounter.bridge)
       const outro = result !== 'won' ? null
-        : enemyId === 'gwimyeon' && run.trueEnding ? TRUE_BRIDGE
+        : enemyId === 'gwimyeon' && run.trueEnding ? null
           : battleOutro(enemyId, known);
-      if (outro === TRUE_BRIDGE) {
-        // 귀면이 쓰러진 자리에 백리현이 걸어 들어옴
-        setScreen('story');
-        const enter = TRUE_BRIDGE.findIndex((l) => l.who === 'narr');
-        await playDialogue(TRUE_BRIDGE.slice(0, enter + 1));
-        await scene.setEnemy(ENEMIES.baekri.art);
-        scene.reset();
-        sfx('door');
-        await playDialogue(TRUE_BRIDGE.slice(enter + 1));
-      } else if (outro) {
+      if (outro) {
         setScreen('story');
         await playDialogue(outro);
       }
@@ -427,6 +450,8 @@ async function showStep() {
       }
       setScreen('panel');
       renderEnd(run, showTitle);
+      clearPendingEnding(meta); // 결과 화면까지 봤음 (BUG-030)
+      saveMeta();
       break;
     default:
       break;

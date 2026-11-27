@@ -53,7 +53,7 @@ test('암기: 쓰지 않고 턴을 넘기면 던져짐 (피해·중독), 쓰면 
   const hp = s.enemy.hp;
   endPlayerTurn(s);
   assert.equal(hp - s.enemy.hp, 3 + 5);
-  assert.equal(s.enemy.status.poison, 3);
+  assert.equal(s.enemy.status.poison, 2); // 마름쇠 던질 때 중독 2 (BUG-034)
   assert.equal(takeEvents(s).filter((e) => e.type === 'thrown').length, 2);
 });
 
@@ -79,13 +79,13 @@ test('칼 바꿔 쥐기: 손패를 버리고(암기 발동) 그만큼 다시 뽑
   assert.equal(t.enemy.status.poison, 3);
 });
 
-test('독 터뜨리기: 중독 × 2 피해, 중독은 사라짐 / 오독수: 중독이 줄지 않음', () => {
+test('독 터뜨리기: 중독 × 3 피해 (BUG-035), 중독은 사라짐 / 오독수: 중독이 줄지 않음', () => {
   const s = battle();
   hand(s, ['poisonBurst']);
   s.enemy.status.poison = 6;
   const hp = s.enemy.hp;
   playCard(s, 900);
-  assert.equal(hp - s.enemy.hp, 12);
+  assert.equal(hp - s.enemy.hp, 18);
   assert.equal(s.enemy.status.poison, 0);
   const t = battle();
   hand(t, ['fivePoison']);

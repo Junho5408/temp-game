@@ -290,7 +290,7 @@ export function renderEvent(run, { onChoose, onLeave }) {
 // ── 판의 끝 ─────────────────────────
 export function renderEnd(run, onRestart) {
   const win = run.phase === 'victory';
-  const floor = runFloor(run);
+  const floor = run.floor ?? runFloor(run);
   const { body, actions } = openPanel(
     !win ? '쓰러졌다' : run.trueWin ? '진엔딩 · 백 일 뒤의 아침' : '그날 밤을 넘기다',
     !win ? '눈앞이 어두워진다…'

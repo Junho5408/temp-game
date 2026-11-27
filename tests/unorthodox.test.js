@@ -67,11 +67,11 @@ test('협박: 전투가 끝나면 은자가 판에 더해짐, 흑도 인장은 �
   assert.equal(run.gold - gold - run.reward.gold, 12 + 8);
 });
 
-test('독낭: 적에게 거는 중독 +2', () => {
+test('독낭: 적에게 거는 중독 +1 (BUG-036)', () => {
   const s = battle({ treasures: ['poisonSac'] });
   hand(s, ['venomBlade']);
   playCard(s, 900);
-  assert.equal(s.enemy.status.poison, 4);
+  assert.equal(s.enemy.status.poison, 3);
 });
 
 test('사파 무공·보물은 정파 판에 나오지 않음', () => {

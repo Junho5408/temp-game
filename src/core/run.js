@@ -134,15 +134,21 @@ export function parseRun(text) {
     run.bag = run.bag.filter((id) => CONSUMABLES[id]).slice(0, BAG_SIZE);
     run.treasures = run.treasures.filter((id) => TREASURES[id]);
     if (!Number.isInteger(run.rngCount) || run.rngCount < 0) run.rngCount = 0;
+    // 값의 범위·연결도 확인 (BUG-029): 살아 있는 판은 체력 1 이상, 최대 체력 넘으면 깎음, 위치는 지도 안
+    if (run.hp < 1) return null;
+    run.hp = Math.min(run.hp, run.maxHp);
+    if (run.position != null && !run.map.rows.flat().some((n) => n?.id === run.position)) return null;
     run.trueEnding = run.trueEnding === true;
     run.trueWin = run.trueWin === true;
     // 단계별로 꼭 필요한 데이터
     const need = {
-      battle: () => ENEMIES[run.encounter?.enemyId],
+      battle: () => ENEMIES[run.encounter?.enemyId]
+        && finiteNum(run.encounter.scale?.hp) && finiteNum(run.encounter.scale?.strength, -Infinity),
       event: () => EVENTS[run.event?.id],
       reward: () => Array.isArray(run.reward?.cards) && run.reward.cards.every((id) => CARDS[id]),
       treasure: () => Array.isArray(run.treasureChoice) && run.treasureChoice.every((id) => TREASURES[id]),
-      shop: () => Array.isArray(run.shop?.items),
+      shop: () => Array.isArray(run.shop?.items) && run.shop.items.every((it) => it
+        && ({ card: CARDS, item: CONSUMABLES, treasure: TREASURES }[it.kind] ?? {})[it.id] && finiteNum(it.price)),
     }[run.phase];
     if (need && !need()) return null;
     attachRng(run);
@@ -328,7 +334,8 @@ export function finishBattle(run, battle) {
     // 진엔딩 조건을 갖춘 판: 귀면 뒤에 백리현이 나타남 (잃은 체력의 TRUE_BOSS_HEAL 회복)
     if (run.trueEnding && beaten !== TRUE_BOSS) {
       run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * TRUE_BOSS_HEAL));
-      run.encounter = { enemyId: TRUE_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
+      // bridge: 백리현 등장 장면을 아직 안 봄 (새로고침해도 다시 보여 줌 — BUG-030)
+      run.encounter = { enemyId: TRUE_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 }, bridge: true };
       run.phase = 'battle';
       return;
     }

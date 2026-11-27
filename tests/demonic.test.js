@@ -38,12 +38,12 @@ test('혈검: 체력 3을 내고 피해 12', () => {
 test('체력이 대가 이하이면 혈 무공을 쓸 수 없음 (스스로 쓰러지지 않음)', () => {
   const s = battle();
   hand(s, ['heavenDemonBlade']);
-  s.player.hp = 8;
+  s.player.hp = 5;
   assert.equal(canPlay(s, 900), false);
-  s.player.hp = 9;
+  s.player.hp = 6;
   assert.ok(canPlay(s, 900));
   playCard(s, 900);
-  assert.equal(s.player.hp, 1);
+  assert.equal(s.player.hp, 1); // 천마혈검 체력 대가 5 (BUG-037)
 });
 
 test('흡혈 일섬: 준 피해 절반 회복', () => {

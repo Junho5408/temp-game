@@ -500,8 +500,8 @@ Object.assign(ENEMIES, {
 
 export const UNORTHODOX_POOLS = [
   {
-    easy: ['gangThug', 'ronin'],
-    normal: ['gangThug', 'ronin', 'brawler', 'gambler'],
+    easy: ['gangThug', 'roninU'],
+    normal: ['gangThug', 'roninU', 'brawler', 'gambler'],
     elite: ['oneEye', 'axeLord'],
     boss: ['gangLord'],
   },
@@ -599,13 +599,17 @@ Object.assign(ENEMIES, {
 ENEMIES.gangLordD = { ...ENEMIES.gangLord, title: '중원 흑도의 주인', maxHp: 210 };
 
 // 3구역: 정마 결전 — 무림맹 정예와 혈영대 안의 반대파, 두목은 무림맹 장로
+// 다른 길에서 데려온 적: 그 길의 장소에 맞는 칭호로 (BUG-032)
+ENEMIES.roninU = { ...ENEMIES.ronin, title: '흑도 판에 끼어든 낭인' };
+ENEMIES.gangThugD = { ...ENEMIES.gangThug, title: '서열전에 팔려 온 흑도 칼잡이' };
+ENEMIES.renegadeD = { ...ENEMIES.renegade, title: '마교를 등지고 맹에 붙은 낭인' };
 ENEMIES.bloodWolfD = { ...ENEMIES.bloodWolf, title: '혈영대 부대주 · 교주를 거스르는 자', maxHp: Math.round(ENEMIES.bloodWolf.maxHp * 0.9) };
 ENEMIES.allianceElderD = { ...ENEMIES.allianceElder, clue: null, title: '무림맹 장로 · 정마 결전의 선봉', maxHp: 205 };
 
 export const DEMONIC_POOLS = [
   {
     easy: ['cultNovice', 'cultSword'],
-    normal: ['cultNovice', 'cultSword', 'cultShadow', 'gangThug'],
+    normal: ['cultNovice', 'cultSword', 'cultShadow', 'gangThugD'],
     elite: ['twinFang', 'redLash'],
     boss: ['rivalProdigy'],
   },
@@ -617,7 +621,7 @@ export const DEMONIC_POOLS = [
   },
   {
     easy: ['allianceGuard', 'allianceScout'],
-    normal: ['allianceGuard', 'allianceScout', 'shaolinMonk', 'renegade'],
+    normal: ['allianceGuard', 'allianceScout', 'shaolinMonk', 'renegadeD'],
     elite: ['bloodWolfD', 'ironInstructor'],
     boss: ['allianceElderD'],
   },
@@ -627,7 +631,7 @@ export const DEMONIC_POOLS = [
 // ══ 진엔딩: 귀면 뒤에 숨어 있던 자 ══════════════
 ENEMIES.baekri = {
   name: '백리현', title: '무림맹 부맹주 · 청명검', art: 'boss-baekri', tier: 'boss',
-  maxHp: 205, evasion: 15, traits: ['feint'],
+  maxHp: 185, evasion: 15, traits: ['feint'],
   clue: 'traitorName',
   pattern: [
     { name: '청명검 · 일검', damage: 12 },

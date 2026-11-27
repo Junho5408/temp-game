@@ -205,8 +205,8 @@ export const CARDS = {
   },
   caltrops: {
     name: '마름쇠', type: 'skill', rarity: 'common', glyph: '菱', faction: 'unorthodox',
-    cost: 1, poison: 2, thrown: 3, thrownPoison: 3,
-    upgrade: { poison: 4, thrownPoison: 5 },
+    cost: 1, poison: 2, thrown: 3, thrownPoison: 2,
+    upgrade: { poison: 4, thrownPoison: 4 },
   },
   lowBlow: {
     name: '비열한 일격', type: 'attack', rarity: 'uncommon', glyph: '卑', faction: 'unorthodox',
@@ -225,8 +225,8 @@ export const CARDS = {
   },
   poisonBurst: {
     name: '독 터뜨리기', type: 'attack', rarity: 'uncommon', glyph: '爆', faction: 'unorthodox',
-    cost: 1, burst: 2,
-    upgrade: { burst: 3 },
+    cost: 1, burst: 3,
+    upgrade: { burst: 4 },
   },
   knifeFan: {
     name: '비도 난사', type: 'skill', rarity: 'uncommon', glyph: '散', faction: 'unorthodox',
@@ -348,7 +348,7 @@ export const CARDS = {
   },
   heavenDemonBlade: {
     name: '천마혈검', type: 'attack', rarity: 'rare', glyph: '魔', faction: 'demonic',
-    cost: 2, hpCost: 8, damage: 10, hits: 3, curse: 1,
+    cost: 2, hpCost: 5, damage: 10, hits: 3, curse: 1,
     upgrade: { damage: 13 },
   },
   dissolution: {
