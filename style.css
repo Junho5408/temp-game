@@ -1190,3 +1190,9 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .popup.thrown { color: #e6e6e6; font-size: 22px; text-shadow: 0 0 6px #6a8aa0; }
 .popup.thrown-name { color: #b8d4e8; font-size: 14px; }
 .popup.magi { color: #ff6a8a; font-size: 16px; }
+
+/* ── BUG-027 카드 설명 맞추기 ─────────────────── */
+.card .desc { min-height: 0; overflow: hidden; }
+.card .desc.dense { font-size: 10.5px; line-height: 1.22; padding: 0 5px; }
+.card .desc.denser { font-size: 9.5px; line-height: 1.12; padding: 0 4px; letter-spacing: -0.02em; }
+#hand .card .ctype { padding-bottom: 11px; } /* 명중 표시 자리 */

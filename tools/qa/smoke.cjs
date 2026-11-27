@@ -120,6 +120,9 @@ async function startLife(page) {
     expect((await page.$$('.map-node.available')).length > 0, '갈 수 있는 칸이 없음');
     const runs = await page.evaluate(() => window.__game.meta.runs);
     expect(runs === 1, `출발 뒤 회차 ${runs} (기대 1)`);
+    // 지도 제목 = 상단 구역 이름 (BUG-028)
+    const [mapTitle, topZone] = await page.evaluate(() => [document.querySelector('.map-title h2')?.textContent, document.querySelector('#topbar .zone')?.textContent]);
+    expect(mapTitle && mapTitle === topZone, `지도 제목 "${mapTitle}" ≠ 상단 "${topZone}"`);
   });
 
   await check('F04', '일반 전투: 카드 사용 → 턴 종료 → 적 행동 → 다음 턴', page, errors, dir, async () => {
@@ -136,6 +139,40 @@ async function startLife(page) {
     const turn = await page.evaluate(() => window.__game.battle?.turn);
     expect(turn >= 2 || (await state(page)).phase !== 'battle', `턴이 넘어가지 않음 (turn ${turn})`);
     if ((await state(page)).phase === 'battle') await winBattle(page);
+  });
+
+  await check('F15', '모든 무공(연마 전후) 설명이 손패 카드 틀 안, 명중 표시 위에 들어감 (BUG-027)', page, errors, dir, async () => {
+    const bad = await page.evaluate(async () => {
+      const { CARDS } = await import('./src/core/cards.js');
+      const { cardFace, fitCardText } = await import('./src/ui/screens.js');
+      const hand = document.getElementById('hand');
+      const sample = hand.querySelector('.card');
+      const out = [];
+      for (const id of Object.keys(CARDS)) {
+        for (const up of [false, true]) {
+          if (up && !CARDS[id].upgrade) continue;
+          const el = cardFace({ id, upgraded: up }, { tag: 'button', showKey: true });
+          if (sample) el.style.cssText = sample.style.cssText;
+          const hit = el.querySelector('.hit');
+          if (hit) hit.textContent = CARDS[id].type === 'attack' ? '명중 90%' : '';
+          hand.appendChild(el);
+          fitCardText(el);
+          const cr = el.getBoundingClientRect();
+          const r = document.createRange();
+          r.selectNodeContents(el.querySelector('.desc'));
+          const rects = [...r.getClientRects()].filter((x) => x.height > 0);
+          const bottom = rects.length ? Math.max(...rects.map((x) => x.bottom)) : 0;
+          const top = rects.length ? Math.min(...rects.map((x) => x.top)) : 0;
+          const d = el.querySelector('.desc').getBoundingClientRect();
+          const h = hit?.textContent ? hit.getBoundingClientRect() : null;
+          const lim = Math.min(cr.bottom, d.bottom + 0.5, h ? h.top : Infinity);
+          if (bottom > lim + 0.5 || top < d.top - 0.5) out.push(`${CARDS[id].name}${up ? '+' : ''}(${Math.round(bottom - lim)}px)`);
+          el.remove();
+        }
+      }
+      return out;
+    });
+    expect(bad.length === 0, `넘친 카드: ${bad.join(', ')}`);
   });
 
   await check('F05', '전투 승리 → 보상 화면 → 무공 고르기 → 지도', page, errors, dir, async () => {

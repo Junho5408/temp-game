@@ -6,6 +6,7 @@ import { NODE_TYPES, ROWS } from '../core/map.js';
 import { availableNodes, canBuy, canRestHeal, restHealAmount } from '../core/run.js';
 import { josa } from '../core/josa.js';
 import { runFloor } from '../core/meta.js';
+import { mapHeader } from '../story/script.js';
 import {
   BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND,
 } from '../core/items.js';
@@ -20,6 +21,7 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
   el.className = `card ${c.type}${c.upgraded ? ' upgraded' : ''}`;
   const kw = cardKeywords(c);
   if (kw) el.title = kw;
+  requestAnimationFrame(() => fitCardText(el)); // 화면에 붙은 뒤 크기를 재서 맞춤
   el.innerHTML = `
     ${showKey ? '<span class="key"></span><span class="hit"></span>' : ''}
     <span class="cost">${c.cost}</span>
@@ -28,6 +30,15 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
     <span class="desc">${c.desc}</span>
     <span class="ctype">${TYPE_LABEL[c.type]} · ${RARITY_LABEL[c.rarity]}</span>`;
   return el;
+}
+
+// 설명이 카드 틀을 넘치면 글자를 한두 단계 줄임 (BUG-027). 손패처럼 설명을 다시 쓰면 다시 부름
+export function fitCardText(el) {
+  const d = el.querySelector('.desc');
+  if (!d || !d.isConnected) return;
+  d.classList.remove('dense', 'denser');
+  if (d.scrollHeight > d.clientHeight + 1) d.classList.add('dense');
+  if (d.scrollHeight > d.clientHeight + 1) d.classList.add('denser');
 }
 
 // 아이템 한 칸: kind = 'item'(행낭 물품, 일시적) | 'treasure'(보물, 영구적)
@@ -110,8 +121,8 @@ export function renderMap(run, onPick) {
 
   el.innerHTML = `
     <div class="map-title">
-      <h2>제1구역 · 후기지수 비무대회</h2>
-      <p>갈 곳을 고르시오 · 방어는 없다, 운기조식(息)에서 회복하라 · 마지막에는 우승 후보가 기다린다</p>
+      <h2>${mapHeader(run.faction, run.zone).title}</h2>
+      <p>${mapHeader(run.faction, run.zone).hint}</p>
     </div>
     <svg class="map-lines" viewBox="0 0 960 540" width="960" height="540">${lines}</svg>
     <div class="map-nodes"></div>

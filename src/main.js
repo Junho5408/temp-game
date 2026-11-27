@@ -33,8 +33,7 @@ import { ROUTES } from './core/routes.js';
 import { josa } from './core/josa.js';
 import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
-  openDeck, closePanel,
-} from './ui/screens.js';
+  openDeck, closePanel, fitCardText } from './ui/screens.js';
 
 const PLAYER_ART = 'orthodox-sword';
 const SAVE_KEY = 'temp-game.meta.v1';
@@ -737,10 +736,13 @@ function renderHand() {
     if (stats.burst) {
       let dmg = s.enemy.status.poison * stats.burst;
       if (s.enemy.status.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
-      el.querySelector('.desc').innerHTML = `<span><b class="dmg-now${dmg > 0 ? ' up' : ' down'}">지금 피해 ${dmg}</b>\n${stats.desc}</span>`;
+      // 첫 줄("중독 × n 피해")을 지금 들어갈 피해로 바꿈 (BUG-027)
+      const rest = stats.desc.split('\n').slice(1).join('\n');
+      el.querySelector('.desc').innerHTML = `<span><b class="dmg-now${dmg > 0 ? ' up' : ' down'}">피해 ${dmg} (중독×${stats.burst})</b>${rest ? `\n${rest}` : ''}</span>`;
       hitEl.textContent = '필중';
       hitEl.classList.add('sure');
     }
+    fitCardText(el);
     el.classList.toggle('combo-on', comboActive(s) && !!(stats.combo || stats.comboHits || stats.perAttack));
     const playable = !busy && canPlay(s, card.uid);
     el.classList.toggle('disabled', !playable);

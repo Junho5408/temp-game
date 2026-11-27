@@ -600,6 +600,11 @@ export function endPlayerTurn(s) {
   s.hand = [];
   const p = s.player;
   for (const card of hand) {
+    // 암기로 이미 이겼으면 남은 카드는 그냥 버림 (승리 뒤 대가 없음) — BUG-026
+    if (s.phase !== 'player') {
+      s.discard.push(card);
+      continue;
+    }
     if (CARDS[card.id].unplayable) {
       const loss = Math.min(CURSE_HP, p.hp - 1); // 입마로는 쓰러지지 않음
       if (loss > 0) {

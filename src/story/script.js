@@ -2,6 +2,7 @@
 // 한 줄: { who: 화자 id, text: 대사 } — who 가 'me' 면 주인공, 'narr' 면 지문(화자 없음)
 // thought: true 면 속마음 (괄호로 표시)
 // 장면 사이의 전투·연출은 main.js 가 순서대로 이어 붙임
+import { josa } from '../core/josa.js';
 
 export const SPEAKERS = {
   me: { name: '나', art: 'orthodox-sword' },
@@ -148,14 +149,18 @@ export const ROUTE_TEXT = {
   orthodox: {
     zones: ['제1구역 · 후기지수 비무대회', '제2구역 · 녹림 토벌', '제3구역 · 마교 침공 저지', '그날 밤 · 청운객잔'],
     backgrounds: ['arena', 'forest', 'gate', 'inn'],
+    // 지도 안내: 구역 끝에서 기다리는 자 (BUG-028)
+    bosses: ['우승 후보', '녹림 총채주', '혈마 장로'],
   },
   unorthodox: {
     zones: ['제1구역 · 흑도 패권 다툼', '제2구역 · 녹림 통합', '제3구역 · 무림맹 지부 습격', '그날 밤 · 청운객잔'],
     backgrounds: ['alley', 'forest', 'hall', 'inn'],
+    bosses: ['흑도 맹주', '녹림 총채주', '무림맹 장로'],
   },
   demonic: {
     zones: ['제1구역 · 서열 혈투', '제2구역 · 중원 진출', '제3구역 · 정마 결전', '그날 밤 · 청운객잔'],
     backgrounds: ['altar', 'forest', 'gate', 'inn'],
+    bosses: ['서열 1위', '흑도 맹주', '무림맹 장로'],
   },
 };
 export const ZONE_NAMES = ROUTE_TEXT.orthodox.zones;
@@ -163,6 +168,16 @@ export const ZONE_BACKGROUNDS = ROUTE_TEXT.orthodox.backgrounds;
 
 export function zoneName(faction, zone) {
   return (ROUTE_TEXT[faction] ?? ROUTE_TEXT.orthodox).zones[zone];
+}
+
+// 지도 화면의 제목·안내 (BUG-028)
+export function mapHeader(faction, zone) {
+  const t = ROUTE_TEXT[faction] ?? ROUTE_TEXT.orthodox;
+  const boss = t.bosses?.[zone];
+  return {
+    title: t.zones[zone],
+    hint: `갈 곳을 고르시오 · 방어는 없다, 운기조식(息)에서 회복하라${boss ? ` · 마지막에는 ${josa(boss, '이/가')} 기다린다` : ''}`,
+  };
 }
 
 export function zoneBackground(faction, zone) {

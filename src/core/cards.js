@@ -424,7 +424,7 @@ export function describe(c) {
   if (c.dirty) lines.push('약화 시 2배');
   if (c.dirtyBonus) lines.push(`약화 시 +${c.dirtyBonus}`);
   if (c.gold) lines.push(`은자 +${c.gold}`);
-  if (c.lifesteal) lines.push(`준 피해 ${Math.round(c.lifesteal * 100)}% 회복`);
+  if (c.lifesteal) lines.push(`흡혈 ${Math.round(c.lifesteal * 100)}%`);
   if (c.hpCost) lines.push(`체력 -${c.hpCost}`);
   if (c.goldCost) lines.push(`은자 -${c.goldCost}`);
   if (c.burst) lines.push(`중독 × ${c.burst} 피해\n중독은 사라짐`);
@@ -449,7 +449,21 @@ export function describe(c) {
   if (c.curse) lines.push(`입마 +${c.curse}`);
   if (c.unplayable) lines.push('쓸 수 없음\n턴 끝: 체력 -2 · 마기 +1');
   if (c.exhaust) lines.push('소멸');
-  return lines.join('\n');
+  return compactLines(lines).join('\n');
+}
+
+// 카드 틀에 들어가도록: 4줄 이상이면 짧은 줄끼리 ' · ' 로 붙임 (BUG-027)
+const SHORT = 9;
+function compactLines(lines) {
+  const flat = lines.flatMap((l) => l.split('\n'));
+  if (flat.length < 4) return lines;
+  const out = [];
+  for (const l of flat) {
+    const prev = out.at(-1);
+    if (prev !== undefined && out.length > 1 && prev.length + l.length + 3 <= SHORT * 2 - 2 && l.length <= SHORT && prev.length <= SHORT * 1.4) out[out.length - 1] = `${prev} · ${l}`;
+    else out.push(l);
+  }
+  return out;
 }
 
 // 카드에 짧게 적힌 세력 기믹 용어 풀이 (툴팁)
