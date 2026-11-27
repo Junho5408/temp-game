@@ -154,6 +154,7 @@ export function renderSelect(meta, onDepart) {
         pick = key;
         grid.querySelectorAll('.sg-cell').forEach((x) => x.classList.toggle('picked', x === b));
         el.querySelector('.passive').textContent = PASSIVE_TEXT[fid];
+        markForeign();
       });
       grid.append(b);
     }
@@ -171,8 +172,21 @@ export function renderSelect(meta, onDepart) {
       else if (chosen.size < slots) chosen.add(id);
       face.classList.toggle('chosen', chosen.has(id));
     });
+    face.dataset.card = id;
     row.appendChild(face);
   }
+  // 고른 길과 다른 세력·계열의 기억 무공에 표시 (BUG-066: 가져갈 수는 있음 — 전생의 기억)
+  function markForeign() {
+    const [f, c] = pick.split('-');
+    for (const face of row.querySelectorAll('.card[data-card]')) {
+      const def = CARDS[face.dataset.card];
+      const tag = def.faction !== f ? `${FACTIONS[def.faction]?.name ?? ''} 무공` : def.cls !== c ? `${CLASSES[def.cls]?.name ?? ''} 무공` : '';
+      face.classList.toggle('foreign', !!tag);
+      if (tag) face.dataset.foreign = `다른 길 · ${tag}`;
+      else delete face.dataset.foreign;
+    }
+  }
+  markForeign();
 
   el.querySelector('.panel-actions').appendChild(btn('출발', () => onDepart(pick, [...chosen])));
 }

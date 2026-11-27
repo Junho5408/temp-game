@@ -28,6 +28,7 @@ import {
 import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
 import { DESIGNS, heroArt } from './ui/characters.js';
+import { CLASS_NAMES } from './core/schools.js';
 import { installTouchTips } from './ui/touch.js';
 import { ROUTES } from './core/routes.js';
 import { josa } from './core/josa.js';
@@ -605,7 +606,7 @@ function render() {
 function renderStatus() {
   const s = battle;
   $('turn-label').textContent = `제 ${s.turn} 턴`;
-  renderUnit($('player-info'), '나', run ? `${ROUTES[run.faction]?.name ?? '정파'} · 떠돌이 무인` : '떠돌이 무인', s.player, 'player');
+  renderUnit($('player-info'), '나', run ? `${ROUTES[run.faction]?.name ?? '정파'} ${CLASS_NAMES[run.cls] ?? '검객'}` : '떠돌이 무인', s.player, 'player');
   renderUnit($('enemy-info'), s.enemy.name, s.enemy.title, s.enemy, 'enemy');
   renderIntent();
   renderRunInfo();

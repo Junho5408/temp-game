@@ -916,6 +916,12 @@ button.card:disabled { cursor: not-allowed; filter: grayscale(.5) brightness(.55
 .st.insight { background: #a8862b; }
 .st.counter { background: #8a2f2f; }
 .st.riposte { background: #6a4aa0; }
+.card.foreign::after {
+  content: attr(data-foreign);
+  position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
+  padding: 0 6px; font-size: 10px; line-height: 16px; white-space: nowrap;
+  color: #f3e2bd; background: #5a4630; border: 1px solid #a8875a; border-radius: 8px;
+}
 .st.guard { background: #8a7a3a; }
 .card .ctype .school { color: #ffd88a; font-weight: 800; }
 .st.stun { background: #2a6f8f; }

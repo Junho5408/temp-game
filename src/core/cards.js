@@ -536,8 +536,8 @@ export function cardKeywords(c) {
   if (c.power) k.push('심법 유지: 쓰면 사라지고, 이번 전투 동안 내 턴이 시작될 때마다 효과가 발동');
   if (c.trap) k.push('함정: 적이 다음에 공격하는 순간 먼저 발동 (깔아 둔 함정은 한꺼번에 터짐)');
   if (c.riposte || c.power?.riposte) k.push('반격: 다음 적 차례에 적이 한 타 칠 때마다 이만큼 되받아침, 피하면 2배');
-  if (c.guard || c.power?.guard) k.push('호신: 다음 적 차례 동안 받는 피해를 합계 이만큼 막음');
-  if (c.opener) k.push(`발도: 이번 턴에 처음 쓰는 카드면 한 타 피해 +${c.opener}`);
+  if (c.guard || c.power?.guard) k.push('호신: 다음 적 차례 동안 받는 피해를 합계 이만큼 막음 (다 막은 타는 맞지 않은 것 — 독·흐트러짐도 안 묻음)');
+  if (c.opener) k.push(`발도: 이번 턴에 처음 쓰는 초식이면 한 타 피해 +${c.opener} (심법·물품은 세지 않음)`);
   if (c.swordQi) k.push('검기: 이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 피해 증가');
   if (c.steal) k.push('훔치기: 적의 기세를 깎고, 적에게 있던 만큼 내 기세로');
   if (c.bloodPact) k.push(`혈계: 내가 잃은 체력 10마다 한 타 피해 +${c.bloodPact}`);

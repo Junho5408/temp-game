@@ -39,7 +39,7 @@
 //   (7-C) 입마 연료(consumeCurse) 손패의 입마 1장을 태워 이번 초식 한 타 피해 +n
 //   (8-A) 반격(riposte)      다음 적 차례 동안 적이 한 타 칠 때마다 n 피해로 되받아침 (피하면 2배)
 //   (8-A) 호신(guard)        다음 적 차례 동안 받는 피해를 합계 n 까지 막음
-//   (8-B) 발도(opener)       이번 턴에 처음 쓰는 카드면 한 타 피해 +n
+//   (8-B) 발도(opener)       이번 턴에 처음 쓰는 초식이면 한 타 피해 +n (심법·물품은 세지 않음)
 //
 // 아이템 (items.js)
 //   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
@@ -494,7 +494,7 @@ export function cardBaseDamage(s, c) {
   if (c.hpCost && s.treasures?.has('bloodJade')) base += 3;
   if (c.desperate && desperateActive(s)) base += c.desperate;
   if (c.swordQi) base += c.swordQi * (s.turnCards ?? 0);
-  if (c.opener && !(s.turnCards > 0)) base += c.opener; // 발도(8-B): 이번 턴 첫 카드면
+  if (c.opener && !(s.turnAttacks > 0)) base += c.opener; // 발도: 이번 턴 첫 초식이면 (BUG-063, 심법·물품은 세지 않음)
   if (c.bloodPact) base += c.bloodPact * Math.floor((s.player.maxHp - s.player.hp) / 10);
   if (c.consumeCurse && s.hand.some((x) => CARDS[x.id].unplayable)) base += c.consumeCurse;
   if (c.magiSpend) base += c.magiSpend * (s.player.magi ?? 0);
@@ -843,7 +843,11 @@ function enemyAct(s, act) {
   if (act.damage) {
     const hits = act.hits ?? 1;
     let landed = 0;
-    for (let h = 0; h < hits && p.hp > 0 && e.hp > 0; h++) {
+    // 공격 도중 반격으로 2단계·광폭이 켜져도 이 공격은 예고대로 (BUG-054):
+    // 2단계로 넘어가면 남은 타는 멈추고, 기세는 공격을 시작할 때 값으로 셈
+    const wasPhase2 = e.phase2Done;
+    const atk = { ...e, status: { ...e.status } };
+    for (let h = 0; h < hits && p.hp > 0 && e.hp > 0 && !(e.phase2Done && !wasPhase2); h++) {
       if (!roll(s, enemyHitChance(s, act))) {
         emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
         riposte(s, true);
@@ -854,17 +858,20 @@ function enemyAct(s, act) {
         emit(s, { type: 'shield', target: 'player' });
         continue;
       }
-      landed += 1;
       const crit = !owns(s, 'mirror') && rollCrit(s, e.crit);
-      let dmg = computeDamage(e, p, act.damage);
+      atk.status.weak = e.status.weak;
+      let dmg = computeDamage(atk, p, act.damage);
       if (crit) dmg = Math.floor(dmg * CRIT_MULT);
+      let fullyGuarded = false;
       if (p.status.guard > 0 && dmg > 0) {
-        // 호신: 이번 적 차례 동안 받는 피해를 남은 만큼 막음
+        // 호신: 이번 적 차례 동안 받는 피해를 남은 만큼 막음. 다 막으면 안 맞은 것 (BUG-055: 독·흐트러짐도 안 묻음)
         const blocked = Math.min(p.status.guard, dmg);
         p.status.guard -= blocked;
         dmg -= blocked;
+        fullyGuarded = dmg === 0;
         emit(s, { type: 'guard', amount: blocked });
       }
+      if (!fullyGuarded) landed += 1;
       p.hp = Math.max(0, p.hp - dmg);
       emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
       riposte(s, false);
@@ -874,9 +881,9 @@ function enemyAct(s, act) {
         e.hp = Math.min(e.maxHp, e.hp + Math.ceil(dmg / 2));
         if (e.hp > before) emit(s, { type: 'heal', target: 'enemy', amount: e.hp - before });
       }
-      if (has(e, 'venom') && p.hp > 0) addStatus(s, 'player', 'poison', 1);
+      if (has(e, 'venom') && p.hp > 0 && !fullyGuarded) addStatus(s, 'player', 'poison', 1);
     }
-    if (e.hp <= 0) return;
+    if (e.hp <= 0 || (e.phase2Done && !wasPhase2)) return;
     if (p.hp > 0 && landed > 0) {
       if (act.weak) addStatus(s, 'player', 'weak', act.weak);
       if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);

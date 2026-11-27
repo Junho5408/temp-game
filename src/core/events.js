@@ -5,6 +5,17 @@ import { josa } from './josa.js';
 import { routeOf, classOf } from './routes.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
 
+// 혈공 장로가 내리는 피의 무공: 계열마다 (BUG-050)
+const BLOOD_GIFT = { sword: 'bloodOath', fist: 'dBloodGod', assassin: 'dBloodRush' };
+function bloodGift(run) {
+  return BLOOD_GIFT[run.cls] ?? BLOOD_GIFT.sword;
+}
+
+// 선택지 안내 문구 (판에 따라 달라지면 함수)
+export function optionHint(run, opt) {
+  return typeof opt.hint === 'function' ? opt.hint(run) : opt.hint;
+}
+
 // 관문의 주노가 가르쳐 주는 보물 (아직 없는 것부터)
 const JUNO_TEACHES = ['taiji', 'farSight', 'silkArmor', 'drunkenFist', 'chainArt', 'mirror'];
 
@@ -415,12 +426,13 @@ export const EVENTS = {
     options: [
       {
         label: '피의 단지를 마신다',
-        hint: '최대 체력 -6 · 희귀 무공 『피의 맹세』',
+        hint: (run) => `최대 체력 -6 · 희귀 무공 『${CARDS[bloodGift(run)].name}』`,
         effect(run, rng, api) {
           run.maxHp -= 6;
           run.hp = Math.min(run.hp, run.maxHp);
-          api.addCard('bloodOath');
-          return '쇳물 같은 것이 목을 타고 내려갔다. 몸 어딘가가 빠져나간 대신, 피가 끓는다.\n『피의 맹세』를 익혔다.';
+          const id = bloodGift(run);
+          api.addCard(id);
+          return `쇳물 같은 것이 목을 타고 내려갔다. 몸 어딘가가 빠져나간 대신, 피가 끓는다.\n${josa(`『${CARDS[id].name}』`, '을/를')} 익혔다.`;
         },
       },
       {

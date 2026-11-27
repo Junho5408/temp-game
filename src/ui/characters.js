@@ -36,10 +36,10 @@ const SPRITES = {
   'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.4856 },
   'orthodox-assassin': { image: 'assets/characters/orthodox-assassin.webp', footX: 0.508 },
   'demonic-sword': { image: 'assets/characters/demonic-sword.webp', footX: 0.6196 },
-  'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5228 },
+  'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5228, face: { size: 0.29 } },
   'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.6678 },
   'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
-  'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.4988 },
+  'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.4988, face: { size: 0.29 } },
   'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.4562 },
 };
 

@@ -113,7 +113,7 @@ function factionScript(f) {
         } catch (err) {
           result = `(결과 문구를 뽑지 못함: ${err.message})`;
         }
-        md += `- 선택 **${opt.label}** (${opt.hint ?? ''}) → ${String(result).replace(/\n/g, ' / ')}\n`;
+        md += `- 선택 **${opt.label}** (${(typeof opt.hint === 'function' ? opt.hint(run) : opt.hint) ?? ''}) → ${String(result).replace(/\n/g, ' / ')}\n`;
       }
       md += '\n';
     }

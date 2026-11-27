@@ -138,6 +138,17 @@ export function serializeRun(run) {
 const PHASES = ['map', 'battle', 'reward', 'treasure', 'rest', 'shop', 'event', 'zoneClear'];
 const finiteNum = (v, min = 0) => typeof v === 'number' && Number.isFinite(v) && v >= min;
 
+// 계열이 없는 옛 저장: 덱에 든 같은 세력 무공의 계열 중 가장 많은 것 (옛 사파 단검 덱 → 살수, 마교 혈조 덱 → 권사)
+function guessClass(run, classes) {
+  const count = {};
+  for (const c of run.deck) {
+    const def = CARDS[c.id];
+    if (def?.faction === run.faction && Object.hasOwn(classes, def.cls)) count[def.cls] = (count[def.cls] ?? 0) + 1;
+  }
+  const best = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+  return best ? best[0] : 'sword';
+}
+
 // 깨졌거나 버전이 다르면 null. 모르는 행낭 물품·보물은 버리고(업데이트 대비), 빠진 목록은 빈 목록으로
 export function parseRun(text) {
   try {
@@ -150,7 +161,9 @@ export function parseRun(text) {
     if (!PHASES.includes(data.phase)) return null;
     const { v, ...run } = data;
     if (!FACTION_IDS.includes(run.faction)) run.faction = 'orthodox'; // 세력이 없던 옛 저장
-    if (!ROUTES[run.faction].classes?.[run.cls]) run.cls = 'sword'; // 계열이 없던 옛 저장
+    // 계열: 문자열이고 그 세력에 열린 계열만 (BUG-052: toString·배열 등 거름)
+    const classes = ROUTES[run.faction].classes ?? {};
+    if (typeof run.cls !== 'string' || !Object.hasOwn(classes, run.cls)) run.cls = guessClass(run, classes); // 계열이 없던 옛 저장 (BUG-051)
     for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents', 'knownClues']) {
       if (!Array.isArray(run[key])) run[key] = [];
     }
@@ -431,7 +444,7 @@ function rollCards(run, weights, n) {
   while (picked.length < n && guard++ < 100) {
     const pool = cardPool(run, pickWeighted(run.rng, weights));
     const id = pickFromPool(run, pool);
-    if (!picked.includes(id)) picked.push(id);
+    if (id && !picked.includes(id)) picked.push(id); // 빈 풀이면 건너뜀 (BUG-052)
   }
   return picked;
 }
