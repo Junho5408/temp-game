@@ -52,6 +52,9 @@ export const REWORK_UNORTHODOX_ASSASSIN = {
   //   독문 uSnakeBite·uToadVenom·uPoisonWell / poisonBurst·poisonMist·uVenomSqueeze / fivePoison·uPoisonJar·uMyriadVenom
   //   함정꾼 uSmokeBomb·uTripWire·uPitfall·uNailBoard / uBearTrap·uPoisonSpike·uAmbush·uSnareNet / uKillingGround·uBait
   tags: {
+    // 8-D 밸런스: 보상 후보가 살수 무공만으로 좁아져 1구역 30% → 단도 찌르기·독 바른 칼을 조금 올림
+    dagger: { damage: 5, upgrade: { damage: 7 } },
+    venomBlade: { damage: 5, upgrade: { damage: 6, poison: 4 } },
     uThrowingStar: { cls: 'assassin', school: null },
     uLimeBag: { cls: 'assassin', school: null },
   },
