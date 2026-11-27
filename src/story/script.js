@@ -114,7 +114,7 @@ const WAKE_AFTER_DEATH = {
     { who: 'me', text: '(그림자에 숨을 때가 위험하다. 다음엔 그 틈에 몰아친다.)', thought: true },
   ],
   nokrimKing: [
-    { who: 'me', text: '산채 꼭대기의 도끼. 함정투성이 길 끝에서 당했다.' },
+    { who: 'me', text: '산채 꼭대기의 도끼. 거기까지 가는 길부터 지옥이었다.' },
     { who: 'me', text: '(길목마다 함정이었다. 우리가 올 길을 미리 안 것처럼.)', thought: true },
   ],
   twinBlade: [
@@ -135,7 +135,7 @@ const WAKE_AFTER_DEATH = {
   ],
   heavenDemon: [
     { who: 'me', text: '천마검귀. 피 맛이 싱겁다더니.' },
-    { who: 'me', text: '(…그 싱거운 피에 진 건 나다. 분하군.)', thought: true },
+    { who: 'me', text: '(싱거운 피라… 그 피를 흘린 건 나였다. 분하군.)', thought: true },
   ],
   gangLord: [
     { who: 'me', text: '곰방대 연기와 금니. 도박장 이층에서 끝났다.' },
@@ -192,7 +192,7 @@ export function wakeLines(runNumber, meta = {}) {
       header,
       { who: 'me', text: '…백 일 전? 분명 끊겼을 텐데.' },
       { who: 'me', text: '(그 노인네, 한 잔 더 따른 게 틀림없다.)', thought: true },
-      { who: 'me', text: '…좋다. 국수 한 그릇 값이라 치지.' },
+      { who: 'me', text: '…좋다. 국수 한 그릇 더 먹는 셈 치지.' },
     ];
   }
   // 일반 엔딩 뒤: 살아남았지만 원한이 풀리지 않아 다시 백 일 전
@@ -449,22 +449,33 @@ export const TRUE_ENDING = [
   { who: 'me', text: '국수 먹던 떠돌이.' },
   { who: 'narr', text: '그 말을 하는 순간, 가슴 한복판에 박혀 있던 것이 스르르 풀려 나갔다.\n칼에 찔린 자리가 아니었다. 그보다 훨씬 오래된 자리였다.' },
   { who: 'juno', text: '(딸꾹) …풀렸구먼.' },
-  { who: 'me', text: '…술 말입니까.' },
+  { who: 'me', text: '…무엇이 말입니까.' },
   { who: 'juno', text: '백일취(百日醉). 그날 밤 내가 따라 준 술 이름일세.\n원한을 품고 죽은 자를 백 일 전 아침으로 돌려보내지. 원한이 풀릴 때까지.' },
   { who: 'juno', text: '나도 젊을 적에 마셨네. 몇 번을 죽고 몇 번을 깨어났는지는… 세다가 말았지.' },
   { who: 'me', text: '…왜 하필 나였습니까.' },
   { who: 'juno', text: '흰 옷에 검 차고 하필 그 자리에 앉았길래. 오늘 밤 억울하게 갈 얼굴이더군.' },
   { who: 'me', text: '(…그럼 말리든가.)', thought: true },
   { who: 'juno', text: '말렸잖나. 흰 옷은 비 오는 날 입는 게 아니라고. 허허.' },
+  { who: 'juno', text: '…말로는 안 들을 얼굴이라, 한 잔 따랐지. 억울한 채로 끝나지는 말라고.' },
   { who: 'boki', text: '소, 손님…! 국수가 아직 따뜻해요! 한 그릇 더 하실래요?' },
   { who: 'me', text: '…그래. 이번엔 다 먹고 가지.' },
   { who: 'narr', text: '면을 건지고, 국물을 들이켜고, 마지막 한 가닥까지.\n백 일을 몇 번이나 돌아서야 비운 그릇은, 생각보다 짰다.' },
   { who: 'boki', text: '와… 국물까지 싹 비우신 손님은 처음이에요!' },
-  { who: 'juno', text: '(딸꾹) 백 일이란 건 말이야… 이번엔 술이 잘 익었군.' },
+  { who: 'juno', text: '(딸꾹) 백 일을 묵혔더니… 이번엔 술이 잘 익었군.' },
   { who: 'me', text: '(…끝까지 술 얘기군, 이 노인네.)', thought: true },
   { who: 'narr', text: '비가 그쳤다.\n그리고 나는 처음으로, 백 일 뒤의 아침을 맞았다.' },
   { who: 'narr', text: '― 진엔딩 · 백일회귀 ―' },
 ];
+
+// 백일취를 이미 아는 회귀자는 진엔딩에서 같은 설명을 다시 듣지 않음 (대사 감수 S-DL-01)
+export function trueEndingLines(clues = []) {
+  if (!clues.includes('wine')) return TRUE_ENDING;
+  return TRUE_ENDING.map((l) => {
+    if (l.who === 'me' && l.text === '…무엇이 말입니까.') return { who: 'me', text: '…술이, 깼습니까.' };
+    if (l.who === 'juno' && l.text.startsWith('백일취(百日醉).')) return { who: 'juno', text: '깼지. 얼굴에서 억울한 기가 싹 가셨어.' };
+    return l;
+  });
+}
 
 export const ENDING = [
   { who: 'gwimyeon', text: '크윽… 이름도 없는 놈에게…' },
@@ -473,9 +484,9 @@ export const ENDING = [
   { who: 'soohaNamed', text: '…목숨을 빚졌소. 당신은 대체 누구요?' },
   { who: 'me', text: '국수 먹던 떠돌이.' },
   { who: 'juno', text: '허허. 이번엔 국수가 식지 않았구먼. …그런데 얼굴은 아직 억울해 보이는군.' },
-  { who: 'juno', text: '(딸꾹) 한 길만 걸어서는 안 보이는 대답도 있지. 술도 여러 독을 맛봐야 아는 법이야.' },
+  { who: 'juno', text: '(딸꾹) 한 길만 걸어서는 안 보이는 대답도 있지. 술도 여러 독을 열어 봐야 맛을 아는 법이야.' },
   { who: 'narr', text: '비가 그치고, 처음 보는 새벽빛이 객잔 문틈으로 스며들었다.\n그런데 눈꺼풀이 자꾸만 무거워진다. 혀끝에 그 쓴 술맛이 돌아온다.' },
-  { who: 'me', text: '(누가 우리를 보냈는지… 그 대답을, 나는 아직 모른다.)', thought: true },
+  { who: 'me', text: '(누가 놈들을 보냈는지… 그 대답을, 나는 아직 모른다.)', thought: true },
   { who: 'me', text: '…아직, 끝나지 않았다.' },
   { who: 'narr', text: '― 일반 엔딩 · 그날 밤을 넘기다 ―' },
 ];
@@ -768,7 +779,7 @@ export function npcIntro(npc, n, meta) {
       ],
       [
         { who: 'juno', text: '자네 검, 지난번보다 조금 덜 정직해졌군. 좋아, 좋아.' },
-        { who: 'me', text: '(지난번… 이 노인은 기억이 아니라 술 냄새로 그걸 안다.)', thought: true },
+        { who: 'me', text: '(지난번… 기억할 리 없는데. 술 냄새가 그만큼 짙어졌다는 건가.)', thought: true },
       ],
     ];
     return pool[n % pool.length];
@@ -780,7 +791,7 @@ export function npcIntro(npc, n, meta) {
         { who: 'narr', text: '토벌대 막사. 낯익은 흰 옷이 지도를 들여다보고 있다.' },
         { who: 'soohaNamed', text: '무림맹 순찰사 진소하라 하오. …이상하군. 처음 보는 얼굴인데, 목소리가 귀에 익소.' },
         ...(n >= 6
-          ? [{ who: 'soohaNamed', text: '우리… 어디서 본 적 있소? 비 오는 밤 꿈에서 본 얼굴 같기도 하고.' }]
+          ? [{ who: 'soohaNamed', text: '…비 오는 밤, 꿈에서 본 얼굴 같기도 하고.' }]
           : []),
         { who: 'me', text: '(진소하. 그날 밤, 내 대신 살아 나간 사내의 이름.)', thought: true },
       ];
@@ -829,7 +840,7 @@ export function npcIntro(npc, n, meta) {
         { who: 'narr', text: '불타는 관문 뒤, 무너진 담벼락에 노인이 기대앉아 있다.' },
         { who: 'juno', text: '(딸꾹) 또 만났군. 이번 생은 꽤 멀리까지 왔어.' },
         { who: 'me', text: '백일취는 아직 깨지 않았습니다.' },
-        { who: 'juno', text: '그건 술이 아니라 자네가 정하는 거야. 그날 밤, 누가 자네를 죽였는지 끝까지 아는가?' },
+        { who: 'juno', text: '그건 술이 아니라 자네가 정하는 거야. 그날 밤 자네를 벤 칼 뒤에 누가 있었는지, 끝까지 알아냈나?' },
       ];
     }
     return [

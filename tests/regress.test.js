@@ -57,3 +57,11 @@ test('미래를 아는 자의 선택지: 필요한 단서는 모두 실제 단�
     assert.ok(run.cluesFound.includes('wine'));
   });
 });
+
+test('진엔딩: 백일취를 이미 알면 같은 설명을 다시 하지 않음', async () => {
+  const { trueEndingLines } = await import('../src/story/script.js');
+  const t = (c) => trueEndingLines(c).map((l) => l.text).join('\n');
+  assert.match(t([]), /백일취\(百日醉\)\. 그날 밤/);
+  assert.ok(!t(['wine']).includes('백일취(百日醉). 그날 밤'));
+  assert.match(t(['wine']), /술이, 깼습니까/);
+});

@@ -19,7 +19,7 @@ import {
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
   wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
-  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE, TRUE_ENDING, ENDING,
+  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE, trueEndingLines, ENDING,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -129,7 +129,7 @@ async function replayEnding() {
   const pe = meta.pendingEnding;
   scene.setBackground('inn');
   setScreen('story');
-  await playDialogue(pe.kind === 'true' ? TRUE_ENDING : ENDING);
+  await playDialogue(pe.kind === 'true' ? trueEndingLines(meta.clues) : ENDING);
   setScreen('panel');
   renderEnd({
     phase: 'victory', trueWin: pe.kind === 'true', floor: pe.floor, battlesWon: pe.battlesWon, deck: { length: pe.deck }, gold: pe.gold,
@@ -372,7 +372,8 @@ async function showStep() {
       // 진엔딩 판: 귀면이 쓰러지면 일반 엔딩 대신 백리현 등장 장면 (다음 전투 시작에서 — encounter.bridge)
       const outro = result !== 'won' ? null
         : enemyId === 'gwimyeon' && run.trueEnding ? null
-          : battleOutro(enemyId, known);
+          : enemyId === 'baekri' ? trueEndingLines(meta.clues)
+            : battleOutro(enemyId, known);
       if (outro) {
         setScreen('story');
         await playDialogue(outro);
