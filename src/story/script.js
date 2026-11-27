@@ -872,6 +872,97 @@ export function npcIntro(npc, n, meta) {
         : { who: 'juno', text: '내가? 술김에 헛소리를 했나 보구먼. 허허.' },
     ];
   }
+  if (npc === 'junoDen') {
+    // 사파 1구역 도박장 뒷방. n = 주노를 만난 횟수 (정파 juno·junoGate 와 함께 셈)
+    if (n === 1) {
+      return [
+        { who: 'narr', text: '도박장 뒷방. 술값 내기 판 한가운데, 낯익은 노인이 호리병을 끌어안고 있다.' },
+        { who: 'me', text: '(청운객잔의 그 노인… 흑도 도박장에서 뭘 하는 거지?)', thought: true },
+        { who: 'juno', text: '(딸꾹) 거기 흰 옷. 낄 거면 앉고, 안 낄 거면 문 닫게. 바람 들어와.' },
+        { who: 'juno', text: '…응? 자네, 낯이 익은데. 판돈 떼먹고 달아난 놈이었나?' },
+        { who: 'me', text: '…처음 뵙습니다.' },
+        { who: 'me', text: '(거짓말은 아니다. 이 노인이 나를 처음 볼 날은 백 일 뒤니까.)', thought: true },
+      ];
+    }
+    if (n === 2) {
+      return [
+        { who: 'juno', text: '(킁킁) 이 방엔 싸구려 술 냄새뿐인데… 자네 쪽에서 좋은 냄새가 나.' },
+        { who: 'juno', text: '오래 묵힌 놈이야. 딱 한 잔. 이런 노름판에서 맡을 냄새가 아닌데.' },
+        { who: 'me', text: '…술은 안 합니다.' },
+        { who: 'juno', text: '허허, 냄새는 패처럼 숨겨지지가 않아. 앉게, 한 판 하지.' },
+      ];
+    }
+    if (!meta.clues.includes('wine')) {
+      return [
+        { who: 'narr', text: '노인이 주사위를 쥔 채 굴리지 않는다. 웬일로 눈빛이 맑다.' },
+        { who: 'juno', text: '자네, 판이 끝날 때마다 처음으로 돌아가는 기분이지? 나도 그런 판을 오래 했네.' },
+        { who: 'me', text: '…노인장도?' },
+        { who: 'juno', text: '같은 백 일을, 같은 원한을 쥐고 몇 번이고 다시 굴렸지. 몇 판째인지는 세다가 말았어.' },
+        { who: 'juno', text: '판을 다시 짜고 싶으면, 그 판에 누가 돈 받고 끼었는지부터 알아 오게. (딸꾹)' },
+      ];
+    }
+    const pool = [
+      [
+        { who: 'juno', text: '(딸꾹) 또 왔나. 이번 판은 끗발이 좀 서나? …냄새 보니 아직이구먼.' },
+        { who: 'me', text: '(백일취. 이 노인이 따른 한 잔에서 시작된 판이다.)', thought: true },
+      ],
+      [
+        { who: 'juno', text: '백일취는 정직한 노름이야. 판돈이 원한이거든.' },
+        { who: 'me', text: '…다 잃어야 끝난다는 말입니까.' },
+        { who: 'juno', text: '다 털어야 이기는 판이지. 허허, 세상에 이런 노름이 또 없어.' },
+      ],
+      [
+        { who: 'juno', text: '(킁킁) 냄새가 꽤 짙구먼. 그사이 판을 몇 번이나 엎었나.' },
+        { who: 'me', text: '(이 노인은 지난 판을 기억하지 못한다. 냄새로 셀 뿐이다.)', thought: true },
+      ],
+    ];
+    return pool[n % pool.length];
+  }
+  if (npc === 'junoInn') {
+    // 마교 2구역 중원 길목 주막. n = 주노를 만난 횟수 (정파 juno·junoGate 와 함께 셈)
+    if (n === 1) {
+      return [
+        { who: 'narr', text: '강을 건너는 길목의 허름한 주막. 마교 깃발을 보자 손님들이 하나둘 자리를 뜬다.\n구석에서 호리병을 베고 자는 노인 하나만 빼고.' },
+        { who: 'me', text: '(객잔의 그 노인… 마교 행렬 앞에서 태평하게 낮잠이라니.)', thought: true },
+        { who: 'juno', text: '(딸꾹) …시끄럽구먼. 마교든 정파든, 주막에선 술값만 내면 다 손님이야.' },
+        { who: 'juno', text: '응? 자네 얼굴… 어느 술독에 비친 걸 본 것 같은데.' },
+        { who: 'me', text: '…잘못 보셨습니다.' },
+      ];
+    }
+    if (n === 2) {
+      return [
+        { who: 'juno', text: '(킁킁) 이 피비린내 속에서… 술 냄새가 나는구먼. 자네한테서.' },
+        { who: 'juno', text: '마교 놈들 냄새는 아니야. 오래 묵힌 술, 딱 한 잔 분량이지.' },
+        { who: 'me', text: '…피 냄새를 잘못 맡으신 겁니다.' },
+        { who: 'juno', text: '피는 금방 마르지. 이건 안 말라. 허허, 앉게.' },
+      ];
+    }
+    if (!meta.clues.includes('wine')) {
+      return [
+        { who: 'narr', text: '노인이 주막 문밖, 강을 건너는 마교 행렬을 오래 바라본다.' },
+        { who: 'juno', text: '칼 든 행렬을 보면 생각나는 게 있지. 나도 같은 백 일을 몇 번이고 걸었네.' },
+        { who: 'me', text: '…노인장도 돌아왔다는 겁니까.' },
+        { who: 'juno', text: '아주 오래전에. 같은 길, 같은 원한, 같은 아침. 몇 번째인지는 세다가 말았지.' },
+        { who: 'juno', text: '그날 밤 칼이 어디서 왔는지 알게 되면, 그때 물어보게. (딸꾹)' },
+      ];
+    }
+    const pool = [
+      [
+        { who: 'juno', text: '(딸꾹) 마교 깃발 아래서도 냄새는 똑같구먼. 원한은 좀 덜었나?' },
+        { who: 'me', text: '…아직입니다.' },
+      ],
+      [
+        { who: 'juno', text: '주막 술은 하룻밤이면 깨. 자네 술은 원한이 다 빠져야 깨지.' },
+        { who: 'me', text: '(백일취. 그날 밤 이 노인이 따른 한 잔.)', thought: true },
+      ],
+      [
+        { who: 'juno', text: '(킁킁) 냄새가 짙게 익었구먼. 몇 번째 아침인가?' },
+        { who: 'me', text: '…세다가 말았습니다.' },
+        { who: 'juno', text: '허허, 그건 내 대사야.' },
+      ],
+    ];
+    return pool[n % pool.length];
+  }
   if (npc === 'sooha') {
     const deja = n >= 3; // 여러 번 스친 뒤로는 그쪽도 걸음을 멈춘다
     if (meta.clues.includes('envoy')) {

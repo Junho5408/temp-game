@@ -78,3 +78,14 @@ test('직전 생이 끝난 방식을 기록 (쓰러짐·포기·일반 엔딩·�
   assert.equal(end({ phase: 'victory', trueWin: true }), 'true');
   assert.equal(parseMeta(serializeMeta(meta)).lastEnd, 'true');
 });
+
+test('사파·마교 주노 回 선택지도 백일취 단서', () => {
+  for (const [id, clue] of [['junoDen', 'innkeeper'], ['junoInn', 'request']]) {
+    const run = createRun({ seed: 4, knownClues: [clue] });
+    run.phase = 'event';
+    run.event = { id };
+    const i = EVENTS[id].options.findIndex((o) => o.needClue === clue);
+    assert.ok(chooseEventOption(run, i));
+    assert.ok(run.cluesFound.includes('wine'), id);
+  }
+});
