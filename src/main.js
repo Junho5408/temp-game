@@ -19,7 +19,7 @@ import {
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
   wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
-  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE, trueEndingLines, ENDING,
+  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE, trueEndingLines, ENDING, SPEAKERS,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -27,7 +27,7 @@ import {
 } from './ui/flow.js';
 import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
-import { DESIGNS } from './ui/characters.js';
+import { DESIGNS, heroArt } from './ui/characters.js';
 import { installTouchTips } from './ui/touch.js';
 import { ROUTES } from './core/routes.js';
 import { josa } from './core/josa.js';
@@ -35,7 +35,7 @@ import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
   openDeck, closePanel, fitCardText } from './ui/screens.js';
 
-const PLAYER_ART = 'orthodox-sword';
+let PLAYER_ART = 'orthodox-sword'; // 판의 세력·계열에 맞춘 주인공 그림 (8단계, heroArt)
 const SAVE_KEY = 'temp-game.meta.v1';
 const RUN_KEY = 'temp-game.run.v1'; // 판 중간 저장
 const STATUS_INFO = {
@@ -211,7 +211,7 @@ async function playPrologue() {
   // 문이 부서지는 순간부터 자객이 등장
   const burst = PROLOGUE_AFTER_THUG.findIndex((l) => l.text.startsWith('쾅'));
   await playDialogue(PROLOGUE_AFTER_THUG.slice(0, burst));
-  await scene.setEnemy('demonic-assassin');
+  await scene.setEnemy('foe-demonic-assassin');
   scene.reset();
   scene.shake(8);
   sfx('door');
@@ -263,6 +263,12 @@ async function beginLife() {
 
 // 구역에 맞는 이름과 배경
 function applyZoneLook() {
+  const hero = heroArt(run.faction, run.cls ?? 'sword');
+  if (hero !== PLAYER_ART) {
+    PLAYER_ART = hero;
+    SPEAKERS.me.art = hero;
+    scene.setPlayer(hero);
+  }
   setZone(zoneName(run.faction, run.zone));
   scene.setBackground(zoneBackground(run.faction, run.zone));
   playMusic(run.zone >= 3 ? 'boss' : zoneBackground(run.faction, run.zone));
@@ -414,7 +420,7 @@ async function showStep() {
         const n = meetEventNpc(run, meta);
         saveMeta();
         saveRun();
-        const npcArt = { cultElder: 'demonic-fist', bloodCamp: null }[ev.npc] ?? `npc-${ev.npc}`;
+        const npcArt = { cultElder: 'foe-demonic-fist', bloodCamp: null }[ev.npc] ?? `npc-${ev.npc}`;
         if (npcArt) await scene.setEnemy(npcArt);
         else scene.clearEnemy();
         scene.reset();

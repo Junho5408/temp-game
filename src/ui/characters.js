@@ -17,16 +17,17 @@ export const CLASSES = {
   assassin: { name: '살수' },
 };
 
+// 주인공 한 사람(회귀자)을 세력 × 계열로 — 같은 얼굴, 흰 옷 + 세력 색 (8단계, docs/art/prompts-hero.md)
 const NOTES = {
   'orthodox-sword': '깔끔하게 올린 상투(도관), 잡티 없는 피부, 좌우 대칭이 반듯한 이목구비',
   'orthodox-fist': '굵은 눈썹, 다부진 턱선, 이마를 드러낸 머리띠(말액)',
   'orthodox-assassin': '푸른 복면·두건으로 하관을 가리고 차분한 눈빛만 강조한 정파 밀정',
-  'demonic-sword': '창백한 안색, 치켜올라간 삼백안, 붉은 눈빛',
-  'demonic-fist': '핏줄 선 거친 피부, 산발, 붉은 문신, 광기 어린 표정',
-  'demonic-assassin': '뿔 달린 귀면 가면, 붉은 눈, 검은 두건',
+  'demonic-sword': '같은 얼굴(주인공) · 흰 도포에 붉은 깃·검은 띠, 검붉은 기운이 서린 검',
+  'demonic-fist': '같은 얼굴(주인공) · 붉은 천을 감은 팔에 검은 쇠 권갑, 주먹에 검붉은 기운',
+  'demonic-assassin': '같은 얼굴(주인공) · 검붉은 복면을 목에 내리고 검은 단검 두 자루',
   'unorthodox-sword': '흐트러진 잔머리, 거친 수염 자국, 챙 넓은 삿갓',
-  'unorthodox-fist': '뭉툭한 코, 굵은 주름, 붕대 감은 주먹',
-  'unorthodox-assassin': '한쪽 눈 안대, 낡은 천 복면, 경계하는 눈빛',
+  'unorthodox-fist': '같은 얼굴(주인공) · 소매를 뜯은 흰 옷, 붕대 감은 주먹, 새끼줄 띠',
+  'unorthodox-assassin': '같은 얼굴(주인공) · 갈색 복면을 목에 내리고 가슴에 비도 띠, 곡단검 두 자루',
 };
 
 // 전신 그림 등록 (prepare_sprite.py 가 출력한 footX 값)
@@ -34,12 +35,12 @@ const SPRITES = {
   'orthodox-sword': { image: 'assets/characters/orthodox-sword.webp', footX: 0.4073 },
   'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.5286 },
   'orthodox-assassin': { image: 'assets/characters/orthodox-assassin.webp', footX: 0.5028 },
-  'demonic-sword': { image: 'assets/characters/demonic-sword.webp', footX: 0.4371 },
-  'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5465 },
+  'demonic-sword': { image: 'assets/characters/demonic-sword.webp', footX: 0.6196 },
+  'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5228 },
   'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
   'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
-  'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.5143 },
-  'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.5332, face: { x: 0.5, y: 0.1 } },
+  'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.4988 },
+  'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.4562 },
 };
 
 // 공격 이펙트 색 (검기/권경/암기)
@@ -193,3 +194,33 @@ for (const [key, n] of Object.entries(NPCS)) {
   };
 }
 export const NPC_IDS = Object.keys(NPCS);
+
+// ── 적으로 나오는 세력 무인 (8단계: 예전 세력×계열 그림 9장) ─────────
+// 세력×계열 그림은 이제 주인공(같은 얼굴)이라, 일반 적은 예전 그림을 foe-<세력>-<계열> 로 씀
+const FOES = {
+  'foe-orthodox-sword': { title: '정파 검객', footX: 0.4073 },
+  'foe-orthodox-fist': { title: '정파 권사', footX: 0.5286 },
+  'foe-orthodox-assassin': { title: '정파 살수', footX: 0.5028 },
+  'foe-unorthodox-sword': { title: '사파 검객', footX: 0.5138 },
+  'foe-unorthodox-fist': { title: '사파 권사', footX: 0.4995 },
+  'foe-unorthodox-assassin': { title: '사파 살수', footX: 0.5143 },
+  'foe-demonic-sword': { title: '마교 검객', footX: 0.4371 },
+  'foe-demonic-fist': { title: '마교 권사', footX: 0.5332, face: { x: 0.5, y: 0.1 } },
+  'foe-demonic-assassin': { title: '혈영대원', footX: 0.5465 },
+};
+for (const [key, f] of Object.entries(FOES)) {
+  const [fid, cls] = key.slice(4).split('-');
+  DESIGNS[key] = {
+    key, faction: fid, cls, title: f.title, note: '적으로 나오는 세력 무인',
+    portrait: `assets/characters/${key}.webp`,
+    sprite: { image: `assets/characters/${key}.webp`, footX: f.footX, ...(f.face ? { face: f.face } : {}) },
+    factionColor: FACTIONS[fid].color, fxColor: FX_COLOR[fid],
+  };
+}
+
+// 주인공 그림: 같은 얼굴로 새로 그린 것만 (아직 안 그린 세력×계열은 정파 검객 그림)
+export const HERO_READY = new Set(['orthodox-sword', 'unorthodox-fist', 'unorthodox-assassin', 'demonic-sword', 'demonic-fist', 'demonic-assassin']);
+export function heroArt(faction, cls) {
+  const key = `${faction}-${cls}`;
+  return HERO_READY.has(key) ? key : 'orthodox-sword';
+}

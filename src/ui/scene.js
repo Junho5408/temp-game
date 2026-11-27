@@ -95,6 +95,10 @@ export async function createScene(canvas, { player }) {
     enemy: null,
   };
 
+  async function setPlayer(artKey) {
+    units.player = await makeUnit(artKey, 1, fallbackImg);
+  }
+
   async function setEnemy(artKey) {
     units.enemy = await makeUnit(artKey, -1, fallbackImg);
   }
@@ -518,7 +522,7 @@ export async function createScene(canvas, { player }) {
     mode = name;
   }
 
-  return { setEnemy, clearEnemy, reset, attack, hit, dodge, buff, die, shake, draw, setBackground };
+  return { setPlayer, setEnemy, clearEnemy, reset, attack, hit, dodge, buff, die, shake, draw, setBackground };
 }
 
 // 캐릭터 하나 준비: 그림 + 번쩍임 사본. 전신 그림이 아직 없으면 실루엣으로 대신함.

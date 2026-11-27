@@ -11,7 +11,7 @@ export const SPEAKERS = {
   boki: { name: '복이', art: 'npc-boki', glyph: '福' },
   juno: { name: '주노', art: 'npc-juno' },
   thug: { name: '왕삼', art: 'npc-drunk-thug' },
-  assassin: { name: '혈영대원', art: 'demonic-assassin' },
+  assassin: { name: '혈영대원', art: 'foe-demonic-assassin' },
   gwimyeon: { name: '귀면', art: 'boss-gwimyeon' },
   sooha: { name: '흰 옷의 사내', art: 'npc-sooha' }, // 진소하 (아직 이름 모름)
   clerk: { name: '맹 서기', art: 'npc-clerk', glyph: '盟' },

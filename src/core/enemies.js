@@ -29,7 +29,7 @@ export const ENEMIES = {
   // ── 일반 ─────────────────
   // 정면 승부형: 철포삼으로 첫 타를 버티고, 기를 모아 붕산권
   ironFist: {
-    name: '곽진', title: '철권문 후기지수', art: 'orthodox-fist', tier: 'normal',
+    name: '곽진', title: '철권문 후기지수', art: 'foe-orthodox-fist', tier: 'normal',
     maxHp: 38, traits: ['ironBody'],
     pattern: [
       { name: '철권', damage: 7 },
@@ -40,7 +40,7 @@ export const ENEMIES = {
   },
   // 변칙형: 무작위로 칼을 바꾸고, 반격 자세로 성급한 공격을 벌함
   ronin: {
-    name: '마철', title: '비무대에 끼어든 낭인', art: 'unorthodox-sword', tier: 'normal',
+    name: '마철', title: '비무대에 끼어든 낭인', art: 'foe-unorthodox-sword', tier: 'normal',
     maxHp: 36, evasion: 10, patternMode: 'random',
     pattern: [
       { name: '쾌검 이연격', damage: 4, hits: 2 },
@@ -62,7 +62,7 @@ export const ENEMIES = {
   },
   // 회피형: 잘 피하고, 수를 숨기고, 독침을 쓴다
   inspector: {
-    name: '소영', title: '대회 감찰 밀정', art: 'orthodox-assassin', tier: 'normal',
+    name: '소영', title: '대회 감찰 밀정', art: 'foe-orthodox-assassin', tier: 'normal',
     maxHp: 32, evasion: 20, traits: ['feint'], patternMode: 'random',
     pattern: [
       { name: '암침', damage: 4, poison: 2 },
@@ -124,7 +124,7 @@ export const ENEMIES = {
 // ══ 2구역: 녹림 토벌 (무림맹의 사파 토벌대에 끼어서) ══════════════
 Object.assign(ENEMIES, {
   bandit: {
-    name: '장칠', title: '녹림 산적', art: 'unorthodox-fist', tier: 'normal',
+    name: '장칠', title: '녹림 산적', art: 'foe-unorthodox-fist', tier: 'normal',
     maxHp: 58,
     pattern: [
       { name: '도끼질', damage: 9 },
@@ -133,7 +133,7 @@ Object.assign(ENEMIES, {
     ],
   },
   snakeWoman: {
-    name: '여독사', title: '독사방 독수', art: 'unorthodox-assassin', tier: 'normal',
+    name: '여독사', title: '독사방 독수', art: 'foe-unorthodox-assassin', tier: 'normal',
     maxHp: 42, evasion: 20, traits: ['venom'], patternMode: 'random',
     pattern: [
       { name: '사독침', damage: 3, hits: 2 },
@@ -142,7 +142,7 @@ Object.assign(ENEMIES, {
     ],
   },
   blackWind: {
-    name: '흑풍', title: '흑풍채 쾌도', art: 'unorthodox-sword', tier: 'normal',
+    name: '흑풍', title: '흑풍채 쾌도', art: 'foe-unorthodox-sword', tier: 'normal',
     maxHp: 54, evasion: 10,
     pattern: [
       { name: '쾌도 이연참', damage: 5, hits: 2 },
@@ -152,7 +152,7 @@ Object.assign(ENEMIES, {
     ],
   },
   fallenMonk: {
-    name: '혜광', title: '파계승', art: 'orthodox-fist', tier: 'normal',
+    name: '혜광', title: '파계승', art: 'foe-orthodox-fist', tier: 'normal',
     maxHp: 54, traits: ['ironBody', 'berserk'],
     pattern: [
       { name: '금강권', damage: 10 },
@@ -208,7 +208,7 @@ Object.assign(ENEMIES, {
 // ══ 3구역: 마교 침공 저지 (불타는 관문) ══════════════
 Object.assign(ENEMIES, {
   bloodCultist: {
-    name: '혈교도', title: '마교 혈의당', art: 'demonic-assassin', tier: 'normal',
+    name: '혈교도', title: '마교 혈의당', art: 'foe-demonic-assassin', tier: 'normal',
     maxHp: 56, evasion: 15, traits: ['feint'], patternMode: 'random',
     pattern: [
       { name: '혈인', damage: 7, hits: 2 },
@@ -217,7 +217,7 @@ Object.assign(ENEMIES, {
     ],
   },
   demonSword: {
-    name: '마검수', title: '마교 검대', art: 'demonic-sword', tier: 'normal',
+    name: '마검수', title: '마교 검대', art: 'foe-demonic-sword', tier: 'normal',
     maxHp: 72, traits: ['killer'],
     pattern: [
       { name: '마검', damage: 12 },
@@ -226,7 +226,7 @@ Object.assign(ENEMIES, {
     ],
   },
   jiangshi: {
-    name: '혈강시', title: '마교의 시체 병기', art: 'demonic-fist', tier: 'normal',
+    name: '혈강시', title: '마교의 시체 병기', art: 'foe-demonic-fist', tier: 'normal',
     maxHp: 72, traits: ['ironBody', 'drain'],
     pattern: [
       { name: '강시권', damage: 11 },
@@ -235,7 +235,7 @@ Object.assign(ENEMIES, {
     ],
   },
   renegade: {
-    name: '배교자', title: '마교에 투항한 낭인', art: 'unorthodox-sword', tier: 'normal',
+    name: '배교자', title: '마교에 투항한 낭인', art: 'foe-unorthodox-sword', tier: 'normal',
     maxHp: 58, evasion: 10, patternMode: 'random',
     pattern: [
       { name: '배신의 칼', damage: 9, vulnerable: 2 },
@@ -330,7 +330,7 @@ Object.assign(ENEMIES, {
     ],
   },
   bloodShadow: {
-    name: '혈영대원', title: '귀면 가면의 자객', art: 'demonic-assassin', tier: 'tutorial',
+    name: '혈영대원', title: '귀면 가면의 자객', art: 'foe-demonic-assassin', tier: 'tutorial',
     maxHp: 48, evasion: 10,
     pattern: [
       { name: '혈인참', damage: 6 },
@@ -344,7 +344,7 @@ Object.assign(ENEMIES, {
 // ── 테스트 전용 (규칙 확인용 목인장) ─────────────────
 Object.assign(ENEMIES, {
   dummy: {
-    name: '목인장', title: '수련용 나무 인형', art: 'orthodox-fist', tier: 'test',
+    name: '목인장', title: '수련용 나무 인형', art: 'foe-orthodox-fist', tier: 'test',
     maxHp: 40,
     pattern: [
       { name: '타격', damage: 7 },
@@ -353,7 +353,7 @@ Object.assign(ENEMIES, {
     ],
   },
   dummyMulti: {
-    name: '목인장', title: '연타 인형', art: 'orthodox-fist', tier: 'test',
+    name: '목인장', title: '연타 인형', art: 'foe-orthodox-fist', tier: 'test',
     maxHp: 40,
     pattern: [{ name: '연타', damage: 4, hits: 2 }],
   },
@@ -364,7 +364,7 @@ Object.assign(ENEMIES, {
 // 1구역: 흑도 패권 다툼 (뒷골목·도박장)
 Object.assign(ENEMIES, {
   gangThug: {
-    name: '두칠', title: '흑도 칼잡이', art: 'unorthodox-sword', tier: 'normal',
+    name: '두칠', title: '흑도 칼잡이', art: 'foe-unorthodox-sword', tier: 'normal',
     maxHp: 42,
     pattern: [
       { name: '칼질', damage: 6 },
@@ -373,7 +373,7 @@ Object.assign(ENEMIES, {
     ],
   },
   gambler: {
-    name: '손씨', title: '도박장 타짜', art: 'unorthodox-assassin', tier: 'normal',
+    name: '손씨', title: '도박장 타짜', art: 'foe-unorthodox-assassin', tier: 'normal',
     maxHp: 32, evasion: 15, traits: ['feint'], patternMode: 'random',
     pattern: [
       { name: '주사위 던지기', damage: 4, hits: 2 },
@@ -426,7 +426,7 @@ ENEMIES.nokrimRival = {
 // 3구역: 무림맹 지부 습격 — 이번엔 정파 고수들이 적
 Object.assign(ENEMIES, {
   allianceGuard: {
-    name: '맹 위사', title: '무림맹 지부 수비', art: 'orthodox-fist', tier: 'normal',
+    name: '맹 위사', title: '무림맹 지부 수비', art: 'foe-orthodox-fist', tier: 'normal',
     maxHp: 60, traits: ['ironBody'],
     pattern: [
       { name: '철권', damage: 11 },
@@ -435,7 +435,7 @@ Object.assign(ENEMIES, {
     ],
   },
   allianceScout: {
-    name: '맹 밀정', title: '무림맹 감찰원', art: 'orthodox-assassin', tier: 'normal',
+    name: '맹 밀정', title: '무림맹 감찰원', art: 'foe-orthodox-assassin', tier: 'normal',
     maxHp: 52, evasion: 20, traits: ['feint'], patternMode: 'random',
     pattern: [
       { name: '암기 연사', damage: 4, hits: 3 },
@@ -444,7 +444,7 @@ Object.assign(ENEMIES, {
     ],
   },
   shaolinMonk: {
-    name: '각성', title: '무림맹 소속 무승', art: 'orthodox-fist', tier: 'normal',
+    name: '각성', title: '무림맹 소속 무승', art: 'foe-orthodox-fist', tier: 'normal',
     maxHp: 66, traits: ['ironBody'],
     pattern: [
       { name: '나한권', damage: 9 },
@@ -524,7 +524,7 @@ export const UNORTHODOX_POOLS = [
 // 1구역: 서열 혈투 (마교 총단 비무장)
 Object.assign(ENEMIES, {
   cultNovice: {
-    name: '혈수', title: '마교 수련생', art: 'demonic-fist', tier: 'normal',
+    name: '혈수', title: '마교 수련생', art: 'foe-demonic-fist', tier: 'normal',
     maxHp: 36,
     pattern: [
       { name: '혈권', damage: 6 },
@@ -533,7 +533,7 @@ Object.assign(ENEMIES, {
     ],
   },
   cultSword: {
-    name: '적검', title: '마검 견습생', art: 'demonic-sword', tier: 'normal',
+    name: '적검', title: '마검 견습생', art: 'foe-demonic-sword', tier: 'normal',
     maxHp: 38,
     pattern: [
       { name: '마검', damage: 7 },
@@ -542,7 +542,7 @@ Object.assign(ENEMIES, {
     ],
   },
   cultShadow: {
-    name: '흑영', title: '혈교도 견습생', art: 'demonic-assassin', tier: 'normal',
+    name: '흑영', title: '혈교도 견습생', art: 'foe-demonic-assassin', tier: 'normal',
     maxHp: 34, evasion: 10, traits: ['feint'], patternMode: 'random',
     pattern: [
       { name: '혈인', damage: 4, hits: 2 },
