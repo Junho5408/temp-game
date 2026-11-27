@@ -1,7 +1,10 @@
 // 기연 (지도의 ? 칸): 선택지가 있는 짧은 사건
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
-import { CONSUMABLES, TREASURES } from './items.js';
+import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
+
+// 관문의 주노가 가르쳐 주는 보물 (아직 없는 것부터)
+const JUNO_TEACHES = ['taiji', 'farSight', 'silkArmor', 'drunkenFist', 'chainArt', 'mirror'];
 
 function heal(run, n) {
   const before = run.hp;
@@ -163,11 +166,10 @@ export const EVENTS = {
       {
         label: '한 수 배운다',
         hint: '은자 -30 · 보물 하나',
-        disabled: (run) => run.gold < 30,
+        disabled: (run) => run.gold < 30 || JUNO_TEACHES.every((t) => run.treasures.includes(t)),
         effect(run, rng, api) {
           run.gold -= 30;
-          const order = ['taiji', 'farSight', 'silkArmor', 'drunkenFist', 'chainArt', 'mirror'];
-          const id = order.find((t) => !run.treasures.includes(t));
+          const id = JUNO_TEACHES.find((t) => !run.treasures.includes(t));
           if (!id) return '"자네한테 더 가르칠 게 없구먼." 노인은 술값만 받아 갔다.';
           api.addTreasure(id);
           return `"잘 봐 두게. 두 번은 안 보여 줘." — 보물 『${TREASURES[id].name}』을(를) 얻었다.`;
@@ -192,7 +194,7 @@ export const EVENTS = {
       {
         label: '금창약을 산다',
         hint: '은자 -25 · 행낭에 금창약 2개 (자리만큼)',
-        disabled: (run) => run.gold < 25,
+        disabled: (run) => run.gold < 25 || run.bag.length >= BAG_SIZE,
         effect(run, rng, api) {
           run.gold -= 25;
           const got = [api.addItem('geumchang'), api.addItem('geumchang')].filter(Boolean).length;

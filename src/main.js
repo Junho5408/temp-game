@@ -2,7 +2,7 @@
 // 규칙은 src/core 에만 있고, 여기서는 상태를 그리고 입력을 전달함.
 import {
   createBattle, startPlayerTurn, playCard, canPlay, endPlayerTurn, runEnemyTurn, takeEvents, intentPreview,
-  playerHitChance, playerEvasion, comboActive, useItem,
+  playerHitChance, playerEvasion, comboActive, useItem, cardPreviewDamage, cardHits,
 } from './core/battle.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js';
 import { cardStats } from './core/cards.js';
@@ -13,7 +13,7 @@ import {
 import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
-  createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade,
+  createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade, swapRewardItem,
   buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, advanceZone, serializeRun, parseRun, meetEventNpc,
 } from './core/run.js';
 import {
@@ -43,7 +43,7 @@ const STATUS_INFO = {
   weak: { glyph: '亂', name: '기혈 흐트러짐', tip: '주는 피해 0.75배, 남은 턴 ' },
   poison: { glyph: '毒', name: '중독', tip: '차례 시작에 이만큼 피해 (1씩 줄어듦): ' },
   evasion: { glyph: '輕', name: '경공', tip: '적의 다음 차례 동안 회피율 +10%씩: ' },
-  insight: { glyph: '見', name: '간파', tip: '다음 초식이 반드시 명중하고 치명: ' },
+  insight: { glyph: '見', name: '간파', tip: '다음 초식이 반드시 명중하고 치명 · 남은 횟수 ' },
   counter: { glyph: '反', name: '반격 자세', tip: '초식으로 공격하면 카드마다 되받는 피해 ' },
   stun: { glyph: '定', name: '굳음', tip: '다음 차례에 움직이지 못함' },
 };
@@ -349,7 +349,7 @@ async function showStep() {
       break;
     case 'reward':
       setScreen('panel');
-      renderReward(run, (i) => { chooseReward(run, i); show(); });
+      renderReward(run, (i) => { chooseReward(run, i); show(); }, (bagIndex) => { swapRewardItem(run, bagIndex); show(); });
       break;
     case 'rest':
       setScreen('panel');
@@ -503,7 +503,8 @@ async function runBattle(b, { title, hints = null, interrupt = null, boss = fals
   setScreen('battle');
   $('hand').replaceChildren();
   startPlayerTurn(b);
-  takeEvents(b);
+  // 첫 턴의 보물 발동은 이름표 뒤에 보여 줌 (나머지 첫 턴 이벤트는 생략) — BUG-011
+  const opening = takeEvents(b).filter((e) => e.type === 'treasure' || (e.type === 'status' && e.target === 'player'));
   busy = false;
   const done = new Promise((resolve) => {
     battleCtx = { resolve, interrupt, hints, hintStep: 0 };
@@ -517,6 +518,14 @@ async function runBattle(b, { title, hints = null, interrupt = null, boss = fals
     showBanner(title, boss ? '#ff8a7a' : '#f2c14e', 1400);
   }
   if (hints) hint(hints.start);
+  if (opening.length) {
+    busy = true;
+    wait(900).then(async () => {
+      await playEvents(opening);
+      busy = false;
+      if (battle === b && b.phase === 'player') render();
+    });
+  }
   return done;
 }
 
@@ -686,6 +695,13 @@ function renderHand() {
     const stats = cardStats(card);
     const hitEl = el.querySelector('.hit');
     if (stats.damage) {
+      // 실제로 들어갈 한 타 피해 (기세·내상·흐트러짐·연계·보물 반영)
+      const dmg = cardPreviewDamage(s, stats);
+      const hits = cardHits(s, stats);
+      const descEl = el.querySelector('.desc');
+      const first = hits > 1 ? `피해 ${dmg} × ${hits}` : `피해 ${dmg}`;
+      const rest = stats.desc.split('\n').slice(1).join('\n');
+      descEl.innerHTML = `<span><b class="dmg-now${dmg > stats.damage ? ' up' : dmg < stats.damage ? ' down' : ''}">${first}</b>${rest ? `\n${rest}` : ''}</span>`;
       const ch = playerHitChance(s, stats);
       hitEl.textContent = `명중 ${ch}%`;
       hitEl.classList.toggle('low', ch < 70);

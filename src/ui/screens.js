@@ -3,7 +3,7 @@
 import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/cards.js';
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
-import { availableNodes, canBuy } from '../core/run.js';
+import { availableNodes, canBuy, canRestHeal } from '../core/run.js';
 import { runFloor } from '../core/meta.js';
 import {
   BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND,
@@ -140,7 +140,7 @@ export function hideMap() {
 }
 
 // ── 승리 보상 ─────────────────────────
-export function renderReward(run, onChoose) {
+export function renderReward(run, onChoose, onSwap) {
   const r = run.reward;
   let itemLine = '';
   if (r.item) {
@@ -150,6 +150,17 @@ export function renderReward(run, onChoose) {
   }
   const { body, actions } = openPanel('승리', `은자 <b class="gold">+${r.gold}냥</b>${itemLine}<br>무공 하나를 골라 익히시오`);
   body.classList.add('card-row');
+  // 행낭이 가득해서 못 챙긴 물품: 행낭 한 칸을 버리고 바꿔 넣기 — BUG-013
+  if (r.item && !r.itemKept && onSwap) {
+    const swap = document.createElement('div');
+    swap.className = 'bag-swap';
+    swap.innerHTML = `<span>버리고 <b>${CONSUMABLES[r.item].name}</b> 챙기기:</span>`;
+    run.bag.forEach((id, i) => {
+      const b = button(`${CONSUMABLES[id].glyph} ${CONSUMABLES[id].name}`, () => onSwap(i), 'ghost small');
+      swap.appendChild(b);
+    });
+    $('panel').querySelector('.panel-sub').after(swap);
+  }
   run.reward.cards.forEach((id, i) => {
     const el = cardFace({ id }, { tag: 'button' });
     el.addEventListener('click', () => onChoose(i));
@@ -175,13 +186,20 @@ export function renderRest(run, { onHeal, onUpgrade }) {
   const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * 0.3));
   const { body } = openPanel('운기조식', '조용한 곳에서 기혈을 고른다. 한 가지만 할 수 있다.');
   body.classList.add('choice-row');
-  const a = button(`<b>息</b><span>휴식</span><small>체력 +${heal} (${run.hp} → ${run.hp + heal})</small>`, onHeal, 'choice');
+  const full = !canRestHeal(run);
+  const a = button(full ? '<b>息</b><span>휴식</span><small>기혈이 이미 충만하다</small>'
+    : `<b>息</b><span>휴식</span><small>체력 +${heal} (${run.hp} → ${run.hp + heal})</small>`, onHeal, 'choice');
+  a.disabled = full;
   const upgradable = run.deck.filter(canUpgrade);
   const b = button('<b>鍊</b><span>초식 연마</span><small>카드 1장을 강화(+)</small>', () => {
     pickCard(run, '연마할 초식을 고르시오', upgradable, { preview: true }, onUpgrade, () => renderRest(run, { onHeal, onUpgrade }));
   }, 'choice');
   b.disabled = upgradable.length === 0;
   body.append(a, b);
+  // 휴식도 연마도 못 하면 그냥 지나가기 (막다른 화면 방지)
+  if (a.disabled && b.disabled) {
+    $('panel').querySelector('.panel-actions').appendChild(button('지나간다', onHeal, 'ghost'));
+  }
 }
 
 // 덱에서 카드 고르기 (연마·제거 공용)

@@ -312,6 +312,20 @@ export function cardBaseDamage(s, c) {
   return base;
 }
 
+// 보물까지 더한 한 타 기본 피해 (기세·내상 적용 전)
+function cardDamageBase(s, c) {
+  let base = cardBaseDamage(s, c);
+  if (owns(s, 'chainArt') && comboActive(s)) base += 2;
+  if (owns(s, 'drunkenFist')) base += s.player.missStreak * 3;
+  return base;
+}
+
+// 손패에 보여 줄 한 타 실제 피해 (치명·철포삼 제외) — BUG-015
+export function cardPreviewDamage(s, c) {
+  if (!c.damage) return 0;
+  return computeDamage(s.player, s.enemy, cardDamageBase(s, c));
+}
+
 export function cardHits(s, c) {
   return (c.hits ?? 1) + (c.comboHits && comboActive(s) ? c.comboHits : 0);
 }
@@ -335,9 +349,7 @@ export function playCard(s, uid) {
     const insight = p.status.insight > 0;
     if (insight) p.status.insight -= 1;
     const hits = cardHits(s, c);
-    let base = cardBaseDamage(s, c);
-    if (owns(s, 'chainArt') && comboActive(s)) base += 2;
-    if (owns(s, 'drunkenFist')) base += p.missStreak * 3;
+    const base = cardDamageBase(s, c);
     const critChance = PLAYER_CRIT + (c.crit ?? 0) + (owns(s, 'blueSteel') ? 10 : 0);
     let landed = 0;
     for (let h = 0; h < hits && e.hp > 0; h++) {

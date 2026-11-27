@@ -1145,3 +1145,10 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 }
 #touch-tip[hidden] { display: none; }
 #touch-tip.below { transform: translate(-50%, 0); }
+
+/* ── 5-B ─────────────────── */
+.card .desc .dmg-now { font-weight: 800; }
+.card .desc .dmg-now.up { color: #ffcf6e; }
+.card .desc .dmg-now.down { color: #9fb4c8; }
+.bag-swap { display: flex; align-items: center; justify-content: center; gap: 6px; margin: -4px 0 8px; font-size: 13px; color: #d9cfbd; }
+.bag-swap .btn.small { padding: 3px 9px; font-size: 12px; }

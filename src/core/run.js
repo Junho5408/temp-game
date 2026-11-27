@@ -384,7 +384,21 @@ export function advanceZone(run) {
   return true;
 }
 
+// 행낭이 가득해서 못 챙긴 보상 물품을 행낭 한 칸과 바꿈 — BUG-013
+export function swapRewardItem(run, bagIndex) {
+  const r = run.reward;
+  if (run.phase !== 'reward' || !r?.item || r.itemKept) return false;
+  if (bagIndex < 0 || bagIndex >= run.bag.length) return false;
+  run.bag[bagIndex] = r.item;
+  r.itemKept = true;
+  return true;
+}
+
 // ── 운기조식 ─────────────────────────
+export function canRestHeal(run) {
+  return run.hp < run.maxHp;
+}
+
 export function restHeal(run) {
   if (run.phase !== 'rest') return 0;
   const before = run.hp;
