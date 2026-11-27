@@ -21,6 +21,7 @@ export function createMeta() {
     met: {}, // 이야기 인물을 만난 횟수 (회차를 넘어 누적) { juno: 2, ... }
     pendingMemory: null, // 쓰러진 뒤 아직 고르지 않은 기억 후보 (새로고침해도 다시 고르게)
     lastDeath: null, // 마지막으로 나를 죽인 적 id (회귀 직후 대사)
+    lastEnd: null, // 직전 생이 끝난 방식: death(전투에서 쓰러짐) · abandon(포기) · normal(일반 엔딩) · true(진엔딩)
     pendingEnding: null, // 아직 끝까지 보지 못한 엔딩 { kind: 'true'|'normal', floor, battlesWon, deck, gold } — BUG-030
     routeStats: {}, // 세력별 { runs, bestZone, wins }
   };
@@ -50,6 +51,7 @@ export function parseMeta(text) {
     }
     setPendingMemory(meta, strList(data.pendingMemory));
     meta.lastDeath = typeof data.lastDeath === 'string' ? data.lastDeath : null;
+    meta.lastEnd = ['death', 'abandon', 'normal', 'true'].includes(data.lastEnd) ? data.lastEnd : null;
     const pe = data.pendingEnding;
     meta.pendingEnding = pe && typeof pe === 'object' && ['true', 'normal'].includes(pe.kind)
       ? { kind: pe.kind, floor: count(pe.floor), battlesWon: count(pe.battlesWon), deck: count(pe.deck), gold: count(pe.gold) }
@@ -117,6 +119,7 @@ export function recordRunEnd(meta, run) {
     meta.lastDeath = run.encounter?.enemyId ?? null;
   }
   if (run.phase === 'victory') meta.lastDeath = null;
+  meta.lastEnd = run.phase === 'victory' ? (run.trueWin ? 'true' : 'normal') : (meta.lastDeath ? 'death' : 'abandon');
   for (let z = 1; z <= Math.min(3, run.zonesCleared ?? 0); z++) meta.clears[`zone${z}`] += 1;
   if (run.phase === 'victory') meta.clears.final += 1;
   if (run.phase === 'victory' && run.trueWin) meta.clears.trueEnd += 1;

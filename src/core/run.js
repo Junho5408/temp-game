@@ -167,6 +167,7 @@ export function meetEventNpc(run, meta) {
   if (!run.event.introDone) {
     run.event.introDone = true;
     meta.met[ev.npc] = (meta.met[ev.npc] ?? 0) + 1;
+    if (ev.intro === 'soohaCamp') meta.met.soohaNamed = (meta.met.soohaNamed ?? 0) + 1; // 이름을 알게 됨
     run.event.metCount = meta.met[ev.npc];
   }
   return run.event.metCount;

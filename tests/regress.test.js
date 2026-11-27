@@ -37,8 +37,11 @@ test('쓰러지면 나를 죽인 적을 회귀 기록에 남기고, 그날 밤�
 test('회귀 직후 대사: 직전에 죽인 적, 일반 엔딩 뒤, 진상 조각을 다 모았을 때', async () => {
   const { wakeLines, CLUES } = await import('../src/story/script.js');
   const text = (ls) => ls.map((l) => l.text).join('\n');
-  assert.match(text(wakeLines(5, { lastDeath: 'gangLordD', clues: [], clears: {} })), /곰방대/);
-  assert.match(text(wakeLines(5, { lastDeath: null, clues: [], clears: { final: 1 } })), /…아니, 아직이다\./);
+  assert.match(text(wakeLines(5, { lastDeath: 'gangLord', clues: [], clears: {} })), /곰방대/);
+  assert.match(text(wakeLines(5, { lastDeath: 'gangLordD', clues: [], clears: {} })), /강 건너 흑도/);
+  assert.match(text(wakeLines(5, { lastDeath: null, lastEnd: 'normal', clues: [], clears: { final: 1 } })), /…아니, 아직이다\./);
+  // 판을 포기했으면 일반 엔딩 뒤 대사가 나오지 않음 (S-LR-01)
+  assert.ok(!text(wakeLines(5, { lastDeath: null, lastEnd: 'abandon', clues: [], clears: { final: 1 } })).includes('그날 밤을 넘겼으니'));
   assert.match(text(wakeLines(5, { lastDeath: 'spy', clues: ['traitor', 'payer', 'request'], clears: {} })), /이번 생에서 끝낸다/);
   assert.ok(wakeLines(1, {}).length > 0 && wakeLines(2).length > 0);
   assert.ok(CLUES.wine);
@@ -64,4 +67,14 @@ test('진엔딩: 백일취를 이미 알면 같은 설명을 다시 하지 않�
   assert.match(t([]), /백일취\(百日醉\)\. 그날 밤/);
   assert.ok(!t(['wine']).includes('백일취(百日醉). 그날 밤'));
   assert.match(t(['wine']), /술이, 깼습니까/);
+});
+
+test('직전 생이 끝난 방식을 기록 (쓰러짐·포기·일반 엔딩·진엔딩)', () => {
+  const meta = createMeta();
+  const end = (patch) => { const r = createRun({ seed: 9 }); Object.assign(r, patch); recordRunEnd(meta, r); return meta.lastEnd; };
+  assert.equal(end({ phase: 'defeat', encounter: { enemyId: 'spy' } }), 'death');
+  assert.equal(end({ phase: 'defeat', encounter: null }), 'abandon');
+  assert.equal(end({ phase: 'victory' }), 'normal');
+  assert.equal(end({ phase: 'victory', trueWin: true }), 'true');
+  assert.equal(parseMeta(serializeMeta(meta)).lastEnd, 'true');
 });

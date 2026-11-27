@@ -8,6 +8,7 @@
 - 진행 중: 6단계 완료 (6-A~6-E + 밸런스 + 최종 QA). 다음은 사용자와 정할 일 (그림 채우기 /art, 배포 등)
 - QA 티켓: BUG-001~037 모두 처리 — docs/qa/tickets/INDEX.md. 밸런스 기준은 새 봇 기준 1구역 35~45% (PROGRESS.md)
 - 다음 할 일: 남은 5명 그림(한소·석무·쌍아·적편·왕삼 /art 넣기, GitHub Pages 켜기(사용자)
+- 회귀: 백일취(STORY.md 회귀의 비밀). 回 선택지 = events 의 needClue (run.knownClues), 회귀 직후 대사 wakeLines(n, meta) 는 meta.lastDeath·lastEnd·clues 로 갈림
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
 - 무공은 세력마다 따로 (공용 0장, cards.js faction). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe), 마교 마기(magi/magiSpend)·혈투(desperate)·입마(curse → qiDeviation)
