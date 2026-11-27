@@ -5,9 +5,9 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 7단계 완료 (7-A~7-E 콘텐츠 확장: 주노 기연 세 길, 무공 세력마다 65장, 보물 56개) + QA qa-20261127-1119
-- QA 티켓: BUG-038~049 열림 (높음 1: 함정→두목 2단계 순서) — docs/qa/tickets/INDEX.md. 밸런스 4건(041~044)은 사용자 결정 필요. 기준: 1구역 35~45%, 나머지 30~60%
-- 다음 할 일: 사용자와 정할 일 (QA 티켓 /fix-bugs, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기)
+- 진행 중: 7단계 완료 (7-A~7-E 콘텐츠 확장: 주노 기연 세 길, 무공 세력마다 65장, 보물 56개) + QA qa-20261127-1119 티켓 처리
+- QA 티켓: BUG-001~049 모두 처리 — docs/qa/tickets/INDEX.md. 기준: 1구역 35~45%, 나머지 30~60% (마교 진엔딩 판 최종 26.6% 경계 아래, 다음 QA 에서 확인)
+- 다음 할 일: 사용자와 정할 일 (/qa quick 재확인, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기)
 - 회귀: 백일취(STORY.md 회귀의 비밀). 回 선택지 = events 의 needClue (run.knownClues), 회귀 직후 대사 wakeLines(n, meta) 는 meta.lastDeath·lastEnd·clues 로 갈림
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
