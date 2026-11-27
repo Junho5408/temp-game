@@ -2,10 +2,12 @@
 // - pools: 구역별 적 목록 (enemies.js), finalBoss: 그날 밤 객잔의 적
 // - unlock: 회귀 기록의 구역 돌파 수로 열림 (천천히 열리게 — 2026-11-27 사용자 결정)
 // - passive: 판 내내 적용되는 세력 고유 규칙 (run.js 가 확인)
-// - starter: 시작 덱에서 바꿀 카드 { remove: [...], add: [...] }
+// - deck: 시작 덱 (세력마다 완전히 다름), basic: 기본 무공 (동굴 기연에서 덜어 냄)
+//   무공은 세력마다 따로 — 공용 무공 없음 (cards.js 의 faction)
 // - ready: 내용이 다 만들어진 루트만 고를 수 있음
 // 이름·배경·대사는 src/story/script.js 의 ROUTE_TEXT
 import { ZONE_POOLS, UNORTHODOX_POOLS, DEMONIC_POOLS, FINAL_BOSS } from './enemies.js';
+import { STARTER_DECK, UNORTHODOX_DECK, DEMONIC_DECK } from './cards.js';
 
 export const FACTION_IDS = ['orthodox', 'unorthodox', 'demonic'];
 
@@ -17,7 +19,8 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: null,
     passive: {},
-    starter: null,
+    deck: STARTER_DECK,
+    basic: 'strike',
   },
   // 사파 · 암수(暗手): 돈과 비열한 수
   unorthodox: {
@@ -27,7 +30,8 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: { zone: 1, text: '어느 길로든 1구역을 한 번 돌파하면 열린다' },
     passive: { startGold: 40, shopDiscount: 0.2 },
-    starter: { remove: ['strike', 'strike'], add: ['venomBlade', 'sandThrow'] },
+    deck: UNORTHODOX_DECK,
+    basic: 'dagger',
   },
   // 마교 · 혈공(血功): 피를 대가로 한 힘
   demonic: {
@@ -37,7 +41,8 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: { zone: 2, text: '어느 길로든 2구역을 한 번 돌파하면 열린다' },
     passive: { winHeal: 6, restHealRatio: 0.2 },
-    starter: { remove: ['strike', 'strike'], add: ['bloodSword', 'bloodMist'] },
+    deck: DEMONIC_DECK,
+    basic: 'bloodClaw',
   },
 };
 

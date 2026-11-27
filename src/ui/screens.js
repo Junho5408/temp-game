@@ -1,6 +1,6 @@
 // 전투 밖 화면들: 지도, 보상, 운기조식, 객잔, 기연, 결과, 덱 보기
 // 규칙은 src/core/run.js 에 있고, 여기서는 그리기와 클릭만 담당.
-import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/cards.js';
+import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS, cardKeywords } from '../core/cards.js';
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
 import { availableNodes, canBuy, canRestHeal, restHealAmount } from '../core/run.js';
@@ -18,6 +18,8 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
   const el = document.createElement(tag);
   if (tag === 'button') el.type = 'button';
   el.className = `card ${c.type}${c.upgraded ? ' upgraded' : ''}`;
+  const kw = cardKeywords(c);
+  if (kw) el.title = kw;
   el.innerHTML = `
     ${showKey ? '<span class="key"></span><span class="hit"></span>' : ''}
     <span class="cost">${c.cost}</span>

@@ -25,10 +25,17 @@
 //   - phase2: 체력이 일정 이하가 되면 패턴·특성이 바뀜 (두목)
 //   - 특성(traits): enemies.js 의 TRAITS 참고
 //
+// 세력 기믹 (cards.js)
+//   암기(thrown)        사파: 쓰지 않고 손에서 버려지면(턴 종료·칼 바꿔 쥐기·비도 난사) 저절로 던져져 피해·중독
+//   매수(bribe)         사파: 은자를 써서 일반·고수는 한 차례 묶고, 두목은 흐트러뜨림. 은자는 판의 은자에서 나감
+//   마기(magi)          마교: 체력을 대가로 쓰거나 적의 공격을 맞으면 쌓임 (최대 MAGI_MAX). magiSpend 무공이 모두 써서 피해로 바꿈
+//   입마(curse)         마교: 강한 마공을 쓰면 이번 전투 덱에 '입마'가 섞임. 쓸 수 없고, 턴 끝에 손에 있으면 체력 -2 · 마기 +1
+//   사라짐(exhaust)     쓰면 이번 전투에서 빠짐
+//
 // 아이템 (items.js)
 //   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
 //   - 보물(treasures): 전투 내내 자동 적용
-import { STARTER_DECK, cardStats } from './cards.js';
+import { CARDS, STARTER_DECK, cardStats } from './cards.js';
 import { ENEMIES, POINT_MAX } from './enemies.js';
 import { CONSUMABLES } from './items.js';
 import { createRng, shuffle } from './rng.js';
@@ -45,6 +52,8 @@ export const EVASION_PER_STACK = 10;
 export const MAX_EVASION = 70;
 export const MIN_HIT = 20;
 export const POINT_STEP = 6; // 점혈로 한 번 굳을 때마다 게이지 최대치 증가
+export const MAGI_MAX = 20;
+export const CURSE_HP = 2; // 입마가 손에 남았을 때 잃는 체력
 
 const newStatus = () => ({
   strength: 0, vulnerable: 0, weak: 0, poison: 0, evasion: 0, insight: 0, counter: 0, stun: 0, point: 0,
@@ -62,6 +71,8 @@ export function createBattle({
   luck = true,
   bag = [],
   treasures = [],
+  gold = 0, // 판의 은자 (매수·전낭 던지기에 씀)
+  faction = 'orthodox',
 } = {}) {
   const def = ENEMIES[enemyId];
   if (!def) throw new Error(`알 수 없는 적: ${enemyId}`);
@@ -78,7 +89,13 @@ export function createBattle({
     turn: 0,
     phase: 'start', // start → player → enemy → player ... → won | lost
     turnAttacks: 0, // 이번 턴에 쓴 초식 수 (연계)
-    goldGained: 0, // 협박 등으로 얻은 은자 (전투가 끝나면 판에 더함)
+    goldGained: 0, // 협박 등으로 얻은(쓰면 음수) 은자 (전투가 끝나면 판에 더함)
+    purse: gold,
+    faction,
+    poisonKeep: false, // 오독수
+    bloodSea: false, // 혈해
+    nextUid: 100000, // 전투 중 새로 생기는 카드(입마)
+    exhausted: [],
     bag: [...bag], // 행낭 물품 id
     treasures: new Set(treasures), // 보물 id
     player: {
@@ -89,6 +106,7 @@ export function createBattle({
       status: newStatus(),
       missStreak: 0,
       shield: treasures.includes('silkArmor'), // 천잠보의: 첫 일격 무효
+      magi: treasures.includes('magiOrb') ? 3 : 0, // 마령주
     },
     enemy: {
       id: def.id,
@@ -178,7 +196,7 @@ function tickPoison(s, key) {
   const u = s[key];
   if (u.status.poison <= 0) return false;
   const amount = u.status.poison;
-  u.status.poison -= 1;
+  if (!(key === 'enemy' && s.poisonKeep)) u.status.poison -= 1;
   u.hp = Math.max(0, u.hp - amount);
   emit(s, { type: 'damage', target: key, amount, poison: true });
   if (key === 'enemy') afterEnemyHurt(s, amount);
@@ -302,8 +320,53 @@ export function canPlay(s, uid) {
   const card = s.hand.find((c) => c.uid === uid);
   if (!card) return false;
   const c = cardStats(card);
+  if (c.unplayable) return false;
+  if (c.goldCost && purse(s) < c.goldCost) return false;
   // 체력을 대가로 쓰는 무공은 대가보다 체력이 많아야 함 (스스로 쓰러지지 않게)
   return c.cost <= s.player.energy && (!c.hpCost || s.player.hp > c.hpCost);
+}
+
+// 전투 중 쓸 수 있는 은자
+export function purse(s) {
+  return Math.max(0, (s.purse ?? 0) + s.goldGained);
+}
+
+// 혈투: 내 체력이 절반 이하
+export function desperateActive(s) {
+  return s.player.hp <= s.player.maxHp / 2;
+}
+
+export function addMagi(s, n) {
+  const p = s.player;
+  const before = p.magi;
+  p.magi = Math.max(0, Math.min(MAGI_MAX, p.magi + n));
+  if (p.magi !== before) emit(s, { type: 'magi', amount: p.magi - before, total: p.magi });
+}
+
+// 손에서 버려지는 카드: 암기면 던져짐
+function discardFromHand(s, card) {
+  const c = cardStats(card);
+  s.discard.push(card);
+  if (!c.thrown || s.enemy.hp <= 0) return;
+  const p = s.player;
+  const e = s.enemy;
+  emit(s, { type: 'thrown', card: card.id });
+  const dmg = computeDamage(p, e, c.thrown + (owns(s, 'knifePouch') ? 3 : 0));
+  e.hp = Math.max(0, e.hp - dmg);
+  emit(s, { type: 'damage', target: 'enemy', amount: dmg, thrown: true });
+  afterEnemyHurt(s, dmg);
+  if (e.hp > 0 && c.thrownPoison) poisonEnemy(s, c.thrownPoison);
+  checkEnd(s);
+}
+
+// 입마를 이번 전투 덱(뽑을 패)에 섞음
+function addCurse(s, n) {
+  for (let i = 0; i < n; i++) {
+    const card = { uid: s.nextUid++, id: 'qiDeviation', upgraded: false };
+    const at = Math.floor(s.rng() * (s.drawPile.length + 1));
+    s.drawPile.splice(at, 0, card);
+  }
+  emit(s, { type: 'curse', amount: n });
 }
 
 // 연계 조건: 이번 턴에 이미 초식을 썼는가
@@ -318,7 +381,10 @@ export function cardBaseDamage(s, c) {
   if (c.combo && comboActive(s)) base += c.combo;
   if (c.perAttack) base += c.perAttack * s.turnAttacks;
   if (c.dirty && isDebuffed(s.enemy)) base *= 2;
+  if (c.dirtyBonus && isDebuffed(s.enemy)) base += c.dirtyBonus;
   if (c.hpCost && s.treasures?.has('bloodJade')) base += 3;
+  if (c.desperate && desperateActive(s)) base += c.desperate;
+  if (c.magiSpend) base += c.magiSpend * (s.player.magi ?? 0);
   return base;
 }
 
@@ -361,10 +427,25 @@ export function playCard(s, uid) {
 
   p.energy -= c.cost;
   s.hand.splice(idx, 1);
-  emit(s, { type: 'play', card: card.id, attack: !!c.damage });
+  emit(s, { type: 'play', card: card.id, attack: !!(c.damage || c.burst) });
+  if (c.goldCost) {
+    s.goldGained -= c.goldCost;
+    emit(s, { type: 'gold', amount: -c.goldCost });
+  }
   if (c.hpCost) {
     p.hp -= c.hpCost;
     emit(s, { type: 'damage', target: 'player', amount: c.hpCost, blood: true });
+    addMagi(s, 1 + (s.bloodSea ? 2 : 0)); // 피를 내주면 마기가 쌓임
+  }
+  if (c.burst && e.hp > 0) {
+    // 독 터뜨리기: 쌓인 중독을 한 번에 피해로
+    let dmg = e.status.poison * c.burst;
+    if (e.status.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
+    e.status.poison = 0;
+    e.hp = Math.max(0, e.hp - dmg);
+    emit(s, { type: 'damage', target: 'enemy', amount: dmg, poison: true, burst: true });
+    afterEnemyHurt(s, dmg);
+    s.turnAttacks += 1;
   }
 
   if (c.strength) addStatus(s, 'player', 'strength', c.strength);
@@ -415,6 +496,7 @@ export function playCard(s, uid) {
       emit(s, { type: 'damage', target: 'player', amount: dmg, counter: true });
     }
     s.turnAttacks += 1;
+    if (c.magiSpend && p.magi > 0) addMagi(s, -p.magi);
   } else if (e.hp > 0) {
     // 심법으로 거는 약화 (모래 뿌리기 등)
     if (c.weak) addStatus(s, 'enemy', 'weak', c.weak);
@@ -428,8 +510,44 @@ export function playCard(s, uid) {
   }
   if (c.insight) addStatus(s, 'player', 'insight', c.insight);
   if (c.energy) p.energy += c.energy;
-  s.discard.push(card);
-  if (c.draw) drawCards(s, c.draw);
+  if (c.bribe && e.hp > 0) {
+    // 매수: 두목은 돈으로 안 움직임 → 흐트러뜨리는 데 그침
+    if (e.tier === 'boss') addStatus(s, 'enemy', 'weak', 2);
+    else {
+      e.status.stun = 1;
+      emit(s, { type: 'stun', reason: 'bribe' });
+    }
+  }
+  if (c.poisonKeep) s.poisonKeep = true;
+  if (c.bloodSea) s.bloodSea = true;
+  if (c.magiDouble) addMagi(s, p.magi);
+  if (c.magi) addMagi(s, c.magi);
+  if (c.purge) {
+    const curses = s.hand.filter((x) => CARDS[x.id].unplayable);
+    s.hand = s.hand.filter((x) => !CARDS[x.id].unplayable);
+    s.exhausted.push(...curses);
+    if (curses.length) {
+      emit(s, { type: 'purge', amount: curses.length });
+      addMagi(s, curses.length * 2);
+    }
+  }
+  if (c.curse) addCurse(s, c.curse);
+  if (c.exhaust) s.exhausted.push(card);
+  else s.discard.push(card);
+  let draw = c.draw ?? 0;
+  if (c.redraw) {
+    // 칼 바꿔 쥐기: 손패를 모두 버리고(암기는 던져짐) 그만큼 다시 뽑음
+    const hand = s.hand;
+    s.hand = [];
+    for (const x of hand) discardFromHand(s, x);
+    draw += hand.length;
+  }
+  if (c.throwAll) {
+    const knives = s.hand.filter((x) => CARDS[x.id].thrown);
+    s.hand = s.hand.filter((x) => !CARDS[x.id].thrown);
+    for (const x of knives) discardFromHand(s, x);
+  }
+  if (draw && s.phase === 'player') drawCards(s, draw);
 
   checkEnd(s);
   return true;
@@ -474,11 +592,25 @@ export function useItem(s, index) {
   return true;
 }
 
-// 턴 종료: 손패를 버리고 적 차례로 넘어감
+// 턴 종료: 손패를 버리고(암기는 던져지고, 입마는 대가를 치름) 적 차례로 넘어감
+// 암기로 적이 쓰러지면 phase 는 'won'
 export function endPlayerTurn(s) {
   if (s.phase !== 'player') return false;
-  s.discard.push(...s.hand);
+  const hand = s.hand;
   s.hand = [];
+  const p = s.player;
+  for (const card of hand) {
+    if (CARDS[card.id].unplayable) {
+      const loss = Math.min(CURSE_HP, p.hp - 1); // 입마로는 쓰러지지 않음
+      if (loss > 0) {
+        p.hp -= loss;
+        emit(s, { type: 'damage', target: 'player', amount: loss, blood: true, curse: true });
+      }
+      addMagi(s, 1);
+    }
+    discardFromHand(s, card);
+  }
+  if (s.phase !== 'player') return true;
   tickStatus(s.player);
   s.phase = 'enemy';
   return true;
@@ -538,6 +670,7 @@ export function runEnemyTurn(s) {
         if (crit) dmg = Math.floor(dmg * CRIT_MULT);
         p.hp = Math.max(0, p.hp - dmg);
         emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
+        if (s.faction === 'demonic' && dmg > 0) addMagi(s, 1);
         if (has(e, 'drain') && dmg > 0) {
           const before = e.hp;
           e.hp = Math.min(e.maxHp, e.hp + Math.ceil(dmg / 2));

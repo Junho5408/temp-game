@@ -17,20 +17,21 @@ function battle(opts = {}) {
 }
 const hand = (s, ids) => { s.hand = ids.map((id, i) => ({ uid: 900 + i, id, upgraded: false })); s.player.energy = 9; };
 
-test('마교 시작 덱: 기본 검법 2장 대신 혈검·혈무', () => {
+test('마교 시작 덱: 정파와 겹치는 무공 없음 (혈조·혈검·혈무·마기 흡수·천마심법)', () => {
   const ids = createRun({ seed: 1, faction: 'demonic' }).deck.map((c) => c.id);
-  assert.ok(ids.includes('bloodSword') && ids.includes('bloodMist'));
-  assert.equal(ids.filter((id) => id === 'strike').length, 3);
+  assert.equal(ids.length, 10);
+  assert.ok(ids.every((id) => CARDS[id].faction === 'demonic'));
+  assert.equal(ids.filter((id) => id === 'bloodClaw').length, 4);
 });
 
-test('혈검: 체력 3을 내고 피해 11', () => {
+test('혈검: 체력 3을 내고 피해 12', () => {
   const s = battle();
   hand(s, ['bloodSword']);
   const hp = s.player.hp;
   const ehp = s.enemy.hp;
   playCard(s, 900);
   assert.equal(s.player.hp, hp - 3);
-  assert.equal(ehp - s.enemy.hp, 11);
+  assert.equal(ehp - s.enemy.hp, 12);
   assert.ok(takeEvents(s).some((e) => e.type === 'damage' && e.blood && e.amount === 3));
 });
 
@@ -50,30 +51,32 @@ test('흡혈 일섬: 준 피해 절반 회복', () => {
   s.player.hp = 40;
   hand(s, ['drainStrike']);
   playCard(s, 900);
-  assert.equal(s.player.hp, 45);
+  assert.equal(s.player.hp, 40 + Math.floor(13 * 0.5));
 });
 
-test('마공 폭주: 체력 5 → 내공 +2, 피의 맹세: 체력 6 → 기세 +4', () => {
+test('마공 폭주: 체력 4 → 내공 +2, 피의 맹세: 체력 5 → 기세 +6 (둘 다 입마)', () => {
   const s = battle();
   hand(s, ['bloodRage', 'bloodOath']);
   s.player.energy = 1;
+  const pile = s.drawPile.length;
   playCard(s, 900);
   assert.equal(s.player.energy, 3);
   playCard(s, 901);
-  assert.equal(s.player.status.strength, 4);
-  assert.equal(s.player.hp, 70 - 5 - 6);
+  assert.equal(s.player.status.strength, 6);
+  assert.equal(s.player.hp, 70 - 4 - 5);
+  assert.equal(s.drawPile.length, pile + 2);
 });
 
 test('천마 혈옥: 혈 무공 피해 +3, 마령 가면: 첫 턴 적 흐트러짐 2', () => {
   const s = battle({ treasures: ['bloodJade', 'demonMask'] });
   assert.equal(s.enemy.status.weak, 2);
-  assert.equal(cardPreviewDamage(s, cardStats({ id: 'bloodSword' })), 14);
-  assert.equal(cardPreviewDamage(s, cardStats({ id: 'strike' })), 6);
+  assert.equal(cardPreviewDamage(s, cardStats({ id: 'bloodSword' })), 15);
+  assert.equal(cardPreviewDamage(s, cardStats({ id: 'bloodClaw' })), 7);
 });
 
 test('마교 무공은 마교 판에서만', () => {
   const demonic = Object.values(CARDS).filter((c) => c.faction === 'demonic').map((c) => c.id);
-  assert.equal(demonic.length, 6);
+  assert.ok(demonic.length >= 16);
   for (const r of ['common', 'uncommon', 'rare']) {
     assert.ok(cardPool(createRun({ seed: 1, faction: 'unorthodox' }), r).every((id) => !demonic.includes(id)));
   }

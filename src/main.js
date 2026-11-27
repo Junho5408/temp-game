@@ -2,10 +2,10 @@
 // 규칙은 src/core 에만 있고, 여기서는 상태를 그리고 입력을 전달함.
 import {
   createBattle, startPlayerTurn, playCard, canPlay, endPlayerTurn, runEnemyTurn, takeEvents, intentPreview,
-  playerHitChance, playerEvasion, comboActive, useItem, cardPreviewDamage, cardHits, counterDamage,
+  playerHitChance, playerEvasion, comboActive, useItem, cardPreviewDamage, cardHits, counterDamage, MAGI_MAX,
 } from './core/battle.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js';
-import { cardStats } from './core/cards.js';
+import { cardStats, CARDS } from './core/cards.js';
 import {
   createMeta, parseMeta, serializeMeta, finishPrologue, startNewRun, recordRunEnd,
   memoryCandidates, validateLoadout, addClue, setPendingMemory, resolvePendingMemory,
@@ -480,7 +480,8 @@ function renderRunInfo() {
     : '행낭이 비었다 (전투 중에 한 번 쓰는 물품)';
   const hp = battle && run.phase === 'battle' ? battle.player.hp : run.hp;
   $('run-hp').textContent = `❤ ${hp}/${run.maxHp}`;
-  $('run-gold').textContent = `銀 ${run.gold}`;
+  const gold = battle && run.phase === 'battle' ? Math.max(0, run.gold + battle.goldGained) : run.gold;
+  $('run-gold').textContent = `銀 ${gold}`;
   $('deck-button').textContent = `덱 ${run.deck.length}`;
 }
 
@@ -610,6 +611,12 @@ function renderUnit(el, name, title, u, who) {
       const tipValue = k === 'stun' ? '' : k === 'counter' && who === 'enemy' ? counterDamage(battle) : v;
       return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${tipValue}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
     });
+  if (who === 'player') {
+    el.querySelector('.magi')?.remove();
+    if (battle.faction === 'demonic' || u.magi > 0) {
+      el.insertAdjacentHTML('beforeend', `<div class="magi" title="마기(魔氣): 체력을 대가로 쓰거나 맞으면 쌓이고, 마기를 쓰는 무공이 한꺼번에 피해로 바꾼다 (최대 ${MAGI_MAX})"><span>魔</span><i><b style="width:${(u.magi / MAGI_MAX) * 100}%"></b></i><em>${u.magi}</em></div>`);
+    }
+  }
   if (who === 'enemy') {
     // 점혈 게이지와 타고난 특성
     if (u.status.point > 0) chips.push(`<span class="st point" title="점혈: ${u.pointMax} 이 되면 한 차례 굳음">穴<b>${u.status.point}/${u.pointMax}</b></span>`);
@@ -727,6 +734,13 @@ function renderHand() {
       hitEl.classList.toggle('low', ch < 70);
       hitEl.classList.toggle('sure', ch >= 100);
     }
+    if (stats.burst) {
+      let dmg = s.enemy.status.poison * stats.burst;
+      if (s.enemy.status.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
+      el.querySelector('.desc').innerHTML = `<span><b class="dmg-now${dmg > 0 ? ' up' : ' down'}">지금 피해 ${dmg}</b>\n${stats.desc}</span>`;
+      hitEl.textContent = '필중';
+      hitEl.classList.add('sure');
+    }
     el.classList.toggle('combo-on', comboActive(s) && !!(stats.combo || stats.comboHits || stats.perAttack));
     const playable = !busy && canPlay(s, card.uid);
     el.classList.toggle('disabled', !playable);
@@ -783,6 +797,12 @@ async function onCard(uid, el) {
 async function onEndTurn() {
   if (busy || !battle || !endPlayerTurn(battle)) return;
   busy = true;
+  const handEvents = takeEvents(battle); // 던져진 암기, 입마의 대가
+  if (handEvents.length) {
+    renderControls();
+    await playEvents(handEvents);
+    if (!battleCtx) return;
+  }
   enemyActing = true;
   render();
   await wait(350);
@@ -840,11 +860,21 @@ async function playEvents(events) {
         if (ev.stunned) await wait(700);
         break;
       case 'damage': {
+        if (ev.thrown) {
+          // 암기: 공격 동작 없이 날아가 꽂힘
+          sfx('stab');
+          scene.hit('enemy', ev.amount);
+          popup('enemy', `暗 -${ev.amount}`, 'thrown');
+          renderStatus();
+          if (battle.enemy.hp <= 0) scene.die('enemy');
+          await wait(380);
+          break;
+        }
         if (ev.blood) {
-          // 혈공: 체력을 대가로 냄
+          // 혈공: 체력을 대가로 냄 (입마의 대가도)
           sfx('poison');
           scene.buff('player');
-          popup('player', `血 -${ev.amount}`, 'blood');
+          popup('player', ev.curse ? `魘 입마 -${ev.amount}` : `血 -${ev.amount}`, 'blood');
           renderStatus();
           await wait(280);
           break;
@@ -853,7 +883,11 @@ async function playEvents(events) {
           // 중독: 공격 동작 없이 독 피해
           scene.hit(ev.target, 2);
           sfx('poison');
-          popup(ev.target, `毒 -${ev.amount}`, 'poison');
+          if (ev.burst) {
+            scene.shake(7);
+            flash('crit');
+          }
+          popup(ev.target, ev.burst ? `毒爆 -${ev.amount}` : `毒 -${ev.amount}`, 'poison');
           renderStatus();
           if (battle[ev.target].hp <= 0) scene.die(ev.target);
           await wait(450);
@@ -911,8 +945,32 @@ async function playEvents(events) {
         break;
       case 'gold':
         sfx('coin');
-        popup('player', `銀 +${ev.amount}`, 'treasure', -70);
+        popup('player', ev.amount < 0 ? `銀 ${ev.amount}` : `銀 +${ev.amount}`, 'treasure', -70);
+        renderRunInfo();
         await wait(200);
+        break;
+      case 'thrown':
+        popup('player', `暗器 · ${CARDS[ev.card].name}`, 'thrown-name', -80);
+        await wait(140);
+        break;
+      case 'magi':
+        if (ev.amount > 0) scene.buff('player');
+        popup('player', ev.amount > 0 ? `魔 +${ev.amount}` : `魔 ${ev.amount}`, 'magi', -60);
+        renderStatus();
+        await wait(150);
+        break;
+      case 'curse':
+        sfx('debuff');
+        flash('phase');
+        showBanner(`입마(入魔)! 마기가 역류한다 — 입마 ${ev.amount}장이 덱에 섞였다`, '#c86aff', 1300);
+        renderControls();
+        await wait(450);
+        break;
+      case 'purge':
+        sfx('heal');
+        popup('player', `입마 ${ev.amount}장 흡수`, 'magi', -90);
+        renderControls();
+        await wait(250);
         break;
       case 'heal':
         sfx('heal');
@@ -930,7 +988,7 @@ async function playEvents(events) {
       case 'stun':
         sfx('stun');
         scene.shake(6);
-        showBanner('점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
+        showBanner(ev.reason === 'bribe' ? '매수! 은자를 받고 이번 차례는 손을 놓는다' : '점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
         renderStatus();
         await wait(500);
         break;

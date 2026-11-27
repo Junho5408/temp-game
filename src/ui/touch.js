@@ -19,14 +19,16 @@ function tipBox() {
 
 // 요소의 설명 문구: title 이 있으면 그것, 카드는 이름·설명
 function textOf(el) {
-  const holder = el.closest('[title]');
-  if (holder?.getAttribute('title')) return holder.getAttribute('title');
   const card = el.closest('.card');
   if (card) {
+    // 카드: 이름·설명 + 용어 풀이(title)
     const name = card.querySelector('.cname')?.textContent ?? '';
     const desc = card.querySelector('.desc')?.textContent ?? '';
-    return `${name}: ${desc.replace(/\n/g, ', ')}`;
+    const kw = card.getAttribute('title');
+    return `${name}: ${desc.replace(/\n/g, ', ')}${kw ? `\n${kw}` : ''}`;
   }
+  const holder = el.closest('[title]');
+  if (holder?.getAttribute('title')) return holder.getAttribute('title');
   return '';
 }
 

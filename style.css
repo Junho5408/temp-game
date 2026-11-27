@@ -1177,3 +1177,16 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .truth span { padding: 3px 9px; font-size: 12px; border: 1px dashed #5a5040; border-radius: 3px; color: #8a8270; }
 .truth span.got { border-style: solid; border-color: #c9a24a; color: #f1dfb2; }
 .truth-done { margin: 0 0 6px; color: #ffcf6e; font-size: 13px; font-weight: 700; }
+
+/* ── 6-E 세력 기믹 ─────────────────── */
+.card.curse { --accent: #6b2a8a; --accent-glow: rgba(160, 70, 220, .45); filter: saturate(.8); }
+.card.curse .cost { visibility: hidden; }
+.card.curse .art { color: #c88aff; }
+.unit-info .magi { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: 12px; }
+.unit-info .magi span { color: #ff6a8a; font-weight: 700; }
+.unit-info .magi i { flex: 1; height: 6px; background: rgba(0, 0, 0, .55); border: 1px solid #5a1f2c; border-radius: 3px; overflow: hidden; }
+.unit-info .magi b { display: block; height: 100%; background: linear-gradient(90deg, #7a1028, #e0304f); transition: width .25s; }
+.unit-info .magi em { font-style: normal; color: #ffb0c0; min-width: 16px; text-align: right; }
+.popup.thrown { color: #e6e6e6; font-size: 22px; text-shadow: 0 0 6px #6a8aa0; }
+.popup.thrown-name { color: #b8d4e8; font-size: 14px; }
+.popup.magi { color: #ff6a8a; font-size: 16px; }

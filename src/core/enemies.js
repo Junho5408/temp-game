@@ -365,7 +365,7 @@ Object.assign(ENEMIES, {
 Object.assign(ENEMIES, {
   gangThug: {
     name: '두칠', title: '흑도 칼잡이', art: 'unorthodox-sword', tier: 'normal',
-    maxHp: 38,
+    maxHp: 42,
     pattern: [
       { name: '칼질', damage: 6 },
       { name: '침 뱉기', damage: 3, weak: 1 },
@@ -383,7 +383,7 @@ Object.assign(ENEMIES, {
   },
   axeLord: {
     name: '마삼', title: '도끼파 두목', art: 'unorthodox-fist', tier: 'elite',
-    maxHp: 70, traits: ['ironBody', 'berserk'],
+    maxHp: 80, traits: ['ironBody', 'berserk'],
     pattern: [
       { name: '도끼 내려찍기', damage: 12 },
       { name: '함성 · 기를 모은다', strength: 2 },
@@ -393,7 +393,7 @@ Object.assign(ENEMIES, {
   },
   gangLord: {
     name: '조광', title: '흑도 맹주', art: 'boss-gang', tier: 'boss',
-    maxHp: 170, traits: ['killer'],
+    maxHp: 190, traits: ['killer'],
     pattern: [
       { name: '대감도', damage: 11 },
       { name: '부하들아! · 기를 모은다', strength: 2 },
@@ -420,6 +420,7 @@ ENEMIES.nokrimRival = {
   ...ENEMIES.nokrimKing,
   title: '녹림 총채주 · 자리를 지키는 산군',
   clue: null,
+  maxHp: Math.round(ENEMIES.nokrimKing.maxHp * 1.2), // 사파 판은 1구역을 돌파한 뒤 열리는 길
 };
 
 // 3구역: 무림맹 지부 습격 — 이번엔 정파 고수들이 적
@@ -598,8 +599,8 @@ Object.assign(ENEMIES, {
 ENEMIES.gangLordD = { ...ENEMIES.gangLord, title: '중원 흑도의 주인', maxHp: 210 };
 
 // 3구역: 정마 결전 — 무림맹 정예와 혈영대 안의 반대파, 두목은 무림맹 장로
-ENEMIES.bloodWolfD = { ...ENEMIES.bloodWolf, title: '혈영대 부대주 · 교주를 거스르는 자' };
-ENEMIES.allianceElderD = { ...ENEMIES.allianceElder, clue: null, title: '무림맹 장로 · 정마 결전의 선봉', maxHp: 245 };
+ENEMIES.bloodWolfD = { ...ENEMIES.bloodWolf, title: '혈영대 부대주 · 교주를 거스르는 자', maxHp: Math.round(ENEMIES.bloodWolf.maxHp * 0.9) };
+ENEMIES.allianceElderD = { ...ENEMIES.allianceElder, clue: null, title: '무림맹 장로 · 정마 결전의 선봉', maxHp: 205 };
 
 export const DEMONIC_POOLS = [
   {

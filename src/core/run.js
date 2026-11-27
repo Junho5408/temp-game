@@ -80,17 +80,12 @@ export function createRun({ seed = 1, extraCards = [], faction = 'orthodox' } = 
 
 // 세력별 시작 덱: 공통 시작 덱에서 starter.remove 를 빼고 starter.add 를 넣음
 export function starterDeck(route) {
-  const deck = [...STARTER_DECK];
-  for (const id of route.starter?.remove ?? []) {
-    const i = deck.indexOf(id);
-    if (i >= 0) deck.splice(i, 1);
-  }
-  return [...deck, ...(route.starter?.add ?? [])];
+  return [...(route.deck ?? STARTER_DECK)];
 }
 
 // 이 판에서 나올 수 있는 무공: 공통 무공 + 내 세력의 고유 무공
 export function cardPool(run, rarity) {
-  return cardsByRarity(rarity).filter((id) => !CARDS[id].faction || CARDS[id].faction === run.faction);
+  return cardsByRarity(rarity).filter((id) => CARDS[id].faction === run.faction);
 }
 
 // 세력 고유 규칙으로 바뀐 객잔 값
@@ -302,6 +297,8 @@ export function startEncounter(run) {
     scale: run.encounter.scale,
     bag: run.bag,
     treasures: run.treasures,
+    gold: run.gold,
+    faction: run.faction,
   });
 }
 
@@ -314,7 +311,7 @@ export function finishBattle(run, battle) {
   if (battle.phase !== 'won') throw new Error('전투가 끝나지 않음');
   run.hp = battle.player.hp;
   run.bag = [...battle.bag]; // 쓴 물품은 사라짐
-  run.gold += battle.goldGained ?? 0; // 협박 등
+  run.gold = Math.max(0, run.gold + (battle.goldGained ?? 0)); // 협박(+)·매수(-) 등
   if (run.treasures.includes('gangSeal')) run.gold += 8;
   if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
   const winHeal = routeOf(run).passive.winHeal ?? 0; // 마교 혈공

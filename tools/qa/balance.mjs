@@ -10,7 +10,7 @@ import {
   restHeal, restUpgrade, leaveRest, buyCard, canBuy, leaveShop, chooseEventOption, leaveEvent, advanceZone,
 } from '../../src/core/run.js';
 import {
-  startPlayerTurn, playCard, endPlayerTurn, runEnemyTurn, intentPreview, useItem,
+  startPlayerTurn, playCard, endPlayerTurn, runEnemyTurn, intentPreview, useItem, cardPreviewDamage, cardHits,
 } from '../../src/core/battle.js';
 import { cardStats, CARDS } from '../../src/core/cards.js';
 import { ENEMIES } from '../../src/core/enemies.js';
@@ -30,13 +30,21 @@ const RUN = arg('run', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 1
 const OUT = path.join(ROOT, 'qa-output', RUN, 'balance');
 fs.mkdirSync(OUT, { recursive: true });
 
-function score(card, attacking) {
+function score(card, attacking, b) {
   const c = cardStats(card);
-  const v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
+  const dmg = c.damage ? cardPreviewDamage(b, c) : 0;
+  const magi = b.player.magi ?? 0;
+  const curses = b.hand.filter((x) => CARDS[x.id].unplayable).length;
+  const knives = b.hand.filter((x) => x.uid !== card.uid && CARDS[x.id].thrown).length;
+  const v = dmg * cardHits(b, c)
+    + (c.burst ? b.enemy.status.poison * c.burst : 0) + (c.bribe ? (attacking ? 16 : 4) : 0)
+    + (c.magi ?? 0) * 1.5 + (c.purge ? curses * 5 : 0) + (c.magiDouble ? magi * 2 : 0)
+    + (c.poisonKeep ? 10 : 0) + (c.bloodSea ? 6 : 0) + (c.redraw ? 2 + knives * 4 : 0) + (c.throwAll ? knives * 5 : 0)
+    - (c.curse ?? 0) * 4 - (c.goldCost ?? 0) * 0.2 + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
     + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
     + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3
-    - (c.hpCost ?? 0) * 0.8 + (c.lifesteal ? (c.damage ?? 0) * c.lifesteal : 0);
+    - (c.hpCost ?? 0) * 0.8 + (c.lifesteal ? dmg * c.lifesteal : 0);
   return v / Math.max(1, c.cost);
 }
 
@@ -72,7 +80,7 @@ function autoBattle(b) {
     let played = true;
     while (played && b.phase === 'player') {
       played = false;
-      for (const c of [...b.hand].sort((x, y) => score(y, attacking) - score(x, attacking))) {
+      for (const c of [...b.hand].sort((x, y) => score(y, attacking, b) - score(x, attacking, b))) {
         if (playCard(b, c.uid)) { played = true; break; }
       }
     }

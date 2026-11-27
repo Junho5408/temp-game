@@ -5,11 +5,12 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 6단계 — 6-A·6-B 사파·6-C 마교·6-D 진엔딩 완료 → 마지막: 밸런스 + /qa
+- 진행 중: 6단계 — 6-A·6-B 사파·6-C 마교·6-D 진엔딩·6-E 세력 무공 재설계 완료 → 마지막: 밸런스 + /qa
 - QA 티켓: BUG-001~025 모두 처리 (BUG-018 보류) — docs/qa/tickets/INDEX.md
 - 다음 할 일: 밸런스(세 루트 + 진엔딩 판, tools/qa/balance.mjs --faction= --true=1) → /qa 한 회차 (계획 docs/PLAN.md 6단계)
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
-- 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/starter/ready), 대사 script.js ROUTE_TEXT
+- 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
+- 무공은 세력마다 따로 (공용 0장, cards.js faction). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe), 마교 마기(magi/magiSpend)·혈투(desperate)·입마(curse → qiDeviation)
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 
 ## 작업 규칙

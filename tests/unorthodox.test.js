@@ -18,11 +18,11 @@ function battle(opts = {}) {
 }
 const hand = (s, ids) => { s.hand = ids.map((id, i) => ({ uid: 900 + i, id, upgraded: false })); s.player.energy = 9; };
 
-test('사파 시작 덱: 기본 검법 2장 대신 독 바른 칼·모래 뿌리기', () => {
+test('사파 시작 덱: 정파와 겹치는 무공 없음 (단도·독 바른 칼·모래·비수·칼 바꿔 쥐기)', () => {
   const run = createRun({ seed: 1, faction: 'unorthodox' });
   const ids = run.deck.map((c) => c.id);
-  assert.equal(ids.filter((id) => id === 'strike').length, 3);
-  assert.ok(ids.includes('venomBlade') && ids.includes('sandThrow'));
+  assert.ok(ids.every((id) => CARDS[id].faction === 'unorthodox'));
+  assert.equal(ids.filter((id) => id === 'dagger').length, 5);
   assert.equal(run.deck.length, 10);
 });
 
@@ -30,7 +30,7 @@ test('독 바른 칼: 맞으면 중독, 모래 뿌리기: 심법으로 흐트러
   const s = battle();
   hand(s, ['venomBlade', 'sandThrow']);
   playCard(s, 900);
-  assert.equal(s.enemy.status.poison, 3);
+  assert.equal(s.enemy.status.poison, 2);
   playCard(s, 901);
   assert.equal(s.enemy.status.weak, 1);
 });
@@ -71,12 +71,12 @@ test('독낭: 적에게 거는 중독 +2', () => {
   const s = battle({ treasures: ['poisonSac'] });
   hand(s, ['venomBlade']);
   playCard(s, 900);
-  assert.equal(s.enemy.status.poison, 5);
+  assert.equal(s.enemy.status.poison, 4);
 });
 
 test('사파 무공·보물은 정파 판에 나오지 않음', () => {
   const sapa = Object.values(CARDS).filter((c) => c.faction === 'unorthodox').map((c) => c.id);
-  assert.equal(sapa.length, 6);
+  assert.ok(sapa.length >= 16);
   for (const r of ['common', 'uncommon', 'rare']) {
     assert.ok(cardPool(createRun({ seed: 1 }), r).every((id) => !sapa.includes(id)));
   }

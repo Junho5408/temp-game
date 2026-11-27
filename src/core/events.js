@@ -2,6 +2,7 @@
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
 import { josa } from './josa.js';
+import { routeOf } from './routes.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
 
 // 관문의 주노가 가르쳐 주는 보물 (아직 없는 것부터)
@@ -26,7 +27,7 @@ export const EVENTS = {
         label: '집어 든다',
         hint: '고급 무공 1장 얻음 · 체력 -6',
         effect(run, rng, api) {
-          const pool = cardsByRarity('uncommon').filter((x) => !CARDS[x].faction || CARDS[x].faction === run.faction);
+          const pool = cardsByRarity('uncommon').filter((x) => CARDS[x].faction === run.faction);
           const id = pool[Math.floor(rng() * pool.length)];
           api.addCard(id);
           damage(run, 6);
@@ -384,12 +385,13 @@ export const EVENTS = {
     options: [
       {
         label: '명상한다',
-        hint: '기본 검법 1장 제거 · 체력 +8',
+        hint: '기본 무공 1장 제거 · 체력 +8',
         effect(run, rng, api) {
-          const removed = api.removeFirst('strike');
+          const basic = routeOf(run).basic;
+          const removed = api.removeFirst(basic);
           heal(run, 8);
           return removed
-            ? '잡념을 비웠다. 덱에서 기본 검법 1장을 덜어 내고, 체력을 8 회복했다.'
+            ? `잡념을 비웠다. 덱에서 ${CARDS[basic].name} 1장을 덜어 내고, 체력을 8 회복했다.`
             : '마음을 가다듬으니 체력이 8 회복되었다.';
         },
       },

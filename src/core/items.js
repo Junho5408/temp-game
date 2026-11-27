@@ -76,7 +76,7 @@ export const TREASURES = {
     desc: '매 턴 시작 시 경공 +1',
   },
   meridianChart: {
-    name: '혈도도해', glyph: '圖', kind: 'art', rarity: 'common',
+    name: '혈도도해', glyph: '圖', kind: 'art', rarity: 'common', faction: 'orthodox', // 점혈은 정파 무공에만
     desc: '점혈을 거는 카드의 점혈 +3',
   },
   chainArt: {
@@ -114,6 +114,10 @@ export const TREASURES = {
     name: '독낭', glyph: '囊', kind: 'gear', rarity: 'uncommon', faction: 'unorthodox',
     desc: '적에게 거는 중독 +2',
   },
+  knifePouch: {
+    name: '암기 주머니', glyph: '袋', kind: 'gear', rarity: 'common', faction: 'unorthodox',
+    desc: '암기가 던져질 때 피해 +3',
+  },
   // ── 마교 고유 ─────────────────
   bloodJade: {
     name: '천마 혈옥', glyph: '玉', kind: 'gear', rarity: 'uncommon', faction: 'demonic',
@@ -122,6 +126,10 @@ export const TREASURES = {
   demonMask: {
     name: '마령 가면', glyph: '面', kind: 'gear', rarity: 'common', faction: 'demonic',
     desc: '전투 첫 턴에 적에게 흐트러짐 2',
+  },
+  magiOrb: {
+    name: '마령주', glyph: '珠', kind: 'gear', rarity: 'uncommon', faction: 'demonic',
+    desc: '전투를 마기 3 으로 시작',
   },
   blueSteel: {
     name: '청강검', glyph: '鋼', kind: 'gear', rarity: 'uncommon',

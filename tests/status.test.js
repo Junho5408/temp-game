@@ -28,7 +28,7 @@ test('연마한 카드는 수치가 올라가고 이름에 + 가 붙음', () => 
 test('모든 카드는 설명과 연마 값이 있음', () => {
   for (const id of Object.keys(CARDS)) {
     assert.ok(cardStats({ id }).desc.length > 0, id);
-    assert.ok(CARDS[id].upgrade, `${id} 연마 값 없음`);
+    if (CARDS[id].rarity !== 'curse') assert.ok(CARDS[id].upgrade, `${id} 연마 값 없음`);
   }
 });
 
