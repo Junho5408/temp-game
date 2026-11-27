@@ -93,7 +93,8 @@ export function cardPool(run, rarity) {
 
 // 세력 고유 규칙으로 바뀐 객잔 값
 function shopPrice(run, price) {
-  const off = routeOf(run).passive.shopDiscount ?? 0;
+  const off = Math.min(0.6, (routeOf(run).passive.shopDiscount ?? 0)
+    + run.treasures.reduce((a, t) => a + (TREASURES[t]?.fx?.shopDiscount ?? 0), 0));
   return Math.max(1, Math.round(price * (1 - off)));
 }
 
@@ -275,6 +276,12 @@ export function addTreasure(run, id) {
     run.maxHp += 10;
     run.hp = Math.min(run.maxHp, run.hp + 10);
   }
+  const fx = TREASURES[id].fx ?? {};
+  if (fx.maxHp) {
+    run.maxHp += fx.maxHp;
+    run.hp = Math.min(run.maxHp, run.hp + Math.max(0, fx.maxHp));
+  }
+  if (fx.gold) run.gold += fx.gold;
   return true;
 }
 
@@ -324,6 +331,9 @@ export function finishBattle(run, battle) {
   run.gold = Math.max(0, run.gold + (battle.goldGained ?? 0)); // 협박(+)·매수(-) 등
   if (run.treasures.includes('gangSeal')) run.gold += 8;
   if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
+  const tfxRun = (k) => run.treasures.reduce((a, t) => a + (TREASURES[t]?.fx?.[k] ?? 0), 0);
+  if (tfxRun('winHeal')) run.hp = Math.min(run.maxHp, run.hp + tfxRun('winHeal'));
+  run.gold += tfxRun('winGold');
   const winHeal = routeOf(run).passive.winHeal ?? 0; // 마교 혈공
   if (winHeal) run.hp = Math.min(run.maxHp, run.hp + winHeal);
   run.battlesWon += 1;
@@ -352,7 +362,10 @@ export function finishBattle(run, battle) {
     const gold = randInt(run.rng, GOLD_REWARD.boss);
     run.gold += gold;
     run.reward = { gold, cards: rollCards(run, REWARD_WEIGHTS.boss, 3), item: null, itemKept: false };
-    const choice = run.treasures.includes('daeHwan') ? [] : ['daeHwan'];
+    // 두목 보물(대환단 + 세력 두목 보물) 중 아직 없는 것 하나를 후보 맨 앞에
+    const bossPool = treasuresByRarity('boss')
+      .filter((id) => !run.treasures.includes(id) && (!TREASURES[id].faction || TREASURES[id].faction === run.faction));
+    const choice = bossPool.length ? [bossPool[Math.floor(run.rng() * bossPool.length)]] : [];
     run.treasureChoice = [...choice, ...rollTreasures(run, 3 - choice.length)];
     run.pendingAdvance = true;
     run.phase = 'treasure';
@@ -450,7 +463,8 @@ export function swapRewardItem(run, bagIndex) {
 
 // ── 운기조식 ─────────────────────────
 export function restHealAmount(run) {
-  return Math.ceil(run.maxHp * (routeOf(run).passive.restHealRatio ?? REST_HEAL_RATIO));
+  const bonus = run.treasures.reduce((a, t) => a + (TREASURES[t]?.fx?.restBonus ?? 0), 0);
+  return Math.ceil(run.maxHp * (routeOf(run).passive.restHealRatio ?? REST_HEAL_RATIO)) + bonus;
 }
 
 export function canRestHeal(run) {

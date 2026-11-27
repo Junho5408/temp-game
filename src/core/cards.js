@@ -1,3 +1,6 @@
+import { ORTHODOX_CARDS_EXT } from './cards-orthodox.js';
+import { UNORTHODOX_CARDS_EXT } from './cards-unorthodox.js';
+import { DEMONIC_CARDS_EXT } from './cards-demonic.js';
 // 카드 정의 (검객)
 // 방어 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복. 대신 경공으로 피한다.
 // type: attack(초식) / skill(심법·보법)
@@ -370,6 +373,8 @@ export const CARDS = {
   },
 };
 
+Object.assign(CARDS, ORTHODOX_CARDS_EXT, UNORTHODOX_CARDS_EXT, DEMONIC_CARDS_EXT);
+
 for (const [id, c] of Object.entries(CARDS)) {
   c.id = id;
   if (!c.faction && c.rarity !== 'curse') c.faction = 'orthodox';
@@ -436,6 +441,12 @@ export function describe(c) {
   if (c.insight) lines.push('간파: 다음 초식 필중·치명');
   if (c.strength) lines.push(`기세 +${c.strength}`);
   if (c.energy) lines.push(`내공 +${c.energy}`);
+  if (c.swordQi) lines.push(`검기: 앞서 쓴 카드마다 +${c.swordQi}`);
+  if (c.bloodPact) lines.push(`혈계: 잃은 체력 10마다 +${c.bloodPact}`);
+  if (c.consumeCurse) lines.push(`입마 1장 태워 +${c.consumeCurse}`);
+  if (c.steal) lines.push(`적 기세 ${c.steal} 훔치기`);
+  if (c.trap) lines.push(`함정: ${fxText(c.trap)}`);
+  if (c.power) lines.push(`매 턴: ${fxText(c.power)}`);
   if (c.redraw) lines.push('손패를 버리고 다시 뽑기');
   if (c.throwAll) lines.push('손패의 암기 모두 던지기');
   if (c.draw) lines.push(`카드 ${c.draw}장 뽑기`);
@@ -450,6 +461,14 @@ export function describe(c) {
   if (c.unplayable) lines.push('쓸 수 없음\n턴 끝: 체력 -2 · 마기 +1');
   if (c.exhaust) lines.push('소멸');
   return compactLines(lines).join('\n');
+}
+
+// 함정·심법 유지 효과를 짧게
+const FX_NAME = {
+  damage: '피해', poison: '독', weak: '亂', vulnerable: '傷', point: '점혈', strength: '기세', evasion: '경공', draw: '뽑기', insight: '간파', magi: '마기', energy: '내공',
+};
+function fxText(fx) {
+  return Object.entries(fx).map(([k, v]) => (k === 'insight' ? '간파' : `${FX_NAME[k] ?? k} ${v}`)).join(' · ');
 }
 
 // 카드 틀에 들어가도록: 4줄 이상이면 짧은 줄끼리 ' · ' 로 붙임 (BUG-027)
@@ -476,6 +495,12 @@ export function cardKeywords(c) {
   if (c.desperate) k.push('혈투: 내 체력이 최대의 절반 이하일 때');
   if (c.curse || c.unplayable) k.push('입마: 이번 전투 덱에 섞이는 쓸 수 없는 카드. 턴 끝에 손에 있으면 체력 -2, 마기 +1 (전투가 끝나면 사라짐)');
   if (c.exhaust) k.push('소멸: 쓰면 이번 전투에서 빠짐');
+  if (c.power) k.push('심법 유지: 쓰면 사라지고, 이번 전투 동안 내 턴이 시작될 때마다 효과가 발동');
+  if (c.trap) k.push('함정: 적이 다음에 공격하는 순간 먼저 발동 (깔아 둔 함정은 한꺼번에 터짐)');
+  if (c.swordQi) k.push('검기: 이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 피해 증가');
+  if (c.steal) k.push('훔치기: 적의 기세를 깎고, 적에게 있던 만큼 내 기세로');
+  if (c.bloodPact) k.push('혈계: 내가 잃은 체력이 많을수록 강해짐');
+  if (c.consumeCurse) k.push('입마 연료: 손패의 입마 1장을 태워 이번 초식을 강하게 (입마가 없으면 기본 피해)');
   return k.join('\n');
 }
 

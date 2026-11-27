@@ -637,6 +637,8 @@ function renderUnit(el, name, title, u, who) {
       return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${tipValue}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
     });
   if (who === 'player') {
+    if (battle.traps?.length) chips.push(`<span class="st trap" title="깔아 둔 함정: 적이 공격하는 순간 발동 (${battle.traps.map((t) => CARDS[t.card].name).join(', ')})">陷<b>${battle.traps.length}</b></span>`);
+    if (battle.powers?.length) chips.push(`<span class="st power" title="심법 유지: 매 턴 시작에 발동 (${battle.powers.map((t) => CARDS[t.card].name).join(', ')})">心<b>${battle.powers.length}</b></span>`);
     el.querySelector('.magi')?.remove();
     if (battle.faction === 'demonic' || u.magi > 0) {
       el.insertAdjacentHTML('beforeend', `<div class="magi" title="마기(魔氣): 체력을 대가로 쓰거나 맞으면 쌓인다. 마기 6마다 초식 피해 +1 (최대 +3), 마기를 쓰는 무공은 한꺼번에 피해로 바꾼다 (최대 ${MAGI_MAX})"><span>魔</span><i><b style="width:${(u.magi / MAGI_MAX) * 100}%"></b></i><em>${u.magi}</em></div>`);
@@ -976,6 +978,28 @@ async function playEvents(events) {
         popup('player', ev.amount < 0 ? `銀 ${ev.amount}` : `銀 +${ev.amount}`, 'treasure', -70);
         renderRunInfo();
         await wait(200);
+        break;
+      case 'powerSet':
+        sfx('buff');
+        scene.buff('player');
+        popup('player', `心 ${CARDS[ev.card].name} · 유지`, 'magi', -80);
+        await wait(250);
+        break;
+      case 'power':
+        popup('player', `心 ${CARDS[ev.card].name}`, 'thrown-name', -95);
+        await wait(120);
+        break;
+      case 'trapSet':
+        sfx('item');
+        popup('player', `陷 ${CARDS[ev.card].name} 설치`, 'thrown-name', -80);
+        renderStatus();
+        await wait(200);
+        break;
+      case 'trap':
+        sfx('stab');
+        scene.shake(5);
+        showBanner(`함정 발동! ${CARDS[ev.card].name}`, '#e8c27a', 900);
+        await wait(300);
         break;
       case 'thrown':
         popup('player', `暗器 · ${CARDS[ev.card].name}`, 'thrown-name', -80);

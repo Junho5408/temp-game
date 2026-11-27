@@ -31,13 +31,19 @@
 //   마기(magi)          마교: 체력을 대가로 쓰거나 적의 공격을 맞으면 쌓임 (최대 MAGI_MAX). magiSpend 무공이 모두 써서 피해로 바꿈
 //   입마(curse)         마교: 강한 마공을 쓰면 이번 전투 덱에 '입마'가 섞임. 쓸 수 없고, 턴 끝에 손에 있으면 체력 -2 · 마기 +1
 //   사라짐(exhaust)     쓰면 이번 전투에서 빠짐
+//   (7-C) 심법 유지(power)   쓰면 사라지고, 이번 전투 동안 매 턴 시작에 효과 { strength, evasion, draw, insight, point, magi, poison, energy }
+//   (7-C) 검기(swordQi)      이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 한 타 피해 +n
+//   (7-C) 함정(trap)         다음에 적이 공격하는 순간 먼저 발동 { damage, poison, weak, vulnerable, point } — 깔아 둔 것은 다 터짐
+//   (7-C) 훔치기(steal)      적 기세 -n, 적에게 있던 만큼(최대 n) 내 기세 +
+//   (7-C) 혈계(bloodPact)    내가 잃은 체력 10마다 한 타 피해 +n
+//   (7-C) 입마 연료(consumeCurse) 손패의 입마 1장을 태워 이번 초식 한 타 피해 +n
 //
 // 아이템 (items.js)
 //   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
 //   - 보물(treasures): 전투 내내 자동 적용
 import { CARDS, STARTER_DECK, cardStats } from './cards.js';
 import { ENEMIES, POINT_MAX } from './enemies.js';
-import { CONSUMABLES } from './items.js';
+import { CONSUMABLES, TREASURES } from './items.js';
 import { createRng, shuffle } from './rng.js';
 
 export const HAND_SIZE = 5;
@@ -97,17 +103,22 @@ export function createBattle({
     bloodSea: false, // 혈해
     nextUid: 100000, // 전투 중 새로 생기는 카드(입마)
     exhausted: [],
+    powers: [], // 심법 유지 효과
+    traps: [], // 깔아 둔 함정
+    turnCards: 0, // 이번 턴에 쓴 카드 수 (검기)
     bag: [...bag], // 행낭 물품 id
     treasures: new Set(treasures), // 보물 id
     player: {
       hp: playerHp,
       maxHp: playerMaxHp,
       energy: 0,
-      maxEnergy: MAX_ENERGY + (treasures.includes('daeHwan') ? 1 : 0),
+      maxEnergy: MAX_ENERGY + (treasures.includes('daeHwan') ? 1 : 0)
+        + treasures.reduce((a, id) => a + (TREASURES[id]?.fx?.maxEnergy ?? 0), 0),
       status: newStatus(),
       missStreak: 0,
       shield: treasures.includes('silkArmor'), // 천잠보의: 첫 일격 무효
-      magi: treasures.includes('magiOrb') ? 3 : 0, // 마령주
+      magi: (treasures.includes('magiOrb') ? 3 : 0) // 마령주
+        + treasures.reduce((a, id) => a + (TREASURES[id]?.fx?.startMagi ?? 0), 0),
     },
     enemy: {
       id: def.id,
@@ -143,6 +154,24 @@ export function createBattle({
 
 const owns = (s, id) => s.treasures?.has(id);
 
+// 7-D 보물 공통 효과(fx): 가진 보물들의 fx[key] 합
+function tfx(s, key) {
+  let v = 0;
+  for (const id of s.treasures ?? []) v += TREASURES[id]?.fx?.[key] ?? 0;
+  return v;
+}
+// 가진 보물들의 fx[key] 객체를 합침 ({ strength: 1 } + { strength: 1, evasion: 2 })
+function tfxObj(s, key) {
+  const out = {};
+  for (const id of s.treasures ?? []) {
+    for (const [k, v] of Object.entries(TREASURES[id]?.fx?.[key] ?? {})) out[k] = (out[k] ?? 0) + v;
+  }
+  return out;
+}
+function treasureFxIds(s, key) {
+  return [...(s.treasures ?? [])].filter((id) => TREASURES[id]?.fx?.[key]);
+}
+
 // 보물 효과로 상태가 붙을 때 (연출용 이벤트에 보물 id 를 같이 실음)
 function treasureStatus(s, id, kind, amount) {
   emit(s, { type: 'treasure', id });
@@ -174,6 +203,7 @@ export function startPlayerTurn(s) {
   const p = s.player;
   p.status.evasion = 0; // 경공은 적의 한 차례 동안만
   s.turnAttacks = 0;
+  s.turnCards = 0;
   s.enemy.turnDamage = 0;
   s.enemy.ironUsed = false;
   emit(s, { type: 'turnStart', turn: s.turn });
@@ -187,8 +217,12 @@ export function startPlayerTurn(s) {
     }
   }
   if (owns(s, 'taiji')) treasureStatus(s, 'taiji', 'evasion', 1);
-  p.energy = p.maxEnergy;
-  drawCards(s, HAND_SIZE);
+  applyTreasureFx(s);
+  applyPowers(s);
+  p.energy = p.maxEnergy + (s.pendingEnergy ?? 0);
+  s.pendingEnergy = 0;
+  drawCards(s, HAND_SIZE + (s.pendingDraw ?? 0));
+  s.pendingDraw = 0;
   s.phase = 'player';
 }
 
@@ -217,7 +251,7 @@ export function computeDamage(attacker, defender, base) {
 // 플레이어 카드의 명중률 (%). 필중·간파면 100
 export function playerHitChance(s, c) {
   if (c.sure || s.player.status.insight > 0) return 100;
-  const chance = (c.accuracy ?? BASE_ACCURACY) - s.enemy.evasion + s.player.missStreak * 10;
+  const chance = (c.accuracy ?? BASE_ACCURACY) - s.enemy.evasion + s.player.missStreak * 10 + tfx(s, 'accuracyBonus');
   return Math.max(MIN_HIT, Math.min(100, chance));
 }
 
@@ -344,6 +378,72 @@ export function addMagi(s, n) {
   if (p.magi !== before) emit(s, { type: 'magi', amount: p.magi - before, total: p.magi });
 }
 
+// 7-D 보물 공통 효과: 첫 턴(start*)과 매 턴(turn*)
+function applyTreasureFx(s) {
+  const groups = s.turn === 1 ? ['startStatus', 'turnStatus'] : ['turnStatus'];
+  for (const g of groups) {
+    const fx = tfxObj(s, g);
+    if (!Object.keys(fx).length) continue;
+    for (const id of treasureFxIds(s, g)) emit(s, { type: 'treasure', id });
+    for (const k of ['strength', 'evasion', 'insight']) if (fx[k]) addStatus(s, 'player', k, fx[k]);
+    if (fx.magi) addMagi(s, fx.magi);
+    if (fx.draw) s.pendingDraw = (s.pendingDraw ?? 0) + fx.draw;
+    if (fx.energy) s.pendingEnergy = (s.pendingEnergy ?? 0) + fx.energy;
+  }
+  const eg = s.turn === 1 ? ['startEnemy', 'turnEnemy'] : ['turnEnemy'];
+  for (const g of eg) {
+    const fx = tfxObj(s, g);
+    if (!Object.keys(fx).length || s.enemy.hp <= 0) continue;
+    for (const id of treasureFxIds(s, g)) emit(s, { type: 'treasure', id });
+    if (fx.weak) addStatus(s, 'enemy', 'weak', fx.weak);
+    if (fx.vulnerable) addStatus(s, 'enemy', 'vulnerable', fx.vulnerable);
+    if (fx.poison) poisonEnemy(s, fx.poison);
+    if (fx.point) addPoint(s, fx.point);
+  }
+}
+
+// 심법 유지: 매 턴 시작에 적용
+function applyPowers(s) {
+  for (const pw of s.powers ?? []) {
+    emit(s, { type: 'power', card: pw.card });
+    const f = pw.fx;
+    if (f.strength) addStatus(s, 'player', 'strength', f.strength);
+    if (f.evasion) addStatus(s, 'player', 'evasion', f.evasion);
+    if (f.insight) addStatus(s, 'player', 'insight', f.insight);
+    if (f.magi) addMagi(s, f.magi);
+    if (f.energy) s.pendingEnergy = (s.pendingEnergy ?? 0) + f.energy;
+    if (f.draw) s.pendingDraw = (s.pendingDraw ?? 0) + f.draw;
+    if (s.enemy.hp > 0 && f.poison) poisonEnemy(s, f.poison);
+    if (s.enemy.hp > 0 && f.point) addPoint(s, f.point);
+  }
+}
+
+// 함정: 적이 공격하는 순간 먼저 발동. 적이 쓰러지면 true
+function springTraps(s) {
+  const e = s.enemy;
+  if (!s.traps?.length) return false;
+  const traps = s.traps;
+  s.traps = [];
+  for (const t of traps) {
+    if (e.hp <= 0) break;
+    emit(s, { type: 'trap', card: t.card });
+    if (t.damage) {
+      const dmg = computeDamage(s.player, e, t.damage + tfx(s, 'trapBonus'));
+      e.hp = Math.max(0, e.hp - dmg);
+      emit(s, { type: 'damage', target: 'enemy', amount: dmg, thrown: true });
+      afterEnemyHurt(s, dmg);
+    }
+    if (e.hp > 0) {
+      if (t.poison) poisonEnemy(s, t.poison);
+      if (t.weak) addStatus(s, 'enemy', 'weak', t.weak);
+      if (t.vulnerable) addStatus(s, 'enemy', 'vulnerable', t.vulnerable);
+      if (t.point) addPoint(s, t.point);
+    }
+  }
+  checkEnd(s);
+  return s.phase === 'won';
+}
+
 // 손에서 버려지는 카드: 암기면 던져짐
 function discardFromHand(s, card) {
   const c = cardStats(card);
@@ -352,7 +452,7 @@ function discardFromHand(s, card) {
   const p = s.player;
   const e = s.enemy;
   emit(s, { type: 'thrown', card: card.id });
-  const dmg = computeDamage(p, e, c.thrown + (owns(s, 'knifePouch') ? 3 : 0));
+  const dmg = computeDamage(p, e, c.thrown + (owns(s, 'knifePouch') ? 3 : 0) + tfx(s, 'thrownBonus'));
   e.hp = Math.max(0, e.hp - dmg);
   emit(s, { type: 'damage', target: 'enemy', amount: dmg, thrown: true });
   afterEnemyHurt(s, dmg);
@@ -385,6 +485,9 @@ export function cardBaseDamage(s, c) {
   if (c.dirtyBonus && isDebuffed(s.enemy)) base += c.dirtyBonus;
   if (c.hpCost && s.treasures?.has('bloodJade')) base += 3;
   if (c.desperate && desperateActive(s)) base += c.desperate;
+  if (c.swordQi) base += c.swordQi * (s.turnCards ?? 0);
+  if (c.bloodPact) base += c.bloodPact * Math.floor((s.player.maxHp - s.player.hp) / 10);
+  if (c.consumeCurse && s.hand.some((x) => CARDS[x.id].unplayable)) base += c.consumeCurse;
   if (c.magiSpend) base += c.magiSpend * (s.player.magi ?? 0);
   return base;
 }
@@ -399,6 +502,12 @@ function cardDamageBase(s, c) {
   let base = cardBaseDamage(s, c) + magiBonus(s);
   if (owns(s, 'chainArt') && comboActive(s)) base += 2;
   if (owns(s, 'drunkenFist')) base += s.player.missStreak * 3;
+  base += tfx(s, 'attackBonus');
+  if (comboActive(s)) base += tfx(s, 'comboBonus');
+  if (c.hpCost) base += tfx(s, 'hpCostBonus');
+  if (isDebuffed(s.enemy)) base += tfx(s, 'debuffBonus');
+  if (purse(s) >= 60) base += tfx(s, 'richBonus');
+  if (desperateActive(s)) base += tfx(s, 'desperateBonus');
   return base;
 }
 
@@ -415,7 +524,7 @@ export function isDebuffed(unit) {
 
 // 적에게 거는 중독 (독낭이 있으면 +1 — BUG-036)
 function poisonEnemy(s, n) {
-  addStatus(s, 'enemy', 'poison', n + (owns(s, 'poisonSac') ? 1 : 0));
+  addStatus(s, 'enemy', 'poison', n + (owns(s, 'poisonSac') ? 1 : 0) + tfx(s, 'poisonBonus'));
 }
 
 export function cardHits(s, c) {
@@ -461,7 +570,14 @@ export function playCard(s, uid) {
     if (insight) p.status.insight -= 1;
     const hits = cardHits(s, c);
     const base = cardDamageBase(s, c);
-    const critChance = PLAYER_CRIT + (c.crit ?? 0) + (owns(s, 'blueSteel') ? 10 : 0);
+    if (c.consumeCurse) {
+      const ci = s.hand.findIndex((x) => CARDS[x.id].unplayable);
+      if (ci >= 0) {
+        s.exhausted.push(...s.hand.splice(ci, 1));
+        emit(s, { type: 'purge', amount: 1 });
+      }
+    }
+    const critChance = PLAYER_CRIT + (c.crit ?? 0) + (owns(s, 'blueSteel') ? 10 : 0) + tfx(s, 'critBonus');
     let landed = 0;
     for (let h = 0; h < hits && e.hp > 0; h++) {
       if (!roll(s, insight || c.sure ? 100 : playerHitChance(s, c))) {
@@ -485,7 +601,7 @@ export function playCard(s, uid) {
       afterEnemyHurt(s, dmg);
       if (c.lifesteal && dmg > 0) {
         const before = p.hp;
-        p.hp = Math.min(p.maxHp, p.hp + Math.floor(dmg * c.lifesteal));
+        p.hp = Math.min(p.maxHp, p.hp + Math.floor(dmg * (c.lifesteal + tfx(s, 'lifestealBonus'))));
         if (p.hp > before) emit(s, { type: 'heal', target: 'player', amount: p.hp - before });
       }
     }
@@ -525,6 +641,21 @@ export function playCard(s, uid) {
     }
   }
   if (c.poisonKeep) s.poisonKeep = true;
+  if (c.steal && e.hp > 0) {
+    const had = Math.max(0, e.status.strength);
+    e.status.strength -= c.steal;
+    emit(s, { type: 'status', target: 'enemy', kind: 'strength', amount: -c.steal });
+    const gain = Math.min(c.steal, had);
+    if (gain) addStatus(s, 'player', 'strength', gain);
+  }
+  if (c.trap) {
+    s.traps.push({ ...c.trap, card: card.id });
+    emit(s, { type: 'trapSet', card: card.id });
+  }
+  if (c.power) {
+    s.powers.push({ fx: c.power, card: card.id });
+    emit(s, { type: 'powerSet', card: card.id });
+  }
   if (c.bloodSea) s.bloodSea = true;
   if (c.magiDouble) addMagi(s, p.magi);
   if (c.magi) addMagi(s, c.magi);
@@ -538,8 +669,9 @@ export function playCard(s, uid) {
     }
   }
   if (c.curse) addCurse(s, c.curse);
-  if (c.exhaust) s.exhausted.push(card);
+  if (c.exhaust || c.power) s.exhausted.push(card);
   else s.discard.push(card);
+  s.turnCards = (s.turnCards ?? 0) + 1;
   let draw = c.draw ?? 0;
   if (c.redraw) {
     // 칼 바꿔 쥐기: 손패를 모두 버리고(암기는 던져짐) 그만큼 다시 뽑음
@@ -617,7 +749,7 @@ export function endPlayerTurn(s) {
         p.hp -= loss;
         emit(s, { type: 'damage', target: 'player', amount: loss, blood: true, curse: true });
       }
-      addMagi(s, 1);
+      addMagi(s, 1 + tfx(s, 'curseMagi'));
     }
     discardFromHand(s, card);
   }
@@ -655,6 +787,7 @@ export function runEnemyTurn(s) {
     emit(s, { type: 'enemyAct', name: '몸이 굳어 움직이지 못한다', stunned: true });
   } else {
     const act = e.intent;
+    if (act.damage && springTraps(s)) return true;
     emit(s, { type: 'enemyAct', name: act.name, charge: !!act.charge });
     if (act.strength) addStatus(s, 'enemy', 'strength', act.strength);
     if (act.heal) {

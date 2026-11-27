@@ -40,7 +40,10 @@ function score(card, attacking, b) {
     + (c.burst ? b.enemy.status.poison * c.burst : 0) + (c.bribe ? (attacking ? 16 : 4) : 0)
     + (c.magi ?? 0) * 1.5 + (c.purge ? curses * 5 : 0) + (c.magiDouble ? magi * 2 : 0)
     + (c.poisonKeep ? 10 : 0) + (c.bloodSea ? 6 : 0) + (c.redraw ? 2 + knives * 4 : 0) + (c.throwAll ? knives * 5 : 0)
-    - (c.curse ?? 0) * 4 - (c.goldCost ?? 0) * 0.2 + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
+    - (c.curse ?? 0) * 4 - (c.goldCost ?? 0) * 0.2
+    + (c.power ? Object.values(c.power).reduce((x, y) => x + y, 0) * 5 * Math.max(1, 6 - b.turn) : 0)
+    + (c.trap ? ((c.trap.damage ?? 0) + (c.trap.poison ?? 0) * 1.5 + (c.trap.weak ?? 0) * 3) * (attacking ? 1 : 0.4) : 0)
+    + (c.steal ? Math.min(c.steal, Math.max(0, b.enemy.status.strength)) * 6 + c.steal : 0) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
     + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
     + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3

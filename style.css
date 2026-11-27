@@ -1200,3 +1200,7 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 /* ── 회귀자의 선택지 (미래를 아는 선택) ─────────────────── */
 .option.foresight { border-color: #c9a24a; box-shadow: inset 0 0 0 1px rgba(242, 193, 78, .35); }
 .option .foresight { color: #ffcf6e; font-weight: 700; }
+
+/* 7-C 함정·심법 유지 */
+.st.trap { background: #7a5a2a; }
+.st.power { background: #2a5a7a; }
