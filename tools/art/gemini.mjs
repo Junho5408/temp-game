@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const API = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_MODEL = 'gemini-2.5-flash-image';
+const DEFAULT_MODEL = 'gemini-3.1-flash-image'; // Nano Banana 2 (2026-11 확인, --list-models)
 
 const args = process.argv.slice(2);
 const arg = (name, def) => args.find((x) => x.startsWith(`--${name}=`))?.slice(name.length + 3) ?? def;
