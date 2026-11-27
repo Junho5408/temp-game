@@ -246,11 +246,11 @@ Object.assign(ENEMIES, {
   },
   bloodWolf: {
     name: '혈랑', title: '혈영대 부대주', art: 'demonic-assassin', tier: 'elite',
-    maxHp: 95, evasion: 20, traits: ['feint', 'killer'],
+    maxHp: 86, evasion: 20, traits: ['feint', 'killer'],
     pattern: [
       { name: '혈랑 연참', damage: 5, hits: 3 },
       { name: '반격 자세', counter: 9 },
-      { name: '혈랑일섬', damage: 28, charge: true, breakAt: 18 },
+      { name: '혈랑일섬', damage: 24, charge: true, breakAt: 16 },
       { name: '귀면 위압', damage: 10, weak: 2 },
     ],
   },
@@ -627,7 +627,7 @@ export const DEMONIC_POOLS = [
 // ══ 진엔딩: 귀면 뒤에 숨어 있던 자 ══════════════
 ENEMIES.baekri = {
   name: '백리현', title: '무림맹 부맹주 · 청명검', art: 'boss-baekri', tier: 'boss',
-  maxHp: 220, evasion: 15, traits: ['feint'],
+  maxHp: 205, evasion: 15, traits: ['feint'],
   clue: 'traitorName',
   pattern: [
     { name: '청명검 · 일검', damage: 12 },

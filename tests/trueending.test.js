@@ -5,7 +5,7 @@ import { TRUE_CLUES, hasTrueClues } from '../src/core/routes.js';
 import { ENEMIES, TRUE_BOSS } from '../src/core/enemies.js';
 import { createMeta, parseMeta, serializeMeta, recordRunEnd } from '../src/core/meta.js';
 import {
-  createRun, startEncounter, finishBattle, advanceZone, serializeRun, parseRun,
+  createRun, startEncounter, finishBattle, advanceZone, serializeRun, parseRun, TRUE_BOSS_HEAL,
 } from '../src/core/run.js';
 import { CLUES, battleIntro, battleOutro } from '../src/story/script.js';
 
@@ -58,11 +58,11 @@ test('단서를 모두 모았으면 귀면 뒤에 백리현이 나오고, 이기
   assert.equal(run.encounter.enemyId, 'gwimyeon');
   run.hp = 20;
   winBattle(run);
-  // 연전: 잃은 체력의 절반 회복 후 백리현
+  // 연전: 잃은 체력의 일부(TRUE_BOSS_HEAL) 회복 후 백리현
   assert.equal(run.phase, 'battle');
   assert.equal(run.encounter.enemyId, TRUE_BOSS);
   assert.ok(run.encounter.final);
-  assert.equal(run.hp, 20 + Math.ceil((run.maxHp - 20) * 0.5));
+  assert.equal(run.hp, 20 + Math.ceil((run.maxHp - 20) * TRUE_BOSS_HEAL));
   // 연전 중 저장·불러오기
   const back = parseRun(serializeRun(run));
   assert.equal(back.trueEnding, true);

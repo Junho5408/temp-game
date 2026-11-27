@@ -28,6 +28,7 @@ const REWARD_WEIGHTS = {
   elite: [['common', 35], ['uncommon', 45], ['rare', 20]],
   boss: [['uncommon', 30], ['rare', 70]],
 };
+export const TRUE_BOSS_HEAL = 0.75; // 귀면을 쓰러뜨린 뒤 백리현 전에 잃은 체력의 이만큼 회복
 const GOLD_REWARD = { normal: [12, 20], elite: [28, 36], boss: [55, 70] };
 export const ZONE_COUNT = 3; // 구역 셋을 지나면 그날 밤의 최종 결전
 export const ZONE_HEAL_RATIO = 0.5; // 구역을 넘어갈 때 잃은 체력의 절반 회복
@@ -324,9 +325,9 @@ export function finishBattle(run, battle) {
   if (clue && !run.cluesFound.includes(clue)) run.cluesFound.push(clue);
   run.encounter = null;
   if (final) {
-    // 진엔딩 조건을 갖춘 판: 귀면 뒤에 백리현이 나타남 (잃은 체력 절반 회복)
+    // 진엔딩 조건을 갖춘 판: 귀면 뒤에 백리현이 나타남 (잃은 체력의 TRUE_BOSS_HEAL 회복)
     if (run.trueEnding && beaten !== TRUE_BOSS) {
-      run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * 0.5));
+      run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * TRUE_BOSS_HEAL));
       run.encounter = { enemyId: TRUE_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
       run.phase = 'battle';
       return;
