@@ -30,6 +30,19 @@ const RUN = arg('run', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 1
 const OUT = path.join(ROOT, 'qa-output', RUN, 'balance');
 fs.mkdirSync(OUT, { recursive: true });
 
+// 덱에 넣을 무공 고르기용 대략적인 값어치 (전투 상황 없이)
+function staticValue(c) {
+  const dmg = (c.damage ?? 0) * ((c.hits ?? 1) + (c.comboHits ? 0.5 : 0)) + (c.combo ?? 0) * 0.6 + (c.perAttack ?? 0) * 1.2
+    + (c.swordQi ?? 0) * 2 + (c.bonusIfAttacking ?? 0) * 0.5 + (c.desperate ?? 0) * 0.4 + (c.bloodPact ?? 0) * 2 + (c.consumeCurse ?? 0) * 0.4
+    + (c.magiSpend ?? 0) * 3 + (c.thrown ?? 0) * 0.7 + (c.burst ?? 0) * 3;
+  const util = (c.draw ?? 0) * 3 + (c.energy ?? 0) * 5 + (c.strength ?? 0) * 5 + (c.evasion ?? 0) * 1.5 + (c.weak ?? 0) * 2.5
+    + (c.vulnerable ?? 0) * 3 + (c.poison ?? 0) * 1.5 + (c.point ?? 0) * 0.6 + (c.insight ?? 0) * 5 + (c.magi ?? 0) * 1.2
+    + (c.power ? Object.values(c.power).reduce((x, y) => x + y, 0) * 12 : 0) + (c.trap ? (c.trap.damage ?? 0) + (c.trap.poison ?? 0) * 1.5 + (c.trap.weak ?? 0) * 3 + (c.trap.vulnerable ?? 0) * 3 : 0)
+    + (c.steal ?? 0) * 4 + (c.gold ?? 0) * 0.2 + (c.lifesteal ? (c.damage ?? 0) * c.lifesteal : 0);
+  const cost = (c.hpCost ?? 0) * 0.7 + (c.curse ?? 0) * 4 + (c.goldCost ?? 0) * 0.15;
+  return (dmg + util - cost) / Math.max(0.7, c.cost);
+}
+
 function score(card, attacking, b) {
   const c = cardStats(card);
   const dmg = c.damage ? cardPreviewDamage(b, c) : 0;
@@ -43,7 +56,9 @@ function score(card, attacking, b) {
     - (c.curse ?? 0) * 4 - (c.goldCost ?? 0) * 0.2
     + (c.power ? Object.values(c.power).reduce((x, y) => x + y, 0) * 5 * Math.max(1, 6 - b.turn) : 0)
     + (c.trap ? ((c.trap.damage ?? 0) + (c.trap.poison ?? 0) * 1.5 + (c.trap.weak ?? 0) * 3) * (attacking ? 1 : 0.4) : 0)
-    + (c.steal ? Math.min(c.steal, Math.max(0, b.enemy.status.strength)) * 6 + c.steal : 0) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
+    + (c.steal ? Math.min(c.steal, Math.max(0, b.enemy.status.strength)) * 6 + c.steal : 0)
+    // 검기 마무리는 다른 카드를 다 쓴 뒤에 (사람처럼) — 내공이 남고 다른 카드가 있으면 미룸
+    - (c.swordQi && b.hand.some((x) => x.uid !== card.uid && !CARDS[x.id].swordQi && !CARDS[x.id].unplayable && cardStats(x).cost <= b.player.energy - c.cost) ? 30 : 0) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
     + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
     + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3
@@ -125,9 +140,12 @@ for (let seed = 1; seed <= N; seed++) {
     } else if (run.phase === 'treasure') {
       chooseTreasure(run, 0);
     } else if (run.phase === 'reward') {
-      const id = run.reward.cards[0];
+      // 보상: 가장 값어치 있어 보이는 무공 (사람은 고름 — 예전 봇은 늘 첫 장)
+      const vals = run.reward.cards.map((cid) => staticValue(cardStats({ id: cid })));
+      const best = vals.indexOf(Math.max(...vals));
+      const id = run.reward.cards[best];
       picked.push(id);
-      chooseReward(run, 0);
+      chooseReward(run, best);
     } else if (run.phase === 'rest') {
       const up = run.deck.find((c) => !c.upgraded);
       if (run.hp < run.maxHp && (run.hp < run.maxHp * 0.75 || !up)) restHeal(run);

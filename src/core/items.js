@@ -135,6 +135,161 @@ export const TREASURES = {
     name: '청강검', glyph: '鋼', kind: 'gear', rarity: 'uncommon',
     desc: '치명 확률 +10%',
   },
+  // ── 7-D 공용 ──
+  tigerBoneWine: {
+    name: '호골주', glyph: '酒', kind: 'elixir', rarity: 'common',
+    desc: '최대 체력 +6, 운기조식 회복 +4', fx: { maxHp: 6, restBonus: 4 },
+  },
+  fleeceFlower: {
+    name: '하수오', glyph: '烏', kind: 'elixir', rarity: 'common',
+    desc: '전투에서 이길 때마다 체력 3 회복', fx: { winHeal: 3 },
+  },
+  oldMoneyBelt: {
+    name: '낡은 전대', glyph: '帶', kind: 'gear', rarity: 'common',
+    desc: '얻을 때 은자 +50', fx: { gold: 50 },
+  },
+  wardCharm: {
+    name: '호신부', glyph: '符', kind: 'gear', rarity: 'common',
+    desc: '전투 첫 턴에 적에게 약화 1', fx: { startEnemy: { weak: 1 } },
+  },
+  whetstone: {
+    name: '숫돌', glyph: '砥', kind: 'gear', rarity: 'common',
+    desc: '모든 초식 한 타마다 피해 +1', fx: { attackBonus: 1 },
+  },
+  clearIncense: {
+    name: '청심향', glyph: '香', kind: 'gear', rarity: 'common',
+    desc: '전투 첫 턴에 무공 1장 더 뽑기', fx: { startStatus: { draw: 1 } },
+  },
+  aimingArt: {
+    name: '조준결', glyph: '準', kind: 'art', rarity: 'common',
+    desc: '초식 명중 +10%', fx: { accuracyBonus: 10 },
+  },
+  turtleBreath: {
+    name: '귀식대법', glyph: '龜', kind: 'art', rarity: 'uncommon',
+    desc: '운기조식 회복 +10', fx: { restBonus: 10 },
+  },
+  twinDragonTag: {
+    name: '쌍룡패', glyph: '雙', kind: 'gear', rarity: 'uncommon',
+    desc: '전투 첫 턴에 기세 +1, 내공 +1', fx: { startStatus: { strength: 1, energy: 1 } },
+  },
+  eagleGlove: {
+    name: '응조 장갑', glyph: '爪', kind: 'gear', rarity: 'uncommon',
+    desc: '치명 확률 +10%, 명중 +5%', fx: { critBonus: 10, accuracyBonus: 5 },
+  },
+  breachArt: {
+    name: '파진결', glyph: '破', kind: 'art', rarity: 'uncommon',
+    desc: '전투 첫 턴에 적에게 내상 2', fx: { startEnemy: { vulnerable: 2 } },
+  },
+  spiritMushroom: {
+    name: '자색 영지', glyph: '芝', kind: 'elixir', rarity: 'uncommon',
+    desc: '최대 체력 +12, 이길 때마다 체력 2 회복', fx: { maxHp: 12, winHeal: 2 },
+  },
+  merchantLedger: {
+    name: '상인 장부', glyph: '簿', kind: 'gear', rarity: 'uncommon',
+    desc: '객잔 값 20% 할인', fx: { shopDiscount: 0.2 },
+  },
+  violetQi: {
+    name: '자하신공', glyph: '紫', kind: 'art', rarity: 'rare',
+    desc: '매 턴 시작 시 기세 +1', fx: { turnStatus: { strength: 1 } },
+  },
+  fireCarp: {
+    name: '천년 화리', glyph: '鯉', kind: 'elixir', rarity: 'rare',
+    desc: '최대 체력 +16, 이길 때마다 체력 4 회복', fx: { maxHp: 16, winHeal: 4 },
+  },
+  cursedBlade: {
+    name: '흉도', glyph: '凶', kind: 'gear', rarity: 'rare',
+    desc: '최대 체력 -8, 모든 초식 한 타 +3', fx: { maxHp: -8, attackBonus: 3 },
+  },
+
+  // ── 7-D 정파 ──
+  craneShoes: {
+    name: '운학화', glyph: '鶴', kind: 'gear', rarity: 'common', faction: 'orthodox',
+    desc: '전투 첫 턴에 경공 +1, 무공 1장 더', fx: { startStatus: { evasion: 1, draw: 1 } },
+  },
+  bronzeFigure: {
+    name: '점혈 동인', glyph: '銅', kind: 'gear', rarity: 'common', faction: 'orthodox',
+    desc: '전투 첫 턴에 적 점혈 +4', fx: { startEnemy: { point: 4 } },
+  },
+  swordTassel: {
+    name: '검수', glyph: '穗', kind: 'gear', rarity: 'common', faction: 'orthodox',
+    desc: '연계 중 한 타 +1, 명중 +5%', fx: { comboBonus: 1, accuracyBonus: 5 },
+  },
+  driftingCloud: {
+    name: '유운신법', glyph: '雲', kind: 'art', rarity: 'uncommon', faction: 'orthodox',
+    desc: '전투 첫 턴에 경공 +2, 내공 +1', fx: { startStatus: { evasion: 2, energy: 1 } },
+  },
+  soulChaseArt: {
+    name: '추풍 검결', glyph: '追', kind: 'art', rarity: 'uncommon', faction: 'orthodox',
+    desc: '연계 중 한 타 +2, 명중 +10%', fx: { comboBonus: 2, accuracyBonus: 10 },
+  },
+  pureSwordArt: {
+    name: '태청 검결', glyph: '淸', kind: 'art', rarity: 'rare', faction: 'orthodox',
+    desc: '첫 턴 적 점혈 +3, 매 턴 점혈 +1', fx: { startEnemy: { point: 3 }, turnEnemy: { point: 1 } },
+  },
+  mirrorHeart: {
+    name: '명경지심', glyph: '明', kind: 'art', rarity: 'boss', faction: 'orthodox',
+    desc: '매 턴 시작 시 간파 1', fx: { turnStatus: { insight: 1 } },
+  },
+
+  // ── 7-D 사파 ──
+  ironCaltropBelt: {
+    name: '철질려 전대', glyph: '鐵', kind: 'gear', rarity: 'common', faction: 'unorthodox',
+    desc: '암기 피해 +2, 얻을 때 은자 +25', fx: { thrownBonus: 2, gold: 25 },
+  },
+  scorpionVial: {
+    name: '전갈 독병', glyph: '蝎', kind: 'gear', rarity: 'common', faction: 'unorthodox',
+    desc: '전투 첫 턴에 적에게 중독 4', fx: { startEnemy: { poison: 4 } },
+  },
+  goldToad: {
+    name: '금두꺼비', glyph: '蟾', kind: 'gear', rarity: 'common', faction: 'unorthodox',
+    desc: '은자 60 이상이면 한 타 +2', fx: { richBonus: 2 },
+  },
+  trapManual: {
+    name: '기관 비록', glyph: '機', kind: 'art', rarity: 'uncommon', faction: 'unorthodox',
+    desc: '함정 피해 +4, 암기 피해 +1', fx: { trapBonus: 4, thrownBonus: 1 },
+  },
+  shadeWindArt: {
+    name: '음풍 비결', glyph: '陰', kind: 'art', rarity: 'uncommon', faction: 'unorthodox',
+    desc: '첫 턴 적 약화 1, 약화·중독 적에 한 타 +2', fx: { startEnemy: { weak: 1 }, debuffBonus: 2 },
+  },
+  thousandHandPoison: {
+    name: '천수 독경', glyph: '經', kind: 'art', rarity: 'rare', faction: 'unorthodox',
+    desc: '매 턴 시작 시 적에게 중독 1', fx: { turnEnemy: { poison: 1 } },
+  },
+  ghostKingHarness: {
+    name: '귀왕 비도갑', glyph: '鬼', kind: 'gear', rarity: 'boss', faction: 'unorthodox',
+    desc: '매 턴 적에게 약화 1, 암기 피해 +2', fx: { turnEnemy: { weak: 1 }, thrownBonus: 2 },
+  },
+
+  // ── 7-D 마교 ──
+  bloodBeads: {
+    name: '혈염주', glyph: '念', kind: 'gear', rarity: 'common', faction: 'demonic',
+    desc: '전투를 마기 2 로 시작', fx: { startMagi: 2 },
+  },
+  frenzyTalisman: {
+    name: '광혈부', glyph: '狂', kind: 'gear', rarity: 'common', faction: 'demonic',
+    desc: '체력 절반 이하면 한 타 +2', fx: { desperateBonus: 2 },
+  },
+  batFang: {
+    name: '박쥐 이빨', glyph: '蝠', kind: 'gear', rarity: 'common', faction: 'demonic',
+    desc: '흡혈 +20%, 이길 때마다 체력 2 회복', fx: { lifestealBonus: 0.2, winHeal: 2 },
+  },
+  madnessSutra: {
+    name: '입마 경문', glyph: '魔', kind: 'art', rarity: 'uncommon', faction: 'demonic',
+    desc: '입마 대가 때 마기 +2, 시작 마기 1', fx: { curseMagi: 2, startMagi: 1 },
+  },
+  demonBloodPill: {
+    name: '마혈단', glyph: '血', kind: 'elixir', rarity: 'uncommon', faction: 'demonic',
+    desc: '최대 체력 -8, 체력 절반 이하면 한 타 +4', fx: { maxHp: -8, desperateBonus: 4 },
+  },
+  heavenDemonSutra: {
+    name: '천마 혈경', glyph: '天', kind: 'art', rarity: 'rare', faction: 'demonic',
+    desc: '매 턴 시작 시 마기 +1', fx: { turnStatus: { magi: 1 } },
+  },
+  demonGodSeal: {
+    name: '마신 혈인', glyph: '神', kind: 'art', rarity: 'boss', faction: 'demonic',
+    desc: '최대 체력 -10, 매 턴 기세 +1·마기 +1', fx: { maxHp: -10, turnStatus: { strength: 1, magi: 1 } },
+  },
 };
 
 for (const [id, it] of Object.entries(CONSUMABLES)) it.id = id;

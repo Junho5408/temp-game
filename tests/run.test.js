@@ -1,3 +1,4 @@
+import { TREASURES } from '../src/core/items.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateMap, ROWS, allNodes } from '../src/core/map.js';
@@ -284,7 +285,7 @@ test('복면객 무명을 쓰러뜨리면 단서 mask', () => {
 });
 
 // ── 2-B: 여러 구역 · 최종 결전 · 판 저장 ─────────────────────────
-test('두목을 이기면 보물(대환단 포함) → 무공 → 다음 구역 (잃은 체력 절반 회복)', () => {
+test('두목을 이기면 보물(두목 보물 하나 포함) → 무공 → 다음 구역 (잃은 체력 절반 회복)', () => {
   const run = createRun({ seed: 12 });
   run.encounter = { enemyId: 'spy', tier: 'boss', scale: { hp: 1, strength: 0 } };
   run.phase = 'battle';
@@ -294,7 +295,7 @@ test('두목을 이기면 보물(대환단 포함) → 무공 → 다음 구역 
   b.phase = 'won';
   finishBattle(run, b);
   assert.equal(run.phase, 'treasure');
-  assert.ok(run.treasureChoice.includes('daeHwan'));
+  assert.equal(TREASURES[run.treasureChoice[0]].rarity, 'boss');
   chooseTreasure(run, 0);
   assert.equal(run.phase, 'reward');
   chooseReward(run, 0);
