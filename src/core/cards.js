@@ -439,6 +439,7 @@ export function describe(c) {
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
   if (c.evasion) lines.push(`경공 +${c.evasion}`);
+  if (c.opener) lines.push(`첫 수면 +${c.opener}`);
   if (c.riposte) lines.push(`반격 ${c.riposte}`);
   if (c.guard) lines.push(`호신 ${c.guard}`);
   if (c.insight) lines.push('간파: 다음 초식 필중·치명');
@@ -502,6 +503,7 @@ export function cardKeywords(c) {
   if (c.trap) k.push('함정: 적이 다음에 공격하는 순간 먼저 발동 (깔아 둔 함정은 한꺼번에 터짐)');
   if (c.riposte || c.power?.riposte) k.push('반격: 다음 적 차례에 적이 한 타 칠 때마다 이만큼 되받아침, 피하면 2배');
   if (c.guard || c.power?.guard) k.push('호신: 다음 적 차례 동안 받는 피해를 합계 이만큼 막음');
+  if (c.opener) k.push(`발도: 이번 턴에 처음 쓰는 카드면 한 타 피해 +${c.opener}`);
   if (c.swordQi) k.push('검기: 이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 피해 증가');
   if (c.steal) k.push('훔치기: 적의 기세를 깎고, 적에게 있던 만큼 내 기세로');
   if (c.bloodPact) k.push(`혈계: 내가 잃은 체력 10마다 한 타 피해 +${c.bloodPact}`);
@@ -514,5 +516,5 @@ export function canUpgrade(card) {
 }
 
 export function cardsByRarity(rarity) {
-  return Object.values(CARDS).filter((c) => c.rarity === rarity).map((c) => c.id);
+  return Object.values(CARDS).filter((c) => c.rarity === rarity && !c.retired).map((c) => c.id);
 }

@@ -39,6 +39,7 @@
 //   (7-C) 입마 연료(consumeCurse) 손패의 입마 1장을 태워 이번 초식 한 타 피해 +n
 //   (8-A) 반격(riposte)      다음 적 차례 동안 적이 한 타 칠 때마다 n 피해로 되받아침 (피하면 2배)
 //   (8-A) 호신(guard)        다음 적 차례 동안 받는 피해를 합계 n 까지 막음
+//   (8-B) 발도(opener)       이번 턴에 처음 쓰는 카드면 한 타 피해 +n
 //
 // 아이템 (items.js)
 //   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
@@ -493,6 +494,7 @@ export function cardBaseDamage(s, c) {
   if (c.hpCost && s.treasures?.has('bloodJade')) base += 3;
   if (c.desperate && desperateActive(s)) base += c.desperate;
   if (c.swordQi) base += c.swordQi * (s.turnCards ?? 0);
+  if (c.opener && !(s.turnCards > 0)) base += c.opener; // 발도(8-B): 이번 턴 첫 카드면
   if (c.bloodPact) base += c.bloodPact * Math.floor((s.player.maxHp - s.player.hp) / 10);
   if (c.consumeCurse && s.hand.some((x) => CARDS[x.id].unplayable)) base += c.consumeCurse;
   if (c.magiSpend) base += c.magiSpend * (s.player.magi ?? 0);
