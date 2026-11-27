@@ -1169,3 +1169,5 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .route-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; margin: 6px 0 2px; font-size: 12px; color: #d9cfbd; }
 .route-stats b { color: #f1dfb2; }
 .sg-cell em { font-size: 9.5px; line-height: 1.25; }
+
+.popup.blood { color: #ff4a4a; font-size: 22px; }

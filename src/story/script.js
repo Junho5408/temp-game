@@ -30,6 +30,9 @@ export const SPEAKERS = {
   axeLord: { name: '마삼', art: 'unorthodox-fist' },
   patrolCaptain: { name: '한소', art: 'orthodox-assassin' },
   gangBro: { name: '흑도 졸개', glyph: '卒' },
+  rival: { name: '연화', art: 'boss-rival', glyph: '華' },
+  cultElder: { name: '혈공 장로', glyph: '魔' },
+  cultHerald: { name: '마교 집사', glyph: '令' },
 };
 
 // ── 프롤로그 ─────────────────────────
@@ -133,6 +136,7 @@ export const CLUES = {
   traitor: { title: '배신자는 맹의 높은 자리', text: '혈마 장로는 "맹의 높으신 분"과 약속을 했다고 했다. 배신자는 말단이 아니다.' },
   innkeeper: { title: '객잔 주인이 돈을 받았다', text: '청운객잔 주인은 "그날 밤 문을 잠그면 큰돈을 준다"는 말에 넘어갔다. 습격은 안에서부터 준비되어 있었다.' },
   payer: { title: '돈을 준 쪽은 정파', text: '무림맹 장로의 품에서 흰 학 문양 전낭과 "청운객잔 주인에게 은자 오백 냥" 이라 적힌 장부가 나왔다. 흰 학은 무림맹 수뇌부의 문양이다.' },
+  request: { title: '혈영대를 부른 것은 무림맹', text: '혈영대 막사의 서찰: "백 일 뒤 청운객잔, 흰 옷의 밀사. 밀서를 회수해 주면 약조대로 관문을 열겠소." 찍힌 인장은 흰 학 — 무림맹이었다.' },
   sender: { title: '귀면을 보낸 자', text: '귀면은 죽기 전에 "누가 우리를 보냈는지 아느냐"고 물었다. 혈영대를 움직인 것은 교주가 아니다.' },
 };
 
@@ -149,7 +153,7 @@ export const ROUTE_TEXT = {
   },
   demonic: {
     zones: ['제1구역 · 서열 혈투', '제2구역 · 중원 진출', '제3구역 · 정마 결전', '그날 밤 · 청운객잔'],
-    backgrounds: ['arena', 'forest', 'gate', 'inn'],
+    backgrounds: ['altar', 'forest', 'gate', 'inn'],
   },
 };
 export const ZONE_NAMES = ROUTE_TEXT.orthodox.zones;
@@ -201,7 +205,44 @@ const UNORTHODOX_TEXT = {
   },
 };
 
+// 마교 루트 구역 대사
+const DEMONIC_TEXT = {
+  start: (meta) => [
+    { who: 'narr', text: '마교 총단. 핏빛 등불 아래 젊은 고수들이 서열을 두고 생사 비무를 벌인다.' },
+    { who: 'cultHerald', text: '이름 없는 떠돌이가 서열전에 들겠다고? 죽어도 원망 말거라.' },
+    { who: 'me', text: '(그날 밤 나를 벤 귀면 가면. 그 뿌리가 이곳이다. 안에서부터 본다.)', thought: true },
+    ...(meta.clues.includes('request')
+      ? [{ who: 'me', text: '(혈영대를 부른 건 교주가 아니었다. 이번엔 그 서찰을 더 빨리 손에 넣는다.)', thought: true }]
+      : []),
+  ],
+  intro: {
+    1: () => [
+      { who: 'narr', text: '서열 1위를 꺾은 이름 없는 자. 마교는 그를 앞세워 중원으로 나섰다.' },
+      { who: 'me', text: '(정파와 사파를 동시에 상대해야 한다. …그날 밤 객잔을 둘러싼 것도 이 셋이었지.)', thought: true },
+    ],
+    2: () => [
+      { who: 'narr', text: '정파와 마교가 마침내 정면으로 부딪친다. 그런데 혈영대 일부가 교주의 명을 따르지 않고 따로 움직인다.' },
+      { who: 'me', text: '혈영대를 움직이는 다른 손. 그 서찰을 찾는다.' },
+    ],
+  },
+  clear: {
+    0: [
+      { who: 'narr', text: '서열전이 끝났다. 총단의 젊은 고수들이 이름 없는 자에게 고개를 숙였다.' },
+      { who: 'me', text: '마교 안에서도 혈영대는 따로 논다. 누가 그들을 부리는지 알아야 한다.' },
+    ],
+    1: [
+      { who: 'narr', text: '중원 흑도가 무너지고, 마교의 깃발이 강을 건넜다.' },
+      { who: 'me', text: '이제 정마 결전이다. 그 판 위에서 혈영대가 어디로 가는지 본다.' },
+    ],
+    2: [
+      { who: 'narr', text: '결전의 불길이 잦아들었다. 그리고 비가 내리기 시작했다. 사흘 동안 그치지 않을 비가.' },
+      { who: 'me', text: '…오늘 밤이다. 이번엔 귀면이 누구의 부름을 받고 왔는지 알고 간다.' },
+    ],
+  },
+};
+
 export function zoneIntro(zone, meta, faction = 'orthodox') {
+  if (faction === 'demonic') return DEMONIC_TEXT.intro[zone]?.(meta) ?? [];
   if (faction === 'unorthodox') return UNORTHODOX_TEXT.intro[zone]?.(meta) ?? [];
   if (zone === 1) {
     return [
@@ -225,6 +266,7 @@ export function zoneIntro(zone, meta, faction = 'orthodox') {
 
 // 구역을 깬 뒤 넘어가는 대사
 export function zoneClearLines(zone, faction = 'orthodox') {
+  if (faction === 'demonic') return DEMONIC_TEXT.clear[zone] ?? [];
   if (faction === 'unorthodox') return UNORTHODOX_TEXT.clear[zone] ?? [];
   if (zone === 0) {
     return [
@@ -271,6 +313,7 @@ export const ENDING = [
 // ── 1구역 · 후기지수 비무대회 ─────────────────────────
 // 구역 시작: 처음 / 그 뒤
 export function zone1Start(meta, faction = 'orthodox') {
+  if (faction === 'demonic') return DEMONIC_TEXT.start(meta);
   if (faction === 'unorthodox') return UNORTHODOX_TEXT.start(meta);
   if (meta.runs <= 1) {
     return [
@@ -386,6 +429,24 @@ export function battleIntro(enemyId, known) {
           { who: 'me', text: '(이 노인의 품에서 무언가가 반짝였다. 흰 학 문양…?)', thought: true },
           { who: 'allianceElder', text: '정의는 맹에 있다. 오너라.' },
         ];
+    case 'rivalProdigy':
+      return [
+        { who: 'narr', text: '서열전 마지막 비무대. 붉은 끈으로 머리를 묶은 여인이 곡도를 늘어뜨리고 서 있다.' },
+        { who: 'rival', text: '이름도 없는 떠돌이가 여기까지? 서열 1위 자리는 그렇게 싸지 않아.' },
+        { who: 'me', text: '자리는 필요 없다. 혈영대를 누가 움직이는지만 알면 된다.' },
+        { who: 'rival', text: '…혈영대? 흥, 그건 이기고 나서 물어봐.' },
+      ];
+    case 'gangLordD':
+      return [
+        { who: 'gangLord', text: '마교 놈들이 중원까지 밀고 들어와? 흑도도 만만하진 않다!' },
+        { who: 'me', text: '(조광… 사파의 길에서 만났던 얼굴이다. 이번엔 적의 편에서.)', thought: true },
+      ];
+    case 'allianceElderD':
+      return [
+        { who: 'allianceElder', text: '마교의 앞잡이가 된 정파 출신이라니. 맹의 이름으로 너를 벤다.' },
+        { who: 'me', text: '맹의 이름이라. 그 맹이 혈영대를 불렀다는 건 아나?' },
+        { who: 'allianceElder', text: '…무슨 헛소리를!' },
+      ];
     case 'gwimyeon':
       return FINAL_INTRO;
     default:
@@ -471,6 +532,18 @@ export function battleOutro(enemyId, known) {
           { who: 'me', text: '…객잔에 돈을 댄 건 정파였다. 흰 학은 맹 수뇌부의 문양이다.' },
           { who: 'narr', text: '― 단서: 돈을 준 쪽은 정파 ―' },
         ];
+    case 'rivalProdigy':
+      return [
+        { who: 'rival', text: '…졌네. 좋아, 약속은 약속이지.' },
+        { who: 'rival', text: '혈영대는 요즘 교주님 명이 아니라 대주의 판단으로 움직여. 대주에게 서찰이 자주 온다던데… 어디서 오는지는 아무도 몰라.' },
+      ];
+    case 'gangLordD':
+      return [{ who: 'gangLord', text: '크윽… 마교가 중원을 먹는다고 끝날 것 같으냐… 정파 높으신 분들도 다 제 몫을 챙기고 있다고…' }];
+    case 'allianceElderD':
+      return [
+        { who: 'allianceElder', text: '크헉… 마교가… 맹의 요청으로 움직였다고…? 그런 일은… 부맹주께서 허락하실 리가…' },
+        { who: 'me', text: '(부맹주…)', thought: true },
+      ];
     case 'gwimyeon':
       return ENDING;
     default:
@@ -521,6 +594,18 @@ export function npcIntro(npc, n, meta) {
       { who: 'me', text: '(그 사내다. 그날 밤 뒷문으로 빠져나가던.)', thought: true },
       { who: 'soohaNamed', text: '…어디서 본 얼굴 같소만. 무림맹 순찰사 진소하라 하오.' },
       { who: 'me', text: '(진소하. 드디어 이름을 알았다.)', thought: true },
+    ];
+  }
+  if (npc === 'cultElder') {
+    return [
+      { who: 'narr', text: '총단 지하, 비린내가 진동하는 수련실. 늙은 장로가 핏빛 단지를 젓고 있다.' },
+      { who: 'cultElder', text: '서열전에 든 떠돌이로군. 혈공을 알고 싶나? 대가는 피다.' },
+    ];
+  }
+  if (npc === 'bloodCamp') {
+    return [
+      { who: 'narr', text: '결전의 함성이 멀어진 틈, 혈영대 막사에 불이 꺼져 있다.' },
+      { who: 'me', text: '(대주의 탁자. 그날 밤의 명령이 여기 있을 것이다.)', thought: true },
     ];
   }
   if (npc === 'innkeeperDebt') {

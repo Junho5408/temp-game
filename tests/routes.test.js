@@ -52,7 +52,7 @@ test('사파 암수: 시작 은자 +40, 객잔 값 20% 할인', async () => {
   });
 });
 
-test('마교 혈공: 이길 때마다 체력 4 회복, 운기조식 회복 20%', () => {
+test('마교 혈공: 이길 때마다 체력 6 회복, 운기조식 회복 20%', () => {
   const run = createRun({ seed: 6, faction: 'demonic' });
   assert.equal(restHealAmount(run), Math.ceil(run.maxHp * 0.2));
   assert.equal(restHealAmount(createRun({ seed: 6 })), Math.ceil(70 * 0.3));
@@ -63,7 +63,7 @@ test('마교 혈공: 이길 때마다 체력 4 회복, 운기조식 회복 20%',
   b.enemy.hp = 0;
   b.phase = 'won';
   finishBattle(run, b);
-  assert.equal(run.hp, 44);
+  assert.equal(run.hp, 46);
 });
 
 test('세력 고유 무공은 그 세력 판에서만 나옴', () => {

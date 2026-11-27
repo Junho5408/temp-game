@@ -114,6 +114,15 @@ export const TREASURES = {
     name: '독낭', glyph: '囊', kind: 'gear', rarity: 'uncommon', faction: 'unorthodox',
     desc: '적에게 거는 중독 +2',
   },
+  // ── 마교 고유 ─────────────────
+  bloodJade: {
+    name: '천마 혈옥', glyph: '玉', kind: 'gear', rarity: 'uncommon', faction: 'demonic',
+    desc: '체력을 대가로 쓰는 무공의 피해 +3',
+  },
+  demonMask: {
+    name: '마령 가면', glyph: '面', kind: 'gear', rarity: 'common', faction: 'demonic',
+    desc: '전투 첫 턴에 적에게 흐트러짐 2',
+  },
   blueSteel: {
     name: '청강검', glyph: '鋼', kind: 'gear', rarity: 'uncommon',
     desc: '치명 확률 +10%',

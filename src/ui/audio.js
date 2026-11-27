@@ -259,6 +259,7 @@ const MOODS = {
   forest: { scale: [164.81, 185, 220, 246.94, 277.18, 329.63, 370], beat: 0.6, density: 0.32, drone: [82.41, 123.47], drum: false, crickets: true },
   gate: { scale: [174.61, 207.65, 233.08, 261.63, 311.13, 349.23], beat: 0.42, density: 0.5, drone: [87.31, 130.81], drum: 'war' },
   alley: { scale: [146.83, 164.81, 196, 220, 246.94, 293.66], beat: 0.55, density: 0.38, drone: [73.42, 110], drum: 'light' },
+  altar: { scale: [146.83, 155.56, 196, 220, 233.08, 293.66], beat: 0.6, density: 0.4, drone: [73.42, 77.78], drum: 'war' },
   hall: { scale: [196, 220, 261.63, 293.66, 329.63, 392], beat: 0.45, density: 0.48, drone: [98, 146.83], drum: 'war' },
   boss: { scale: [146.83, 174.61, 196, 220, 261.63, 293.66], beat: 0.36, density: 0.6, drone: [73.42, 110, 155.56], drum: 'war' },
 };

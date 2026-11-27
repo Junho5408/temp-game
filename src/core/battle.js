@@ -162,6 +162,10 @@ export function startPlayerTurn(s) {
   if (s.turn === 1) {
     if (owns(s, 'stoneMilk')) treasureStatus(s, 'stoneMilk', 'strength', 1);
     if (owns(s, 'farSight')) treasureStatus(s, 'farSight', 'insight', 1);
+    if (owns(s, 'demonMask')) {
+      emit(s, { type: 'treasure', id: 'demonMask' });
+      addStatus(s, 'enemy', 'weak', 2);
+    }
   }
   if (owns(s, 'taiji')) treasureStatus(s, 'taiji', 'evasion', 1);
   p.energy = p.maxEnergy;
@@ -296,7 +300,10 @@ function addPoint(s, n) {
 export function canPlay(s, uid) {
   if (s.phase !== 'player') return false;
   const card = s.hand.find((c) => c.uid === uid);
-  return !!card && cardStats(card).cost <= s.player.energy;
+  if (!card) return false;
+  const c = cardStats(card);
+  // 체력을 대가로 쓰는 무공은 대가보다 체력이 많아야 함 (스스로 쓰러지지 않게)
+  return c.cost <= s.player.energy && (!c.hpCost || s.player.hp > c.hpCost);
 }
 
 // 연계 조건: 이번 턴에 이미 초식을 썼는가
@@ -311,6 +318,7 @@ export function cardBaseDamage(s, c) {
   if (c.combo && comboActive(s)) base += c.combo;
   if (c.perAttack) base += c.perAttack * s.turnAttacks;
   if (c.dirty && isDebuffed(s.enemy)) base *= 2;
+  if (c.hpCost && s.treasures?.has('bloodJade')) base += 3;
   return base;
 }
 
@@ -354,6 +362,10 @@ export function playCard(s, uid) {
   p.energy -= c.cost;
   s.hand.splice(idx, 1);
   emit(s, { type: 'play', card: card.id, attack: !!c.damage });
+  if (c.hpCost) {
+    p.hp -= c.hpCost;
+    emit(s, { type: 'damage', target: 'player', amount: c.hpCost, blood: true });
+  }
 
   if (c.strength) addStatus(s, 'player', 'strength', c.strength);
   if (c.evasion) addStatus(s, 'player', 'evasion', c.evasion);
@@ -384,6 +396,11 @@ export function playCard(s, uid) {
       e.hp = Math.max(0, e.hp - dmg);
       emit(s, { type: 'damage', target: 'enemy', amount: dmg, crit, guarded });
       afterEnemyHurt(s, dmg);
+      if (c.lifesteal && dmg > 0) {
+        const before = p.hp;
+        p.hp = Math.min(p.maxHp, p.hp + Math.floor(dmg * c.lifesteal));
+        if (p.hp > before) emit(s, { type: 'heal', target: 'player', amount: p.hp - before });
+      }
     }
     if (e.hp > 0 && landed > 0) {
       if (c.vulnerable) addStatus(s, 'enemy', 'vulnerable', c.vulnerable);

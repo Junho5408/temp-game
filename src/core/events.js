@@ -249,6 +249,70 @@ export const EVENTS = {
       },
     ],
   },
+  // 마교 1구역: 혈공 비전을 내리는 장로
+  cultElder: {
+    story: true,
+    npc: 'cultElder',
+    intro: 'cultElder',
+    route: 'demonic',
+    zone: 0,
+    minRow: 3,
+    title: '혈공 장로의 시험',
+    text: '늙은 장로가 핏빛 단지를 내민다.\n"혈공은 피를 내주고 힘을 얻는 법. 마실 테냐?"',
+    options: [
+      {
+        label: '피의 단지를 마신다',
+        hint: '최대 체력 -6 · 희귀 무공 『피의 맹세』',
+        effect(run, rng, api) {
+          run.maxHp -= 6;
+          run.hp = Math.min(run.hp, run.maxHp);
+          api.addCard('bloodOath');
+          return '쇳물 같은 것이 목을 타고 내려갔다. 몸 어딘가가 빠져나간 대신, 피가 끓는다.\n『피의 맹세』를 익혔다.';
+        },
+      },
+      {
+        label: '장로에게 혈영대를 묻는다',
+        hint: '체력 +10 · 소문을 듣는다',
+        effect(run) {
+          run.hp = Math.min(run.maxHp, run.hp + 10);
+          return '장로는 단지를 거두며 혀를 찼다. "혈영대? 교주님은 요 몇 해 혈영대를 움직이신 적이 없다. 그런데 요즘 녀석들이 자꾸 밖으로 나간단 말이지…"\n장로가 내준 약차로 기운을 차렸다.';
+        },
+      },
+    ],
+  },
+  // 마교 3구역: 혈영대 막사에서 찾은 서찰
+  bloodCamp: {
+    story: true,
+    npc: 'bloodCamp',
+    intro: 'bloodCamp',
+    route: 'demonic',
+    zone: 2,
+    minRow: 3,
+    title: '혈영대 막사',
+    text: '전장 뒤편, 혈영대 막사가 비어 있다.\n대주의 탁자 위에 봉인된 서찰 뭉치가 놓여 있다.',
+    options: [
+      {
+        label: '서찰을 몰래 읽는다',
+        hint: '단서 · 체력 -6 (들킬 뻔함)',
+        effect(run, rng, api) {
+          run.hp = Math.max(1, run.hp - 6);
+          api.addClue('request');
+          return '『혈영대주께. 백 일 뒤 청운객잔, 흰 옷의 밀사. 밀서를 회수해 주면 약조한 대로 관문을 열겠소.』\n아래에 찍힌 인장은 마교의 것이 아니었다. 흰 학 — 무림맹의 인장이었다.\n막사를 빠져나오다 보초의 칼에 스쳤다.';
+        },
+      },
+      {
+        label: '서찰 뭉치를 통째로 챙긴다',
+        hint: '단서 · 은자 +30 · 행낭 물품 1개',
+        effect(run, rng, api) {
+          run.gold += 30;
+          api.addClue('request');
+          const id = api.randomItem();
+          api.addItem(id);
+          return '서찰과 함께 탁자 위의 전낭까지 쓸어 담았다.\n펼쳐 본 서찰에는 혈영대 출동을 청하는 글과 흰 학 인장. 혈영대를 부른 것은 교주가 아니라 무림맹이었다.';
+        },
+      },
+    ],
+  },
   herbSeller: {
     title: '약초 파는 노파',
     text: '등이 굽은 노파가 바구니 가득 약을 팔고 있다.\n"상처엔 금창약, 몸을 보하는 덴 소환단이라오. 소환단은 한 번 먹으면 평생 가지."',

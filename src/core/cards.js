@@ -19,6 +19,8 @@
 //   dirty               비열한 수: 적이 흐트러짐·중독·굳음 상태면 한 타 피해 2배
 //   gold                은자 +n (전투가 끝나면 판에 더해짐)
 //   faction             그 세력 판에서만 보상·객잔에 나옴 (routes.js)
+//   hpCost              체력을 대가로 씀 (남은 체력이 대가보다 많아야 쓸 수 있음)
+//   lifesteal           준 피해의 n 비율만큼 체력 회복
 // upgrade: 연마(+)했을 때 바뀌는 값
 
 export const CARDS = {
@@ -196,6 +198,38 @@ export const CARDS = {
     cost: 2, damage: 12, sure: true, crit: 30, dirty: true,
     upgrade: { damage: 16 },
   },
+
+  // ── 마교 고유 (혈공) ─────────────────
+  bloodSword: {
+    name: '혈검', type: 'attack', rarity: 'common', glyph: '血', faction: 'demonic',
+    cost: 1, hpCost: 3, damage: 11,
+    upgrade: { damage: 14 },
+  },
+  bloodMist: {
+    name: '혈무', type: 'skill', rarity: 'common', glyph: '霧', faction: 'demonic',
+    cost: 1, evasion: 3, weak: 1,
+    upgrade: { evasion: 5 },
+  },
+  drainStrike: {
+    name: '흡혈 일섬', type: 'attack', rarity: 'uncommon', glyph: '吸', faction: 'demonic',
+    cost: 2, damage: 10, lifesteal: 0.5,
+    upgrade: { damage: 13 },
+  },
+  bloodRage: {
+    name: '마공 폭주', type: 'skill', rarity: 'uncommon', glyph: '狂', faction: 'demonic',
+    cost: 0, hpCost: 5, energy: 2,
+    upgrade: { energy: 2, draw: 1 },
+  },
+  bloodOath: {
+    name: '피의 맹세', type: 'skill', rarity: 'rare', glyph: '誓', faction: 'demonic',
+    cost: 1, hpCost: 6, strength: 4,
+    upgrade: { strength: 5 },
+  },
+  heavenDemonBlade: {
+    name: '천마혈검', type: 'attack', rarity: 'rare', glyph: '魔', faction: 'demonic',
+    cost: 2, hpCost: 8, damage: 7, hits: 3,
+    upgrade: { damage: 9 },
+  },
 };
 
 for (const [id, c] of Object.entries(CARDS)) c.id = id;
@@ -236,6 +270,8 @@ export function describe(c) {
   if (c.poison) lines.push(`중독 ${c.poison}`);
   if (c.dirty) lines.push('흐트러짐·중독·굳음이면 2배');
   if (c.gold) lines.push(`은자 +${c.gold}`);
+  if (c.lifesteal) lines.push(`준 피해 ${Math.round(c.lifesteal * 100)}% 회복`);
+  if (c.hpCost) lines.push(`체력 -${c.hpCost}`);
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
   if (c.evasion) lines.push(`경공 +${c.evasion}`);

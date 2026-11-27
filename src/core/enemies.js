@@ -518,6 +518,110 @@ export const UNORTHODOX_POOLS = [
   },
 ];
 
+
+// ══ 마교 루트 ══════════════════════════════
+// 1구역: 서열 혈투 (마교 총단 비무장)
+Object.assign(ENEMIES, {
+  cultNovice: {
+    name: '혈수', title: '마교 수련생', art: 'demonic-fist', tier: 'normal',
+    maxHp: 36,
+    pattern: [
+      { name: '혈권', damage: 6 },
+      { name: '혈기 끌어올리기', strength: 1 },
+      { name: '난타', damage: 3, hits: 2 },
+    ],
+  },
+  cultSword: {
+    name: '적검', title: '마검 견습생', art: 'demonic-sword', tier: 'normal',
+    maxHp: 38,
+    pattern: [
+      { name: '마검', damage: 7 },
+      { name: '혈기', strength: 1 },
+      { name: '혈우', damage: 3, hits: 2 },
+    ],
+  },
+  cultShadow: {
+    name: '흑영', title: '혈교도 견습생', art: 'demonic-assassin', tier: 'normal',
+    maxHp: 34, evasion: 10, traits: ['feint'], patternMode: 'random',
+    pattern: [
+      { name: '혈인', damage: 4, hits: 2 },
+      { name: '은신 · 반격 자세', counter: 4 },
+      { name: '혈독침', damage: 4, poison: 2 },
+    ],
+  },
+  twinFang: {
+    name: '쌍아', title: '혈영대 견습 살수', art: 'demonic-assassin', tier: 'elite',
+    maxHp: 62, evasion: 20, traits: ['feint', 'venom'],
+    pattern: [
+      { name: '쌍아 찌르기', damage: 4, hits: 2 },
+      { name: '그림자 숨기', strength: 2 },
+      { name: '반격 자세', counter: 6 },
+      { name: '혈독침', damage: 8, poison: 3 },
+    ],
+  },
+  redLash: {
+    name: '적편', title: '마교 검각 제자', art: 'demonic-sword', tier: 'elite',
+    maxHp: 66, traits: ['drain'],
+    pattern: [
+      { name: '혈편검', damage: 7, hits: 2 },
+      { name: '마공 운기', strength: 2 },
+      { name: '흡혈검', damage: 11 },
+      { name: '천마일섬', damage: 18, charge: true, breakAt: 13 },
+    ],
+  },
+  rivalProdigy: {
+    name: '연화', title: '마교 서열 1위', art: 'boss-rival', tier: 'boss',
+    maxHp: 135, evasion: 10, traits: ['killer'],
+    pattern: [
+      { name: '혈월참', damage: 6, hits: 2 },
+      { name: '반격 자세', counter: 7 },
+      { name: '혈기 개방', strength: 2 },
+      { name: '적혈검', damage: 12, vulnerable: 1 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '서열 1위의 진심',
+      text: '연화의 칼끝에서 붉은 기운이 흘러넘친다 — "재미있네. 이제야 칼을 뽑을 맛이 나."',
+      traits: ['drain'],
+      strength: 1,
+      pattern: [
+        { name: '혈화난무', damage: 4, hits: 4 },
+        { name: '피의 서약', strength: 3 },
+        { name: '천마혈화', damage: 26, charge: true, breakAt: 20 },
+        { name: '적혈검', damage: 12, vulnerable: 2 },
+      ],
+    },
+  },
+});
+
+// 2구역: 중원 진출 — 정파 문파와 사파 세력을 함께 상대, 두목은 중원 흑도를 지키는 조광
+ENEMIES.gangLordD = { ...ENEMIES.gangLord, title: '중원 흑도의 주인', maxHp: 210 };
+
+// 3구역: 정마 결전 — 무림맹 정예와 혈영대 안의 반대파, 두목은 무림맹 장로
+ENEMIES.bloodWolfD = { ...ENEMIES.bloodWolf, title: '혈영대 부대주 · 교주를 거스르는 자' };
+ENEMIES.allianceElderD = { ...ENEMIES.allianceElder, clue: null, title: '무림맹 장로 · 정마 결전의 선봉', maxHp: 245 };
+
+export const DEMONIC_POOLS = [
+  {
+    easy: ['cultNovice', 'cultSword'],
+    normal: ['cultNovice', 'cultSword', 'cultShadow', 'gangThug'],
+    elite: ['twinFang', 'redLash'],
+    boss: ['rivalProdigy'],
+  },
+  {
+    easy: ['bandit', 'blackWind'],
+    normal: ['bandit', 'snakeWoman', 'blackWind', 'fallenMonk'],
+    elite: ['twinBlade', 'poisonKing'],
+    boss: ['gangLordD'],
+  },
+  {
+    easy: ['allianceGuard', 'allianceScout'],
+    normal: ['allianceGuard', 'allianceScout', 'shaolinMonk', 'renegade'],
+    elite: ['bloodWolfD', 'ironInstructor'],
+    boss: ['allianceElderD'],
+  },
+];
+
 for (const [id, e] of Object.entries(ENEMIES)) e.id = id;
 
 export const ENEMY_IDS = Object.keys(ENEMIES);

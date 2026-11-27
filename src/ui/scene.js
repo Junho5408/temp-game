@@ -71,6 +71,7 @@ export async function createScene(canvas, { player }) {
     forest: renderBackground('forest'),
     gate: renderBackground('gate'),
     alley: renderBackground('alley'),
+    altar: renderBackground('altar'),
     hall: renderBackground('hall'),
     inn: renderInnBackground(),
   };
@@ -499,7 +500,7 @@ export async function createScene(canvas, { player }) {
       const flicker = 0.55 + Math.sin(now / 160 + e.phase) * 0.35;
       // 숲에서는 반딧불, 관문에서는 굵은 불티
       const [glow, core] = mode === 'forest' ? ['170, 230, 120', '220, 255, 170']
-        : mode === 'gate' || mode === 'hall' ? ['255, 80, 30', '255, 170, 90']
+        : mode === 'gate' || mode === 'hall' || mode === 'altar' ? ['255, 80, 30', '255, 170, 90']
           : mode === 'alley' ? ['255, 90, 150', '255, 190, 210'] : ['255, 120, 40', '255, 195, 120'];
       const big = mode === 'gate' || mode === 'hall' ? 1.4 : 1;
       g.fillStyle = `rgba(${glow}, ${0.16 * flicker})`;
@@ -576,6 +577,12 @@ const THEMES = {
     banners: [['#6b2a4a', '#41182c'], ['#2c2c36', '#18181f']],
     roofs: true,
   },
+  altar: {
+    sky: ['#0b0507', '#1f080b', '#33100f', '#120707'], haze: '220, 30, 40', hazeA: 0.45,
+    ridges: [['#24100f', '#1c0c0c'], ['#190a0a', '#140808'], ['#110707', '#0c0505']],
+    banners: [['#7a0f18', '#4a0a0f'], ['#151215', '#0a080a']],
+    pillars: true,
+  },
   hall: {
     sky: ['#121a24', '#1e2c3c', '#3a3030', '#171416'], haze: '255, 120, 60', hazeA: 0.4,
     ridges: [['#26313e', '#1f2833'], ['#1c242e', '#161c24'], ['#141a21', '#0f1318']],
@@ -617,6 +624,7 @@ function renderBackground(theme = 'arena') {
   mist(g, 240, 50, 0.14);
   if (t.trees) drawPines(g);
   if (t.roofs) drawRoofs(g);
+  if (t.pillars) drawPillars(g);
   ridge(g, 282, 34, 0.013, 5.2, t.ridges[2]);
 
   drawBanner(g, 198, 300, ...t.banners[0]);
@@ -652,6 +660,23 @@ function drawPines(g) {
     }
     g.fill();
     g.fillRect(x - 2, base - 4, 4, 10);
+  }
+}
+
+// 마교 1구역: 총단의 핏빛 기둥과 화로
+function drawPillars(g) {
+  for (let i = 0; i < 6; i++) {
+    const x = 70 + i * 170;
+    const top = 120 + (i % 2) * 20;
+    g.fillStyle = i % 2 ? '#1a0b0c' : '#140809';
+    g.fillRect(x - 14, top, 28, 170);
+    g.fillStyle = '#2a0f10';
+    g.fillRect(x - 20, top - 8, 40, 10);
+    const fire = g.createRadialGradient(x, top - 18, 2, x, top - 18, 34);
+    fire.addColorStop(0, 'rgba(255, 70, 40, 0.8)');
+    fire.addColorStop(1, 'rgba(255, 70, 40, 0)');
+    g.fillStyle = fire;
+    g.fillRect(x - 34, top - 52, 68, 68);
   }
 }
 

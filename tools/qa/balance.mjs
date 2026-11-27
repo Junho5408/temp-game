@@ -33,7 +33,8 @@ function score(card, attacking) {
   const v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
     + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
-    + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3;
+    + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3
+    - (c.hpCost ?? 0) * 0.8 + (c.lifesteal ? (c.damage ?? 0) * c.lifesteal : 0);
   return v / Math.max(1, c.cost);
 }
 

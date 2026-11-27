@@ -377,7 +377,9 @@ async function showStep() {
         const n = meetEventNpc(run, meta);
         saveMeta();
         saveRun();
-        await scene.setEnemy(`npc-${ev.npc}`);
+        const npcArt = { cultElder: 'demonic-fist', bloodCamp: null }[ev.npc] ?? `npc-${ev.npc}`;
+        if (npcArt) await scene.setEnemy(npcArt);
+        else scene.clearEnemy();
         scene.reset();
         setScreen('story');
         await playDialogue(npcIntro(ev.intro ?? ev.npc, n, meta));
@@ -826,6 +828,15 @@ async function playEvents(events) {
         if (ev.stunned) await wait(700);
         break;
       case 'damage': {
+        if (ev.blood) {
+          // 혈공: 체력을 대가로 냄
+          sfx('poison');
+          scene.buff('player');
+          popup('player', `血 -${ev.amount}`, 'blood');
+          renderStatus();
+          await wait(280);
+          break;
+        }
         if (ev.poison) {
           // 중독: 공격 동작 없이 독 피해
           scene.hit(ev.target, 2);

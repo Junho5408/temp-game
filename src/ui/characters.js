@@ -75,6 +75,9 @@ const NPCS = {
   'boss-elder': {
     title: '무림맹 장로 우문혁', note: '사파·마교 3구역 두목. 쇠지팡이와 호신강기', cls: 'fist', color: '#3e7cc8', sprite: null,
   },
+  'boss-rival': {
+    title: '마교 서열 1위 연화', note: '마교 1구역 두목. 붉은 곡도를 쓰는 젊은 천재', cls: 'sword', color: '#c22a36', sprite: null,
+  },
   'npc-innkeeper': {
     title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a', sprite: null,
   },
