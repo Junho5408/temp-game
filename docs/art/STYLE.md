@@ -46,6 +46,9 @@ Semi-realistic Korean wuxia game character illustration, bold clean ink outlines
 | boss-elder (우문혁) | An elderly orthodox alliance elder grandmaster, long white beard and white eyebrows, stern righteous face, blue and white layered robe with alliance insignia, a heavy iron staff in both hands, solid immovable stance with a faint golden protective qi glowing around the body. |
 | npc-innkeeper (객잔 주인) | A nervous middle-aged innkeeper, round face with a thin mustache, sweating with shifty eyes, plain brown apron over a gray shirt, holding an abacus close to his chest, hunched timid stance. |
 
+> 2026-11-27 반자동으로 넣은 10명(복이·맹 서기·토벌대장·흑도 졸개·혈공 장로·마교 집사·연무혁·위극·무명·독안귀)의 설명은 `docs/art/prompts-20261127.md` 에 그대로 있음 (다시 그릴 때 그 블록을 씀)
+> 웹에서 받은 그림의 배경이 탁한 초록이면 `prepare_sprite.py … --bg-key` (모서리 색 기준으로 지움)
+
 ## 좋은 그림 점검표 (에이전트가 후보마다 확인)
 - [ ] 전신이 잘리지 않음 (발끝까지)
 - [ ] 오른쪽을 보는 3/4 각도

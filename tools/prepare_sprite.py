@@ -33,6 +33,16 @@ def chroma_alpha(rgb):
     return alpha
 
 
+def bg_key_alpha(rgb):
+    """모서리(테두리 띠) 색의 중앙값을 배경색으로 보고, 그 색에 가까울수록 투명하게."""
+    h, w, _ = rgb.shape
+    b = max(4, min(h, w) // 50)
+    border = np.concatenate([rgb[:b].reshape(-1, 3), rgb[-b:].reshape(-1, 3), rgb[:, :b].reshape(-1, 3), rgb[:, -b:].reshape(-1, 3)])
+    bg = np.median(border, axis=0)
+    dist = np.sqrt(((rgb - bg) ** 2).sum(axis=-1))
+    return np.clip((dist - 28.0) / 40.0, 0.0, 1.0)
+
+
 def edge_band(alpha, width=4):
     """투명한 곳에서 width 픽셀 안쪽까지의 가장자리 영역."""
     band = alpha < 0.99
@@ -111,11 +121,14 @@ def main():
     ap.add_argument('--pad', type=int, default=8)
     ap.add_argument('--despill', choices=['edge', 'all'], default='edge')
     ap.add_argument('--out-dir', default='assets/characters', help='저장 폴더 (후보 점검용은 qa-output/... 에)')
+    ap.add_argument('--bg-key', action='store_true', help='배경이 탁한 초록일 때: 모서리 색에 가까운 곳을 지움 (웹에서 받은 그림)')
     args = ap.parse_args()
 
     img = Image.open(args.src).convert('RGB')
     rgb = np.asarray(img).astype(np.float32)
     alpha = chroma_alpha(rgb)
+    if args.bg_key:
+        alpha = np.minimum(alpha, bg_key_alpha(rgb))
     alpha = keep_main_components(alpha)
     rgb = despill(rgb, alpha, args.despill)
 

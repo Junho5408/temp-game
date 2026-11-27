@@ -73,7 +73,7 @@ export const ENEMIES = {
 
   // ── 고수 ─────────────────
   oneEye: {
-    name: '독안귀', title: '외눈 살수', art: 'unorthodox-assassin', tier: 'elite',
+    name: '독안귀', title: '외눈 살수', art: 'elite-one-eye', tier: 'elite',
     maxHp: 58, evasion: 15, traits: ['venom', 'killer'],
     pattern: [
       { name: '독비도', damage: 3, hits: 3 },
@@ -82,7 +82,7 @@ export const ENEMIES = {
     ],
   },
   masked: {
-    name: '무명', title: '정체불명의 복면객', art: 'demonic-assassin', tier: 'elite',
+    name: '무명', title: '정체불명의 복면객', art: 'elite-masked', tier: 'elite',
     maxHp: 64, evasion: 10, traits: ['feint'],
     clue: 'mask', // 쓰러뜨리면 얻는 단서
     pattern: [
@@ -96,7 +96,7 @@ export const ENEMIES = {
   // ── 두목 ─────────────────
   // 1단계: 정파 검법으로 위장 / 2단계: 체력 절반에서 마공을 드러냄
   spy: {
-    name: '연무혁', title: '비무대회 우승 후보', art: 'demonic-sword', tier: 'boss',
+    name: '연무혁', title: '비무대회 우승 후보', art: 'boss-spy', tier: 'boss',
     maxHp: 150,
     clue: 'note',
     pattern: [
@@ -265,7 +265,7 @@ Object.assign(ENEMIES, {
     ],
   },
   bloodElder: {
-    name: '위극', title: '혈마 장로', art: 'demonic-fist', tier: 'boss',
+    name: '위극', title: '혈마 장로', art: 'boss-blood-elder', tier: 'boss',
     maxHp: 250, traits: ['drain'],
     clue: 'traitor',
     pattern: [

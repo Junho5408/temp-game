@@ -85,6 +85,46 @@ const NPCS = {
     title: '마교 서열 1위 연화', note: '마교 1구역 두목. 붉은 곡도를 쓰는 젊은 천재', cls: 'sword', color: '#c22a36',
     sprite: { image: 'assets/characters/boss-rival.webp', footX: 0.5391 },
   },
+  'npc-boki': {
+    title: '청운객잔 점소이 복이', note: '겁 많고 수다스러운 점소이. "손님, 국수 한 그릇 더 하실래요?"', cls: 'fist', color: '#c8a878',
+    sprite: { image: 'assets/characters/npc-boki.webp', footX: 0.4033 },
+  },
+  'npc-clerk': {
+    title: '무림맹 서기', note: '비무대회 접수를 맡은 지친 관리', cls: 'sword', color: '#d8dde4',
+    sprite: { image: 'assets/characters/npc-clerk.webp', footX: 0.4196 },
+  },
+  'npc-officer': {
+    title: '녹림 토벌대장', note: '정파 2구역 토벌대를 이끄는 맹의 장수', cls: 'sword', color: '#6f8fb8',
+    sprite: { image: 'assets/characters/npc-officer.webp', footX: 0.6066 },
+  },
+  'npc-gangbro': {
+    title: '흑도 졸개', note: '이쑤시개를 문 뒷골목 졸개', cls: 'fist', color: '#8e7050',
+    sprite: { image: 'assets/characters/npc-gangbro.webp', footX: 0.535 },
+  },
+  'npc-cult-elder': {
+    title: '혈공 장로', note: '마교 총단 지하에서 피의 단지를 젓는 노인', cls: 'fist', color: '#a83040',
+    sprite: { image: 'assets/characters/npc-cult-elder.webp', footX: 0.5104 },
+  },
+  'npc-cult-herald': {
+    title: '마교 집사', note: '서열전을 진행하는 냉정한 집사', cls: 'sword', color: '#5a2030',
+    sprite: { image: 'assets/characters/npc-cult-herald.webp', footX: 0.3659 },
+  },
+  'boss-spy': {
+    title: '비무대회 우승 후보 연무혁', note: '정파 1구역 두목. 우승 후보로 위장한 마교 첩자, 검과 철선', cls: 'sword', color: '#9aa0b8',
+    sprite: { image: 'assets/characters/boss-spy.webp', footX: 0.4233 },
+  },
+  'boss-blood-elder': {
+    title: '혈마 장로 위극', note: '정파 3구역 두목. 팔꿈치까지 핏빛으로 물든 장법', cls: 'fist', color: '#7a1a28',
+    sprite: { image: 'assets/characters/boss-blood-elder.webp', footX: 0.4519 },
+  },
+  'elite-masked': {
+    title: '정체불명의 복면객 무명', note: '정파 1구역 고수. 그날 밤 자객들과 같은 귀면 가면', cls: 'assassin', color: '#b83040',
+    sprite: { image: 'assets/characters/elite-masked.webp', footX: 0.5301 },
+  },
+  'elite-one-eye': {
+    title: '외눈 살수 독안귀', note: '꿰맨 흉터 눈, 독 바른 비도', cls: 'assassin', color: '#6a5a48',
+    sprite: { image: 'assets/characters/elite-one-eye.webp', footX: 0.4381 },
+  },
   'npc-innkeeper': {
     title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a',
     sprite: { image: 'assets/characters/npc-innkeeper.webp', footX: 0.4919 },
