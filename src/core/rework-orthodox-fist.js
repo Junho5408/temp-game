@@ -13,8 +13,8 @@ export const REWORK_ORTHODOX_FIST = {
     // 견제 자리: 흐트러짐 + 점혈 맛보기
     oCheckPalm: {
       name: '견제장', type: 'attack', rarity: 'starter', glyph: '牽', faction: 'orthodox', cls: 'fist',
-      cost: 1, damage: 4, weak: 1, point: 3,
-      upgrade: { damage: 6, weak: 2, point: 4 },
+      cost: 1, damage: 4, weak: 1, point: 2,
+      upgrade: { damage: 6, weak: 2, point: 3 },
     },
     // 2비용 자리: 짧은 연타 + 연계
     oLinkFist: {
@@ -25,8 +25,8 @@ export const REWORK_ORTHODOX_FIST = {
     // 심법 자리: 경신법 대신 호신
     oIronBody: {
       name: '호신강기', type: 'skill', rarity: 'starter', glyph: '護', faction: 'orthodox', cls: 'fist',
-      cost: 1, guard: 6,
-      upgrade: { guard: 9 },
+      cost: 1, guard: 5,
+      upgrade: { guard: 8 },
     },
 
     // ── 권사 기본: 일반 5 (연계·점혈·간파) ──

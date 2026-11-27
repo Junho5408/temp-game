@@ -12,6 +12,13 @@ import { STARTER_DECK, UNORTHODOX_DECK, DEMONIC_DECK, REWORKS } from './cards.js
 
 export const FACTION_IDS = ['orthodox', 'unorthodox', 'demonic'];
 
+// 계열: 류파 재편 파일(cards.js REWORKS)에 시작 덱이 있는 계열만 열림
+function classesOf(f) {
+  const out = {};
+  for (const [cls, deck] of Object.entries(REWORKS[f].decks)) out[cls] = { ready: true, deck, basic: REWORKS[f].basic[cls] };
+  return out;
+}
+
 export const ROUTES = {
   orthodox: {
     name: '정파',
@@ -22,9 +29,7 @@ export const ROUTES = {
     passive: {},
     deck: REWORKS.orthodox.decks.sword,
     basic: REWORKS.orthodox.basic.sword,
-    classes: {
-      sword: { ready: true, deck: REWORKS.orthodox.decks.sword, basic: REWORKS.orthodox.basic.sword },
-    },
+    classes: classesOf('orthodox'),
   },
   // 사파 · 암수(暗手): 돈과 비열한 수
   unorthodox: {
@@ -36,10 +41,7 @@ export const ROUTES = {
     passive: { startGold: 40, shopDiscount: 0.2 },
     deck: REWORKS.unorthodox.decks.sword,
     basic: REWORKS.unorthodox.basic.sword,
-    classes: {
-      sword: { ready: true, deck: REWORKS.unorthodox.decks.sword, basic: REWORKS.unorthodox.basic.sword },
-      assassin: { ready: false, deck: UNORTHODOX_DECK, basic: 'dagger' }, // 8-D 에서 엶 (옛 사파 시작 덱)
-    },
+    classes: classesOf('unorthodox'),
   },
   // 마교 · 혈공(血功): 피를 대가로 한 힘
   demonic: {
@@ -51,10 +53,7 @@ export const ROUTES = {
     passive: { winHeal: 6, restHealRatio: 0.2 },
     deck: REWORKS.demonic.decks.sword,
     basic: REWORKS.demonic.basic.sword,
-    classes: {
-      sword: { ready: true, deck: REWORKS.demonic.decks.sword, basic: REWORKS.demonic.basic.sword },
-      fist: { ready: false, deck: DEMONIC_DECK, basic: 'bloodClaw' }, // 8-C 에서 엶 (옛 마교 시작 덱, 혈조)
-    },
+    classes: classesOf('demonic'),
   },
 };
 

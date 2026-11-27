@@ -4,6 +4,9 @@ import { DEMONIC_CARDS_EXT } from './cards-demonic.js';
 import { REWORK_ORTHODOX } from './rework-orthodox.js';
 import { REWORK_UNORTHODOX } from './rework-unorthodox.js';
 import { REWORK_DEMONIC } from './rework-demonic.js';
+import { REWORK_ORTHODOX_FIST } from './rework-orthodox-fist.js';
+import { REWORK_UNORTHODOX_FIST } from './rework-unorthodox-fist.js';
+import { REWORK_DEMONIC_FIST } from './rework-demonic-fist.js';
 // 카드 정의 (검객)
 // 방어 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복. 대신 경공으로 피한다.
 // type: attack(초식) / skill(심법·보법)
@@ -379,8 +382,19 @@ export const CARDS = {
 Object.assign(CARDS, ORTHODOX_CARDS_EXT, UNORTHODOX_CARDS_EXT, DEMONIC_CARDS_EXT);
 
 // 8-B 류파 재편: 새 무공 + 기존 무공의 계열·류파·이름 바꿈 + 은퇴(판에 안 나옴, 옛 저장 호환용으로 정의는 남김)
-export const REWORKS = { orthodox: REWORK_ORTHODOX, unorthodox: REWORK_UNORTHODOX, demonic: REWORK_DEMONIC };
-for (const rw of Object.values(REWORKS)) {
+// 8-C·8-D: 계열마다 파일 하나씩 더 (rework-<세력>-<계열>.js), 순서대로 적용
+const REWORK_LIST = [
+  ['orthodox', REWORK_ORTHODOX], ['unorthodox', REWORK_UNORTHODOX], ['demonic', REWORK_DEMONIC],
+  ['orthodox', REWORK_ORTHODOX_FIST], ['unorthodox', REWORK_UNORTHODOX_FIST], ['demonic', REWORK_DEMONIC_FIST],
+];
+// 세력별로 합친 시작 덱·기본 무공: REWORKS[세력].decks[계열], .basic[계열]
+export const REWORKS = {};
+for (const [f, rw] of REWORK_LIST) {
+  REWORKS[f] ??= { decks: {}, basic: {} };
+  Object.assign(REWORKS[f].decks, rw.decks);
+  Object.assign(REWORKS[f].basic, rw.basic);
+}
+for (const [, rw] of REWORK_LIST) {
   Object.assign(CARDS, rw.cards);
   for (const [id, patch] of Object.entries(rw.tags)) {
     if (!CARDS[id]) throw new Error(`rework: 없는 무공 ${id}`);

@@ -109,17 +109,25 @@ test('세력마다 계열 정의: 검객은 열림', () => {
   for (const f of FACTION_IDS) assert.ok(ROUTES[f].classes.sword.ready);
 });
 
-test('8-B 검객 재편: 세력마다 검객 기본 + 류파 3개, 류파마다 일반·고급·희귀가 다 있음', async () => {
+test('8-B·8-C 류파 재편: 열린 계열마다 기본 + 류파 3개, 류파마다 일반·고급·희귀가 다 있음', async () => {
   const { REWORKS } = await import('../src/core/cards.js');
   for (const f of FACTION_IDS) {
-    const sword = Object.values(CARDS).filter((c) => c.faction === f && c.cls === 'sword' && !c.retired);
-    assert.ok(sword.length >= 38 && sword.length <= 46, `${f} ${sword.length}`);
-    for (const sc of SCHOOLS[`${f}-sword`]) {
-      for (const r of ['common', 'uncommon', 'rare']) {
-        assert.ok(sword.some((c) => c.school === sc.id && c.rarity === r), `${f} ${sc.id} ${r}`);
+    assert.ok(REWORKS[f].decks.sword && REWORKS[f].decks.fist, `${f}: 검객·권사 열림`);
+    for (const [cls, deck] of Object.entries(REWORKS[f].decks)) {
+      const pool = Object.values(CARDS).filter((c) => c.faction === f && c.cls === cls && !c.retired);
+      assert.ok(pool.length >= 38 && pool.length <= 46, `${f}-${cls} ${pool.length}`);
+      for (const sc of SCHOOLS[`${f}-${cls}`]) {
+        for (const r of ['common', 'uncommon', 'rare']) {
+          assert.ok(pool.some((c) => c.school === sc.id && c.rarity === r), `${f}-${cls} ${sc.id} ${r}`);
+        }
       }
+      // 시작 덱은 그 계열 기본 무공만, 10장
+      assert.equal(deck.length, 10);
+      assert.ok(deck.every((id) => CARDS[id].cls === cls && !CARDS[id].school), `${f}-${cls}`);
+      assert.ok(ROUTES[f].classes[cls].ready);
+      const run = createRun({ seed: 3, faction: f, cls });
+      assert.equal(run.cls, cls);
+      assert.ok(['common', 'uncommon', 'rare'].every((r) => cardPool(run, r).length >= 8), `${f}-${cls} 보상 후보`);
     }
-    // 시작 덱은 검객 기본 무공만
-    assert.ok(REWORKS[f].decks.sword.every((id) => CARDS[id].cls === 'sword' && !CARDS[id].school), f);
   }
 });
