@@ -67,7 +67,7 @@ test('마교 혈공: 이길 때마다 체력 6 회복, 운기조식 회복 20%',
 });
 
 test('세력 고유 무공은 그 세력 판에서만 나옴', () => {
-  CARDS.__testOnly = { id: '__testOnly', name: '시험', type: 'attack', rarity: 'common', faction: 'demonic', cost: 1, damage: 1 };
+  CARDS.__testOnly = { id: '__testOnly', name: '시험', type: 'attack', rarity: 'common', faction: 'demonic', cls: 'sword', cost: 1, damage: 1 };
   try {
     assert.ok(!cardPool(createRun({ seed: 1 }), 'common').includes('__testOnly'));
     assert.ok(cardPool(createRun({ seed: 1, faction: 'demonic' }), 'common').includes('__testOnly'));

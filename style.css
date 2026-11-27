@@ -915,6 +915,9 @@ button.card:disabled { cursor: not-allowed; filter: grayscale(.5) brightness(.55
 .st.evasion { background: #3b6fa8; }
 .st.insight { background: #a8862b; }
 .st.counter { background: #8a2f2f; }
+.st.riposte { background: #6a4aa0; }
+.st.guard { background: #8a7a3a; }
+.card .ctype .school { color: #ffd88a; font-weight: 800; }
 .st.stun { background: #2a6f8f; }
 .st.point { background: #4b5a78; }
 .unit-info .traits { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 3px; }

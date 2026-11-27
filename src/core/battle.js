@@ -37,6 +37,8 @@
 //   (7-C) 훔치기(steal)      적 기세 -n, 적에게 있던 만큼(최대 n) 내 기세 +
 //   (7-C) 혈계(bloodPact)    내가 잃은 체력 10마다 한 타 피해 +n
 //   (7-C) 입마 연료(consumeCurse) 손패의 입마 1장을 태워 이번 초식 한 타 피해 +n
+//   (8-A) 반격(riposte)      다음 적 차례 동안 적이 한 타 칠 때마다 n 피해로 되받아침 (피하면 2배)
+//   (8-A) 호신(guard)        다음 적 차례 동안 받는 피해를 합계 n 까지 막음
 //
 // 아이템 (items.js)
 //   - 행낭 물품(bag): useItem 으로 내 차례에 한 번 쓰고 사라짐 (내공 안 씀)
@@ -63,7 +65,7 @@ export const MAGI_PER_BONUS = 6; // 마기 자체 효과: 마기 6마다 초식 
 export const CURSE_HP = 2; // 입마가 손에 남았을 때 잃는 체력
 
 const newStatus = () => ({
-  strength: 0, vulnerable: 0, weak: 0, poison: 0, evasion: 0, insight: 0, counter: 0, stun: 0, point: 0,
+  strength: 0, vulnerable: 0, weak: 0, poison: 0, evasion: 0, insight: 0, counter: 0, stun: 0, point: 0, riposte: 0, guard: 0,
 });
 
 // scale: 위층 적일수록 강하게 { hp: 배율, strength: 처음부터 붙은 기세 }
@@ -202,6 +204,8 @@ export function startPlayerTurn(s) {
   s.turn += 1;
   const p = s.player;
   p.status.evasion = 0; // 경공은 적의 한 차례 동안만
+  p.status.riposte = 0; // 반격·호신도 적의 한 차례 동안만 (8-A)
+  p.status.guard = 0;
   s.turnAttacks = 0;
   s.turnCards = 0;
   s.enemy.turnDamage = 0;
@@ -410,6 +414,8 @@ function applyPowers(s) {
     const f = pw.fx;
     if (f.strength) addStatus(s, 'player', 'strength', f.strength);
     if (f.evasion) addStatus(s, 'player', 'evasion', f.evasion);
+    if (f.riposte) addStatus(s, 'player', 'riposte', f.riposte);
+    if (f.guard) addStatus(s, 'player', 'guard', f.guard);
     if (f.insight) addStatus(s, 'player', 'insight', f.insight);
     if (f.magi) addMagi(s, f.magi);
     if (f.energy) s.pendingEnergy = (s.pendingEnergy ?? 0) + f.energy;
@@ -566,6 +572,8 @@ export function playCard(s, uid) {
 
   if (c.strength) addStatus(s, 'player', 'strength', c.strength);
   if (c.evasion) addStatus(s, 'player', 'evasion', c.evasion);
+  if (c.riposte) addStatus(s, 'player', 'riposte', c.riposte + tfx(s, 'riposteBonus'));
+  if (c.guard) addStatus(s, 'player', 'guard', c.guard);
   if (c.damage) {
     const insight = p.status.insight > 0;
     if (insight) p.status.insight -= 1;
@@ -793,7 +801,11 @@ export function runEnemyTurn(s) {
     if (act.damage && springTraps(s)) return true;
     // 함정 피해로 2단계에 들어가면 이 차례는 전환으로 끝나고, 2단계 첫 수를 다음 의도로 보여 줌 (BUG-038)
     if (!wasPhase2 && e.phase2Done) phaseShift = true;
-    else enemyAct(s, act);
+    else {
+      enemyAct(s, act);
+      // 반격으로 2단계에 들어가면 2단계 첫 수를 다음 의도로
+      if (!wasPhase2 && e.phase2Done) phaseShift = true;
+    }
   }
   tickStatus(e);
   if (!phaseShift) setNextIntent(s);
@@ -801,6 +813,18 @@ export function runEnemyTurn(s) {
   checkEnd(s);
   if (s.phase === 'enemy') startPlayerTurn(s);
   return true;
+}
+
+// 반격(8-A, 무당 등): 적이 한 타 공격할 때마다 n 피해로 되받아침, 피하면 2배
+function riposte(s, dodged) {
+  const p = s.player;
+  const e = s.enemy;
+  if (p.status.riposte <= 0 || e.hp <= 0 || p.hp <= 0) return;
+  const dmg = computeDamage(p, e, p.status.riposte * (dodged ? 2 : 1));
+  e.hp = Math.max(0, e.hp - dmg);
+  emit(s, { type: 'damage', target: 'enemy', amount: dmg, riposte: true, dodged });
+  afterEnemyHurt(s, dmg);
+  checkEnd(s);
 }
 
 // 적의 한 수 (공격·기세·회복·디버프·반격 자세)
@@ -817,9 +841,10 @@ function enemyAct(s, act) {
   if (act.damage) {
     const hits = act.hits ?? 1;
     let landed = 0;
-    for (let h = 0; h < hits && p.hp > 0; h++) {
+    for (let h = 0; h < hits && p.hp > 0 && e.hp > 0; h++) {
       if (!roll(s, enemyHitChance(s, act))) {
         emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
+        riposte(s, true);
         continue;
       }
       if (p.shield) {
@@ -831,8 +856,16 @@ function enemyAct(s, act) {
       const crit = !owns(s, 'mirror') && rollCrit(s, e.crit);
       let dmg = computeDamage(e, p, act.damage);
       if (crit) dmg = Math.floor(dmg * CRIT_MULT);
+      if (p.status.guard > 0 && dmg > 0) {
+        // 호신: 이번 적 차례 동안 받는 피해를 남은 만큼 막음
+        const blocked = Math.min(p.status.guard, dmg);
+        p.status.guard -= blocked;
+        dmg -= blocked;
+        emit(s, { type: 'guard', amount: blocked });
+      }
       p.hp = Math.max(0, p.hp - dmg);
       emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
+      riposte(s, false);
       if (s.faction === 'demonic' && dmg > 0) addMagi(s, 1);
       if (has(e, 'drain') && dmg > 0) {
         const before = e.hp;
@@ -841,6 +874,7 @@ function enemyAct(s, act) {
       }
       if (has(e, 'venom') && p.hp > 0) addStatus(s, 'player', 'poison', 1);
     }
+    if (e.hp <= 0) return;
     if (p.hp > 0 && landed > 0) {
       if (act.weak) addStatus(s, 'player', 'weak', act.weak);
       if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);

@@ -378,6 +378,7 @@ Object.assign(CARDS, ORTHODOX_CARDS_EXT, UNORTHODOX_CARDS_EXT, DEMONIC_CARDS_EXT
 for (const [id, c] of Object.entries(CARDS)) {
   c.id = id;
   if (!c.faction && c.rarity !== 'curse') c.faction = 'orthodox';
+  if (!c.cls && c.rarity !== 'curse') c.cls = 'sword'; // 8-A 계열 (검객·권사·살수), school = 류파 (schools.js)
 }
 
 // 정파 시작 덱: 기본 검법 5 + 견제 3 + 유수검 1 + 경신법 1
@@ -438,6 +439,8 @@ export function describe(c) {
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
   if (c.evasion) lines.push(`경공 +${c.evasion}`);
+  if (c.riposte) lines.push(`반격 ${c.riposte}`);
+  if (c.guard) lines.push(`호신 ${c.guard}`);
   if (c.insight) lines.push('간파: 다음 초식 필중·치명');
   if (c.strength) lines.push(`기세 +${c.strength}`);
   if (c.energy) lines.push(`내공 +${c.energy}`);
@@ -465,7 +468,7 @@ export function describe(c) {
 
 // 함정·심법 유지 효과를 짧게
 const FX_NAME = {
-  damage: '피해', poison: '독', weak: '亂', vulnerable: '傷', point: '점혈', strength: '기세', evasion: '경공', draw: '뽑기', insight: '간파', magi: '마기', energy: '내공',
+  damage: '피해', poison: '독', weak: '亂', vulnerable: '傷', point: '점혈', strength: '기세', evasion: '경공', riposte: '반격', guard: '호신', draw: '뽑기', insight: '간파', magi: '마기', energy: '내공',
 };
 function fxText(fx) {
   return Object.entries(fx).map(([k, v]) => (k === 'insight' ? '간파' : `${FX_NAME[k] ?? k} ${v}`)).join(' · ');
@@ -497,6 +500,8 @@ export function cardKeywords(c) {
   if (c.exhaust) k.push('소멸: 쓰면 이번 전투에서 빠짐');
   if (c.power) k.push('심법 유지: 쓰면 사라지고, 이번 전투 동안 내 턴이 시작될 때마다 효과가 발동');
   if (c.trap) k.push('함정: 적이 다음에 공격하는 순간 먼저 발동 (깔아 둔 함정은 한꺼번에 터짐)');
+  if (c.riposte || c.power?.riposte) k.push('반격: 다음 적 차례에 적이 한 타 칠 때마다 이만큼 되받아침, 피하면 2배');
+  if (c.guard || c.power?.guard) k.push('호신: 다음 적 차례 동안 받는 피해를 합계 이만큼 막음');
   if (c.swordQi) k.push('검기: 이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 피해 증가');
   if (c.steal) k.push('훔치기: 적의 기세를 깎고, 적에게 있던 만큼 내 기세로');
   if (c.bloodPact) k.push(`혈계: 내가 잃은 체력 10마다 한 타 피해 +${c.bloodPact}`);

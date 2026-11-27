@@ -3,7 +3,7 @@
 import { createBattle, PLAYER_MAX_HP } from './battle.js';
 import { CARDS, STARTER_DECK, canUpgrade, cardsByRarity } from './cards.js';
 import { ENEMIES, TRUE_BOSS } from './enemies.js';
-import { FACTION_IDS, ROUTES, routeOf, hasTrueClues } from './routes.js';
+import { FACTION_IDS, ROUTES, routeOf, classOf, hasTrueClues } from './routes.js';
 import { EVENTS, EVENT_IDS } from './events.js';
 import { findNode, generateMap } from './map.js';
 import {
@@ -42,12 +42,13 @@ export const SNOW_LOTUS_HEAL = 6;
 
 // extraCards: 회귀하며 기억한 무공 (시작 덱에 추가), faction: 몸을 담은 세력 (routes.js)
 // knownClues: 회귀 기록이 아는 단서 (미래를 아는 자의 선택지 needClue 에 씀)
-export function createRun({ seed = 1, extraCards = [], faction = 'orthodox', knownClues = [] } = {}) {
+export function createRun({ seed = 1, extraCards = [], faction = 'orthodox', cls = 'sword', knownClues = [] } = {}) {
   const route = ROUTES[faction] ?? ROUTES.orthodox;
   const run = {
     seed,
     knownClues: [...knownClues],
     faction: ROUTES[faction] ? faction : 'orthodox',
+    cls: route.classes?.[cls] ? cls : 'sword', // 계열 (8-A)
     rng: null,
     rngCount: 0, // 저장·불러오기 때 난수 위치를 되살리기 위해 센다
     zone: 0, // 0~2 = 1~3구역, 3 = 최종 결전
@@ -76,7 +77,7 @@ export function createRun({ seed = 1, extraCards = [], faction = 'orthodox', kno
     battlesWon: 0,
   };
   attachRng(run);
-  for (const id of starterDeck(route)) addCard(run, id);
+  for (const id of classOf(run).deck) addCard(run, id);
   for (const id of extraCards) addCard(run, id);
   return run;
 }
@@ -86,9 +87,27 @@ export function starterDeck(route) {
   return [...(route.deck ?? STARTER_DECK)];
 }
 
-// 이 판에서 나올 수 있는 무공: 공통 무공 + 내 세력의 고유 무공
+// 이 판에서 나올 수 있는 무공: 내 세력 · 내 계열 무공만
 export function cardPool(run, rarity) {
-  return cardsByRarity(rarity).filter((id) => CARDS[id].faction === run.faction);
+  const cls = run.cls ?? 'sword';
+  return cardsByRarity(rarity).filter((id) => CARDS[id].faction === run.faction && CARDS[id].cls === cls);
+}
+
+// 류파 쏠림 (8-A): 덱에 이미 있는 류파의 무공은 SCHOOL_WEIGHT 배로 잘 나옴 → 한 갈래로 덱을 짜기 쉽게
+export const SCHOOL_WEIGHT = 3;
+export function deckSchools(run) {
+  return new Set(run.deck.map((c) => CARDS[c.id]?.school).filter(Boolean));
+}
+export function pickFromPool(run, pool) {
+  if (!pool.length) return undefined;
+  const mine = deckSchools(run);
+  const w = pool.map((id) => (mine.has(CARDS[id].school) ? SCHOOL_WEIGHT : 1));
+  let r = run.rng() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++) {
+    r -= w[i];
+    if (r < 0) return pool[i];
+  }
+  return pool[pool.length - 1];
 }
 
 // 세력 고유 규칙으로 바뀐 객잔 값
@@ -131,6 +150,7 @@ export function parseRun(text) {
     if (!PHASES.includes(data.phase)) return null;
     const { v, ...run } = data;
     if (!FACTION_IDS.includes(run.faction)) run.faction = 'orthodox'; // 세력이 없던 옛 저장
+    if (!ROUTES[run.faction].classes?.[run.cls]) run.cls = 'sword'; // 계열이 없던 옛 저장
     for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents', 'knownClues']) {
       if (!Array.isArray(run[key])) run[key] = [];
     }
@@ -410,7 +430,7 @@ function rollCards(run, weights, n) {
   let guard = 0;
   while (picked.length < n && guard++ < 100) {
     const pool = cardPool(run, pickWeighted(run.rng, weights));
-    const id = pool[Math.floor(run.rng() * pool.length)];
+    const id = pickFromPool(run, pool);
     if (!picked.includes(id)) picked.push(id);
   }
   return picked;
@@ -503,7 +523,7 @@ function makeShop(run) {
   const plan = ['common', 'common', 'uncommon', 'uncommon', 'rare'];
   for (const rarity of plan) {
     const pool = cardPool(run, rarity).filter((id) => !items.some((it) => it.id === id));
-    const id = pool[Math.floor(run.rng() * pool.length)];
+    const id = pickFromPool(run, pool);
     items.push({ kind: 'card', id, price: shopPrice(run, randInt(run.rng, PRICE[rarity])), sold: false });
   }
   for (let i = 0; i < 2; i++) {

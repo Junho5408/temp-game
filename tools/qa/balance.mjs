@@ -25,6 +25,7 @@ const arg = (name, def) => {
 };
 const N = Number(arg('n', 400));
 const FACTION = arg('faction', 'orthodox'); // 세력 루트 (routes.js)
+const CLS = arg('cls', 'sword'); // 계열 (8-A)
 const TRUE_RUN = arg('true', '0') === '1'; // 1 이면 진엔딩 판 (세 길의 단서를 다 모은 회귀 — 귀면 뒤 백리현)
 const RUN = arg('run', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
 const OUT = path.join(ROOT, 'qa-output', RUN, 'balance');
@@ -38,7 +39,8 @@ function staticValue(c) {
   const util = (c.draw ?? 0) * 3 + (c.energy ?? 0) * 5 + (c.strength ?? 0) * 5 + (c.evasion ?? 0) * 1.5 + (c.weak ?? 0) * 2.5
     + (c.vulnerable ?? 0) * 3 + (c.poison ?? 0) * 1.5 + (c.point ?? 0) * 0.6 + (c.insight ?? 0) * 5 + (c.magi ?? 0) * 1.2
     + (c.power ? Object.values(c.power).reduce((x, y) => x + y, 0) * 12 : 0) + (c.trap ? (c.trap.damage ?? 0) + (c.trap.poison ?? 0) * 1.5 + (c.trap.weak ?? 0) * 3 + (c.trap.vulnerable ?? 0) * 3 : 0)
-    + (c.steal ?? 0) * 4 + (c.gold ?? 0) * 0.2 + (c.lifesteal ? (c.damage ?? 0) * c.lifesteal : 0);
+    + (c.steal ?? 0) * 4 + (c.gold ?? 0) * 0.2 + (c.lifesteal ? (c.damage ?? 0) * c.lifesteal : 0)
+    + (c.riposte ?? 0) * 1.6 + (c.guard ?? 0) * 0.7;
   const cost = (c.hpCost ?? 0) * 0.7 + (c.curse ?? 0) * 4 + (c.goldCost ?? 0) * 0.15;
   return (dmg + util - cost) / Math.max(0.7, c.cost);
 }
@@ -62,7 +64,8 @@ function score(card, attacking, b) {
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
     + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
     + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3
-    - (c.hpCost ?? 0) * 0.8 + (c.lifesteal ? dmg * c.lifesteal : 0);
+    - (c.hpCost ?? 0) * 0.8 + (c.lifesteal ? dmg * c.lifesteal : 0)
+    + (attacking ? (c.riposte ?? 0) * (b.enemy.intent.hits ?? 1) * 1.3 + Math.min(c.guard ?? 0, (b.enemy.intent.damage ?? 0) * (b.enemy.intent.hits ?? 1)) : 0);
   return v / Math.max(1, c.cost);
 }
 
@@ -109,7 +112,7 @@ function autoBattle(b) {
 }
 
 for (let seed = 1; seed <= N; seed++) {
-  const run = createRun({ seed, faction: FACTION });
+  const run = createRun({ seed, faction: FACTION, cls: CLS });
   const picked = [];
   let steps = 0;
   stats.zoneEnter[0]++;
@@ -208,7 +211,7 @@ const result = {
 };
 fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify(result, null, 2));
 
-console.log(`봇 ${N}판 · ${FACTION}${TRUE_RUN ? ' · 진엔딩 판' : ''}`);
+console.log(`봇 ${N}판 · ${FACTION}-${CLS}${TRUE_RUN ? ' · 진엔딩 판' : ''}`);
 for (const z of zones) console.log(`  ${z.zone}: 들어간 ${z.entered} → 돌파 ${z.cleared} (${z.rate}%)`);
 console.log(`  3층 이하 사망 ${stats.earlyDeaths}판, 판당 전투 ${result.avgBattles}회`);
 console.log('사망률 높은 적:', enemies.slice(0, 6).map((e) => `${e.name} ${e.deathRate}%`).join(', '));

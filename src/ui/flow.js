@@ -1,7 +1,7 @@
 // 판 바깥의 흐름 화면: 타이틀, 기록, 세력·계열 선택, 무공 기억, 회귀 연출
 import { CARDS } from '../core/cards.js';
 import { memorySlots } from '../core/meta.js';
-import { ROUTES, PASSIVE_TEXT, isFactionOpen, TRUE_CLUES } from '../core/routes.js';
+import { ROUTES, PASSIVE_TEXT, isFactionOpen, TRUE_CLUES, isClassOpen } from '../core/routes.js';
 import { CLUES } from '../story/script.js';
 import { CLASSES, DESIGNS, FACTIONS } from './characters.js';
 import { cardFace } from './screens.js';
@@ -102,8 +102,7 @@ export function renderRecord(meta, onBack) {
 }
 
 // ── 세력 · 계열 선택 + 들고 갈 기억 ─────────────────────────
-// 지금은 계열 중 검객만, 세력은 회귀 기록에 따라 열림 (routes.js)
-const OPEN_CLASSES = new Set(['sword']);
+// 계열은 만들어진 것(routes.js classes.ready)이면 처음부터, 세력은 회귀 기록에 따라 열림
 
 export function renderSelect(meta, onDepart) {
   const el = overlay();
@@ -143,8 +142,8 @@ export function renderSelect(meta, onDepart) {
     for (const cid of Object.keys(CLASSES)) {
       const key = `${fid}-${cid}`;
       const d = DESIGNS[key];
-      const open = OPEN_CLASSES.has(cid) && isFactionOpen(meta, fid);
-      const why = !OPEN_CLASSES.has(cid) ? '아직 열리지 않은 길'
+      const open = isClassOpen(fid, cid) && isFactionOpen(meta, fid);
+      const why = !isClassOpen(fid, cid) ? '준비 중인 길'
         : ROUTES[fid].ready ? ROUTES[fid].unlock?.text ?? '' : '준비 중인 길';
       const b = document.createElement('button');
       b.type = 'button';

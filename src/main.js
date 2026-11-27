@@ -47,6 +47,8 @@ const STATUS_INFO = {
   insight: { glyph: '見', name: '간파', tip: '다음 초식이 반드시 명중하고 치명 · 남은 횟수 ' },
   counter: { glyph: '反', name: '반격 자세', tip: '초식으로 공격하면 카드마다 되받는 피해 ' },
   stun: { glyph: '定', name: '굳음', tip: '다음 차례에 움직이지 못함' },
+  riposte: { glyph: '反', name: '반격', tip: '적이 한 타 칠 때마다 되받아침 (피하면 2배): ' },
+  guard: { glyph: '護', name: '호신', tip: '이번 적 차례에 받는 피해를 막음, 남은 양 ' },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -252,7 +254,7 @@ async function beginLife() {
     hideFlow();
     startNewRun(meta);
     saveMeta();
-    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories, faction: artKey.split('-')[0], knownClues: meta.clues });
+    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories, faction: artKey.split('-')[0], cls: artKey.split('-')[1], knownClues: meta.clues });
     run.art = artKey;
     applyZoneLook();
     startZone();
@@ -880,7 +882,7 @@ window.addEventListener('keydown', (e) => {
 // ── 연출 ─────────────────────────
 const STATUS_POPUP = {
   cleanse: '해독',
-  strength: '기세', vulnerable: '내상', weak: '흐트러짐', poison: '중독', evasion: '경공', insight: '간파', counter: '반격 자세', point: '점혈',
+  strength: '기세', vulnerable: '내상', weak: '흐트러짐', poison: '중독', evasion: '경공', insight: '간파', counter: '반격 자세', point: '점혈', riposte: '반격', guard: '호신',
 };
 
 async function playEvents(events) {
@@ -891,11 +893,11 @@ async function playEvents(events) {
         if (ev.stunned) await wait(700);
         break;
       case 'damage': {
-        if (ev.thrown) {
-          // 암기: 공격 동작 없이 날아가 꽂힘
-          sfx('stab');
+        if (ev.thrown || ev.riposte) {
+          // 암기·함정·반격: 공격 동작 없이 바로 꽂힘
+          sfx(ev.riposte ? 'hit' : 'stab');
           scene.hit('enemy', ev.amount);
-          popup('enemy', `${ev.trap ? '陷' : '暗'} -${ev.amount}`, 'thrown');
+          popup('enemy', `${ev.riposte ? '反' : ev.trap ? '陷' : '暗'} -${ev.amount}`, 'thrown');
           renderStatus();
           if (battle.enemy.hp <= 0) scene.die('enemy');
           await wait(380);
@@ -966,6 +968,12 @@ async function playEvents(events) {
       case 'treasure':
         popup('player', TREASURES[ev.id].name, 'treasure', -90);
         await wait(150);
+        break;
+      case 'guard':
+        sfx('stun');
+        popup('player', `護 ${ev.amount} 막음`, 'treasure');
+        renderStatus();
+        await wait(200);
         break;
       case 'shield':
         swingSound('enemy');

@@ -2,7 +2,7 @@
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
 import { josa } from './josa.js';
-import { routeOf } from './routes.js';
+import { routeOf, classOf } from './routes.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
 
 // 관문의 주노가 가르쳐 주는 보물 (아직 없는 것부터)
@@ -37,7 +37,7 @@ export const EVENTS = {
         label: '집어 든다',
         hint: '고급 무공 1장 얻음 · 체력 -6',
         effect(run, rng, api) {
-          const pool = cardsByRarity('uncommon').filter((x) => CARDS[x].faction === run.faction);
+          const pool = cardsByRarity('uncommon').filter((x) => CARDS[x].faction === run.faction && CARDS[x].cls === (run.cls ?? 'sword'));
           const id = pool[Math.floor(rng() * pool.length)];
           api.addCard(id);
           damage(run, 6);
@@ -614,7 +614,7 @@ export const EVENTS = {
         label: '명상한다',
         hint: '기본 무공 1장 제거 · 체력 +8',
         effect(run, rng, api) {
-          const basic = routeOf(run).basic;
+          const basic = classOf(run).basic;
           const removed = api.removeFirst(basic);
           heal(run, 8);
           return removed

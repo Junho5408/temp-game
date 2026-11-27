@@ -5,6 +5,7 @@
 // - deck: 시작 덱 (세력마다 완전히 다름), basic: 기본 무공 (동굴 기연에서 덜어 냄)
 //   무공은 세력마다 따로 — 공용 무공 없음 (cards.js 의 faction)
 // - ready: 내용이 다 만들어진 루트만 고를 수 있음
+// - classes: 계열별 { ready, deck, basic } (8-A). 계열은 처음부터 고를 수 있음 (세력만 회귀로 열림)
 // 이름·배경·대사는 src/story/script.js 의 ROUTE_TEXT
 import { ZONE_POOLS, UNORTHODOX_POOLS, DEMONIC_POOLS, FINAL_BOSS } from './enemies.js';
 import { STARTER_DECK, UNORTHODOX_DECK, DEMONIC_DECK } from './cards.js';
@@ -21,6 +22,7 @@ export const ROUTES = {
     passive: {},
     deck: STARTER_DECK,
     basic: 'strike',
+    classes: { sword: { ready: true, deck: STARTER_DECK, basic: 'strike' } },
   },
   // 사파 · 암수(暗手): 돈과 비열한 수
   unorthodox: {
@@ -32,6 +34,7 @@ export const ROUTES = {
     passive: { startGold: 40, shopDiscount: 0.2 },
     deck: UNORTHODOX_DECK,
     basic: 'dagger',
+    classes: { sword: { ready: true, deck: UNORTHODOX_DECK, basic: 'dagger' } },
   },
   // 마교 · 혈공(血功): 피를 대가로 한 힘
   demonic: {
@@ -43,6 +46,7 @@ export const ROUTES = {
     passive: { winHeal: 6, restHealRatio: 0.2 },
     deck: DEMONIC_DECK,
     basic: 'bloodClaw',
+    classes: { sword: { ready: true, deck: DEMONIC_DECK, basic: 'bloodClaw' } },
   },
 };
 
@@ -61,6 +65,16 @@ export function hasTrueClues(clues) {
 
 export function routeOf(run) {
   return ROUTES[run?.faction] ?? ROUTES.orthodox;
+}
+
+// 8-A 계열(검객·권사·살수): 세력마다 시작 덱·기본 무공. 만들어진 계열만 ready
+export function classOf(run) {
+  const r = routeOf(run);
+  return r.classes?.[run?.cls] ?? r.classes?.sword ?? { ready: true, deck: r.deck, basic: r.basic };
+}
+
+export function isClassOpen(faction, cls) {
+  return !!ROUTES[faction]?.classes?.[cls]?.ready;
 }
 
 // 회귀 기록으로 이 세력이 열렸는지
