@@ -349,6 +349,7 @@ export function startEncounter(run) {
     treasures: run.treasures,
     gold: run.gold,
     faction: run.faction,
+    cls: run.cls ?? 'sword',
   });
 }
 

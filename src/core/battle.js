@@ -83,6 +83,7 @@ export function createBattle({
   treasures = [],
   gold = 0, // 판의 은자 (매수·전낭 던지기에 씀)
   faction = 'orthodox',
+  cls = 'sword',
 } = {}) {
   const def = ENEMIES[enemyId];
   if (!def) throw new Error(`알 수 없는 적: ${enemyId}`);
@@ -102,6 +103,7 @@ export function createBattle({
     goldGained: 0, // 협박 등으로 얻은(쓰면 음수) 은자 (전투가 끝나면 판에 더함)
     purse: gold,
     faction,
+    cls,
     poisonKeep: false, // 오독수
     bloodSea: false, // 혈해
     nextUid: 100000, // 전투 중 새로 생기는 카드(입마)
@@ -140,7 +142,7 @@ export function createBattle({
       patternIndex: 0,
       intent: def.pattern[0],
       intentHidden: false,
-      pointMax: POINT_MAX[def.tier] ?? 12,
+      pointMax: def.pointMax ?? POINT_MAX[def.tier] ?? 12, // 적마다 따로 (BUG-057: 귀면 34)
       phase2Done: false,
       berserkDone: false,
       turnDamage: 0, // 이번 내 턴에 받은 피해 (파기 판정)
@@ -512,6 +514,7 @@ function cardDamageBase(s, c) {
   if (owns(s, 'chainArt') && comboActive(s)) base += 2;
   if (owns(s, 'drunkenFist')) base += s.player.missStreak * 3;
   base += tfx(s, 'attackBonus');
+  if (s.cls !== 'assassin') base += tfx(s, 'nonThrowerAttack'); // 암기를 안 쓰는 계열 (BUG-065)
   if (comboActive(s)) base += tfx(s, 'comboBonus');
   if (c.hpCost) base += tfx(s, 'hpCostBonus');
   if (isDebuffed(s.enemy)) base += tfx(s, 'debuffBonus');

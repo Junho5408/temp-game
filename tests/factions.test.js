@@ -79,13 +79,13 @@ test('칼 바꿔 쥐기: 손패를 버리고(암기 발동) 그만큼 다시 뽑
   assert.equal(t.enemy.status.poison, 3);
 });
 
-test('독 터뜨리기: 중독 × 3 피해 (BUG-035), 중독은 사라짐 / 오독수: 중독이 줄지 않음', () => {
+test('독 터뜨리기: 중독 × 4 피해 (BUG-035·061), 중독은 사라짐 / 오독수: 중독이 줄지 않음', () => {
   const s = battle();
   hand(s, ['poisonBurst']);
   s.enemy.status.poison = 6;
   const hp = s.enemy.hp;
   playCard(s, 900);
-  assert.equal(hp - s.enemy.hp, 18);
+  assert.equal(hp - s.enemy.hp, 24);
   assert.equal(s.enemy.status.poison, 0);
   const t = battle();
   hand(t, ['fivePoison']);
@@ -126,7 +126,7 @@ test('쓴 은자는 판의 은자에서 빠짐', () => {
   b.enemy.hp = 0;
   b.phase = 'won';
   finishBattle(run, b);
-  assert.equal(run.gold, 30 + (run.reward?.gold ?? 0));
+  assert.equal(run.gold, 33 + (run.reward?.gold ?? 0)); // 전낭 쥔 주먹 은자 7 (BUG-059)
 });
 
 // ── 마교 ─────────────────

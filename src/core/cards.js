@@ -2,6 +2,7 @@ import { ORTHODOX_CARDS_EXT } from './cards-orthodox.js';
 import { UNORTHODOX_CARDS_EXT } from './cards-unorthodox.js';
 import { DEMONIC_CARDS_EXT } from './cards-demonic.js';
 import { REWORK_ORTHODOX } from './rework-orthodox.js';
+import { applyBalance8E } from './balance-8e.js';
 import { REWORK_UNORTHODOX } from './rework-unorthodox.js';
 import { REWORK_DEMONIC } from './rework-demonic.js';
 import { REWORK_ORTHODOX_FIST } from './rework-orthodox-fist.js';
@@ -408,6 +409,8 @@ for (const [, rw] of REWORK_LIST) {
   }
   for (const id of rw.retire ?? []) CARDS[id].retired = true;
 }
+
+applyBalance8E(CARDS);
 
 for (const [id, c] of Object.entries(CARDS)) {
   c.id = id;

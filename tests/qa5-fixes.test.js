@@ -147,3 +147,28 @@ test('BUG-063: 발도는 이번 턴 첫 초식 — 심법을 먼저 써도 남�
   playCard(s, 902);
   assert.equal(cardPreviewDamage(s, c), full - iaido.opener, '둘째 초식은 발도 없음');
 });
+
+test('BUG-056~062·065 밸런스 수치', async () => {
+  const { ENEMIES: E } = await import('../src/core/enemies.js');
+  const { TREASURES } = await import('../src/core/items.js');
+  assert.equal(CARDS.dWitherCut.lifesteal, 0.6);
+  assert.ok(Object.values(CARDS).filter((c) => c.school === 'dokhyeol' && c.lifesteal).every((c) => c.lifesteal <= 0.6));
+  assert.equal(CARDS.dBloodGod.hpCost, 4); // 혈수 6 → 4
+  assert.equal(E.gwimyeon.pointMax, 34);
+  assert.equal(CARDS.uGoldRain.goldCost, 22);
+  assert.equal(CARDS.poisonBurst.burst, 4);
+  assert.equal(CARDS.uCatchPunch.riposte, 7);
+  assert.equal(TREASURES.ghostKingHarness.fx.nonThrowerAttack, 1);
+  // 귀면 점혈 게이지는 34, 다른 두목은 20
+  const g = createBattle({ enemyId: 'gwimyeon', seed: 1, luck: false });
+  const b = createBattle({ enemyId: 'spy', seed: 1, luck: false });
+  assert.equal(g.enemy.pointMax, 34);
+  assert.equal(b.enemy.pointMax, 20);
+});
+
+test('BUG-065: 귀왕 비도갑은 살수가 아니면 초식 한 타 +1', () => {
+  const c = cardStats({ id: 'strike' });
+  const sw = createBattle({ enemyId: 'dummy', seed: 1, luck: false, treasures: ['ghostKingHarness'], cls: 'sword' });
+  const as = createBattle({ enemyId: 'dummy', seed: 1, luck: false, treasures: ['ghostKingHarness'], cls: 'assassin' });
+  assert.equal(cardPreviewDamage(sw, c), cardPreviewDamage(as, c) + 1);
+});

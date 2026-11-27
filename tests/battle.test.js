@@ -79,7 +79,7 @@ test('역류검: 적이 공격을 예고한 턴에는 추가 피해', () => {
   forceHand(s, ['counter']);
   const hp = s.enemy.hp;
   playCard(s, 1000);
-  assert.equal(s.enemy.hp, hp - 12);
+  assert.equal(s.enemy.hp, hp - 14); // 무당 공격 예고 시 +2 (BUG-060)
   endPlayerTurn(s);
   runEnemyTurn(s); // 다음 예고: 기 모으기 (공격 아님)
   forceHand(s, ['counter']);

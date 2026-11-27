@@ -54,7 +54,7 @@ test('흡혈 일섬: 준 피해 절반 회복', () => {
   assert.equal(s.player.hp, 40 + Math.floor(13 * 0.5));
 });
 
-test('마공 폭주: 체력 4 → 내공 +2, 피의 맹세: 체력 5 → 기세 +6 (둘 다 입마)', () => {
+test('마공 폭주: 체력 2(혈수 -2, BUG-056) → 내공 +2, 피의 맹세: 체력 5 → 기세 +6 (둘 다 입마)', () => {
   const s = battle();
   hand(s, ['bloodRage', 'bloodOath']);
   s.player.energy = 1;
@@ -63,7 +63,7 @@ test('마공 폭주: 체력 4 → 내공 +2, 피의 맹세: 체력 5 → 기세 
   assert.equal(s.player.energy, 3);
   playCard(s, 901);
   assert.equal(s.player.status.strength, 6);
-  assert.equal(s.player.hp, 70 - 4 - 5);
+  assert.equal(s.player.hp, 70 - 2 - 5);
   assert.equal(s.drawPile.length, pile + 2);
 });
 

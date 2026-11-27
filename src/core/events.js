@@ -6,7 +6,7 @@ import { routeOf, classOf } from './routes.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
 
 // 혈공 장로가 내리는 피의 무공: 계열마다 (BUG-050)
-const BLOOD_GIFT = { sword: 'bloodOath', fist: 'dBloodGod', assassin: 'dBloodRush' };
+const BLOOD_GIFT = { sword: 'bloodOath', fist: 'dFinalFist', assassin: 'dVenomKiss' }; // 각 계열의 강한 피의 희귀 무공 (피의 맹세 세기에 맞춤)
 function bloodGift(run) {
   return BLOOD_GIFT[run.cls] ?? BLOOD_GIFT.sword;
 }

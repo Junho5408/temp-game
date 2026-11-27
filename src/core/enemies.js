@@ -294,7 +294,8 @@ Object.assign(ENEMIES, {
 Object.assign(ENEMIES, {
   gwimyeon: {
     name: '귀면', title: '혈영대주', art: 'boss-gwimyeon', tier: 'boss',
-    maxHp: 235, evasion: 20, traits: ['feint', 'killer'],
+    maxHp: 235, evasion: 20, pointMax: 34, // 점혈로 귀면멸살을 너무 쉽게 지우지 않게 (BUG-057)
+    traits: ['feint', 'killer'],
     clue: 'sender',
     pattern: [
       { name: '쌍월참', damage: 8, hits: 2 },

@@ -39,15 +39,15 @@ test('비열한 일격: 흐트러짐·중독·굳음이면 2배 (미리보기도
   const s = battle();
   hand(s, ['lowBlow', 'lowBlow']);
   const c = cardStats({ id: 'lowBlow' });
-  assert.equal(cardPreviewDamage(s, c), 6);
+  assert.equal(cardPreviewDamage(s, c), 7); // 흑도 피해 +1 (BUG-058)
   let hp = s.enemy.hp;
   playCard(s, 900);
-  assert.equal(hp - s.enemy.hp, 6);
+  assert.equal(hp - s.enemy.hp, 7);
   s.enemy.status.poison = 1;
-  assert.equal(cardPreviewDamage(s, c), 12);
+  assert.equal(cardPreviewDamage(s, c), 14);
   hp = s.enemy.hp;
   playCard(s, 901);
-  assert.equal(hp - s.enemy.hp, 12);
+  assert.equal(hp - s.enemy.hp, 14);
 });
 
 test('협박: 전투가 끝나면 은자가 판에 더해짐, 흑도 인장은 이길 때 +8', () => {

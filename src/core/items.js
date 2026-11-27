@@ -258,7 +258,7 @@ export const TREASURES = {
   },
   ghostKingHarness: {
     name: '귀왕 비도갑', glyph: '鬼', kind: 'gear', rarity: 'boss', faction: 'unorthodox',
-    desc: '매 턴 적에게 흐트러짐 1, 암기 피해 +2', fx: { turnEnemy: { weak: 1 }, thrownBonus: 2 },
+    desc: '매 턴 적에게 흐트러짐 1, 암기 피해 +2 (살수 아니면 초식 한 타 +1)', fx: { turnEnemy: { weak: 1 }, thrownBonus: 2, nonThrowerAttack: 1 },
   },
 
   // ── 7-D 마교 ──
