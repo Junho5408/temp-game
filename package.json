@@ -7,6 +7,7 @@
     "start": "python3 -m http.server 8000",
     "qa:smoke": "node tools/qa/smoke.cjs",
     "qa:monkey": "node tools/qa/monkey.cjs",
-    "qa:balance": "node tools/qa/balance.mjs"
+    "qa:balance": "node tools/qa/balance.mjs",
+    "story:dump": "node tools/story/dump.mjs"
   }
 }
