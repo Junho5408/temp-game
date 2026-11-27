@@ -5,13 +5,14 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 6단계 완료 (6-A~6-E + 밸런스 + 최종 QA) + 회귀물 스토리 개편 + 인물 그림 전원 완료
-- QA 티켓: BUG-001~037 모두 처리 — docs/qa/tickets/INDEX.md. 밸런스 기준은 새 봇 기준 1구역 35~45% (PROGRESS.md)
-- 다음 할 일: 사용자와 정할 일 (사파·마교 길에도 주노 기연 — 백일취 단서, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기)
+- 진행 중: 7단계 완료 (7-A~7-E 콘텐츠 확장: 주노 기연 세 길, 무공 세력마다 65장, 보물 56개) + QA qa-20261127-1119
+- QA 티켓: BUG-038~049 열림 (높음 1: 함정→두목 2단계 순서) — docs/qa/tickets/INDEX.md. 밸런스 4건(041~044)은 사용자 결정 필요. 기준: 1구역 35~45%, 나머지 30~60%
+- 다음 할 일: 사용자와 정할 일 (QA 티켓 /fix-bugs, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기)
 - 회귀: 백일취(STORY.md 회귀의 비밀). 回 선택지 = events 의 needClue (run.knownClues), 회귀 직후 대사 wakeLines(n, meta) 는 meta.lastDeath·lastEnd·clues 로 갈림
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
-- 무공은 세력마다 따로 (공용 0장, cards.js faction). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe), 마교 마기(magi/magiSpend)·혈투(desperate)·입마(curse → qiDeviation)
+- 무공은 세력마다 따로 (공용 0장, cards.js faction + 확장 파일 cards-orthodox/unorthodox/demonic.js). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe)·함정(trap)·훔치기(steal), 마교 마기(magi/magiSpend, 6마다 초식 +1 최대 +3)·혈투(desperate)·입마(curse → qiDeviation)·혈계(bloodPact)·입마 연료(consumeCurse), 정파 검기(swordQi)·심법 유지(power)
+- 보물 효과는 items.js 의 fx (battle.js tfx/applyTreasureFx, run.js 획득·승리·휴식·상점 쪽)
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 
 ## 작업 규칙
