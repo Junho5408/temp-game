@@ -434,7 +434,7 @@ export function describe(c) {
   if (c.goldCost) lines.push(`은자 -${c.goldCost}`);
   if (c.burst) lines.push(`중독 × ${c.burst} 피해\n중독은 사라짐`);
   if (c.desperate) lines.push(`혈투: 체력 절반 이하 +${c.desperate}`);
-  if (c.magiSpend) lines.push(`마기 모두 사용 (1마다 +${c.magiSpend})`);
+  if (c.magiSpend) lines.push(`마기 1마다 +${c.magiSpend} (모두 씀)`);
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
   if (c.evasion) lines.push(`경공 +${c.evasion}`);
@@ -450,7 +450,7 @@ export function describe(c) {
   if (c.redraw) lines.push('손패를 버리고 다시 뽑기');
   if (c.throwAll) lines.push('손패의 암기 모두 던지기');
   if (c.draw) lines.push(`카드 ${c.draw}장 뽑기`);
-  if (c.bribe) lines.push('한 차례 묶기 (두목 亂2)');
+  if (c.bribe) lines.push('묶기 · 두목 亂2');
   if (c.poisonKeep) lines.push('적 중독이 줄지 않음');
   if (c.magi) lines.push(`마기 +${c.magi}`);
   if (c.purge) lines.push('입마 흡수 (마기 +2씩)');
