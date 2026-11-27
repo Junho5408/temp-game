@@ -9,6 +9,7 @@ import { REWORK_UNORTHODOX_FIST } from './rework-unorthodox-fist.js';
 import { REWORK_DEMONIC_FIST } from './rework-demonic-fist.js';
 import { REWORK_ORTHODOX_ASSASSIN } from './rework-orthodox-assassin.js';
 import { REWORK_UNORTHODOX_ASSASSIN } from './rework-unorthodox-assassin.js';
+import { REWORK_DEMONIC_ASSASSIN } from './rework-demonic-assassin.js';
 // 카드 정의 (검객)
 // 방어 개념은 없음: 체력은 깎이기만 하고 지도의 운기조식에서 회복. 대신 경공으로 피한다.
 // type: attack(초식) / skill(심법·보법)
@@ -388,7 +389,7 @@ Object.assign(CARDS, ORTHODOX_CARDS_EXT, UNORTHODOX_CARDS_EXT, DEMONIC_CARDS_EXT
 const REWORK_LIST = [
   ['orthodox', REWORK_ORTHODOX], ['unorthodox', REWORK_UNORTHODOX], ['demonic', REWORK_DEMONIC],
   ['orthodox', REWORK_ORTHODOX_FIST], ['unorthodox', REWORK_UNORTHODOX_FIST], ['demonic', REWORK_DEMONIC_FIST],
-  ['orthodox', REWORK_ORTHODOX_ASSASSIN], ['unorthodox', REWORK_UNORTHODOX_ASSASSIN],
+  ['orthodox', REWORK_ORTHODOX_ASSASSIN], ['unorthodox', REWORK_UNORTHODOX_ASSASSIN], ['demonic', REWORK_DEMONIC_ASSASSIN],
 ];
 // 세력별로 합친 시작 덱·기본 무공: REWORKS[세력].decks[계열], .basic[계열]
 export const REWORKS = {};

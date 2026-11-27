@@ -112,7 +112,7 @@ test('세력마다 계열 정의: 검객은 열림', () => {
 test('8-B·8-C 류파 재편: 열린 계열마다 기본 + 류파 3개, 류파마다 일반·고급·희귀가 다 있음', async () => {
   const { REWORKS } = await import('../src/core/cards.js');
   for (const f of FACTION_IDS) {
-    assert.ok(REWORKS[f].decks.sword && REWORKS[f].decks.fist, `${f}: 검객·권사 열림`);
+    assert.ok(REWORKS[f].decks.sword && REWORKS[f].decks.fist && REWORKS[f].decks.assassin, `${f}: 세 계열 모두 열림`);
     for (const [cls, deck] of Object.entries(REWORKS[f].decks)) {
       const pool = Object.values(CARDS).filter((c) => c.faction === f && c.cls === cls && !c.retired);
       assert.ok(pool.length >= 38 && pool.length <= 46, `${f}-${cls} ${pool.length}`);
