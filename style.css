@@ -1049,5 +1049,61 @@ button.item-face:disabled { cursor: default; }
   color: var(--bone); font-size: 13px;
   box-shadow: 0 8px 20px rgba(0,0,0,.5);
 }
+#sound-panel[hidden] { display: none; }
 #sound-panel label { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
 #sound-panel input { width: 120px; accent-color: #e8c46a; }
+
+/* ── 4-B 연출 ─────────────────── */
+.card.flying {
+  position: absolute; margin: 0; z-index: 3; pointer-events: none;
+  animation: fly-card .4s cubic-bezier(.5, 0, .9, .6) forwards;
+}
+@keyframes fly-card {
+  0% { transform: translate(0, 0) scale(1) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(.35) rotate(18deg); opacity: 0; }
+}
+
+#flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 2; }
+#flash.on.crit { background: radial-gradient(circle at 70% 55%, rgba(255,255,240,.5), rgba(255,240,200,.1) 40%, transparent 70%); animation: flash .28s ease-out; }
+#flash.on.phase { background: radial-gradient(circle at 70% 50%, rgba(255,60,40,.55), rgba(120,0,0,.25) 60%, transparent); animation: flash .9s ease-out; }
+#flash.on.lost { background: radial-gradient(circle, transparent 30%, rgba(90,0,0,.75)); animation: flash-hold 1.4s ease-out forwards; }
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes flash-hold { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: .85; } }
+
+#namecard {
+  position: absolute; left: 0; right: 0; top: 150px; z-index: 3;
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none; opacity: 0;
+  font-family: var(--serif); text-shadow: 0 3px 0 var(--ink), 0 0 18px rgba(0,0,0,.8);
+}
+#namecard::before {
+  content: ''; position: absolute; left: 50%; top: 18px; width: 520px; height: 78px; transform: translateX(-50%) skewX(-12deg);
+  background: linear-gradient(90deg, transparent, rgba(120, 12, 16, .85) 18%, rgba(120, 12, 16, .85) 82%, transparent);
+  z-index: -1;
+}
+#namecard small { font-size: 15px; letter-spacing: .5em; color: #e8c46a; }
+#namecard b { font-size: 48px; font-weight: 900; color: #fff1dc; letter-spacing: .12em; line-height: 1.1; }
+#namecard span { font-size: 15px; color: #f1cfa8; margin-top: 4px; }
+#namecard.show { animation: namecard 2.2s ease-out; }
+@keyframes namecard {
+  0% { opacity: 0; transform: translateX(-60px); }
+  15% { opacity: 1; transform: translateX(0); }
+  80% { opacity: 1; transform: translateX(10px); }
+  100% { opacity: 0; transform: translateX(60px); }
+}
+
+#bigword {
+  position: absolute; left: 0; right: 0; top: 140px; z-index: 3; text-align: center;
+  font-family: var(--serif); font-size: 140px; font-weight: 900; pointer-events: none; opacity: 0;
+  text-shadow: 0 6px 0 var(--ink), 0 0 40px rgba(242, 193, 78, .5);
+}
+#bigword.show { animation: bigword 1s ease-out; }
+@keyframes bigword {
+  0% { opacity: 0; transform: scale(1.8); }
+  20% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: scale(.95); }
+}
+
+#fade { position: absolute; inset: 0; background: #06070a; opacity: 0; pointer-events: none; transition: opacity .22s; z-index: 7; }
+#fade.on { opacity: 1; }

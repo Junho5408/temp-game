@@ -427,6 +427,7 @@ async function onDeath() {
 
 // 기억할 무공 고르기 → 회귀 → 새 생
 async function pickMemoryAndRegress() {
+  $('flash').className = '';
   setScreen('title');
   await new Promise((resolve) => {
     renderMemoryPick(meta.pendingMemory ?? [], meta, (id) => {
@@ -492,6 +493,8 @@ async function runBattle(b, { title, hints = null, interrupt = null, boss = fals
   battle = b;
   if (run) run.lastEnemyName = b.enemy.name;
   if (b.enemy.tier === 'elite' || b.enemy.tier === 'boss') playMusic('boss');
+  await fadeOut();
+  $('flash').className = '';
   await scene.setEnemy(b.enemy.art);
   scene.reset();
   setScreen('battle');
@@ -503,7 +506,13 @@ async function runBattle(b, { title, hints = null, interrupt = null, boss = fals
     battleCtx = { resolve, interrupt, hints, hintStep: 0 };
   });
   render();
-  showBanner(title, boss ? '#ff8a7a' : '#f2c14e', 1400);
+  fadeIn();
+  if (b.enemy.tier === 'elite' || b.enemy.tier === 'boss') {
+    nameCard(b.enemy.tier === 'boss' ? '두목' : '고수', b.enemy.name, b.enemy.title);
+    sfx('gong');
+  } else {
+    showBanner(title, boss ? '#ff8a7a' : '#f2c14e', 1400);
+  }
   if (hints) hint(hints.start);
   return done;
 }
@@ -662,6 +671,7 @@ function renderHand() {
     if (!el) {
       el = cardFace(card, { tag: 'button', showKey: true });
       el.dataset.uid = card.uid;
+      el.dataset.cardId = card.id;
       el.style.animationDelay = `${i * 50}ms`;
       el.addEventListener('click', () => onCard(card.uid, el));
     }
@@ -717,6 +727,7 @@ async function onCard(uid, el) {
   }
   busy = true;
   sfx('card');
+  flyCard(el, cardStats({ id: el.dataset.cardId ?? 'strike' }).type);
   renderControls(); // 카드는 바로 손에서 빠지고, 체력은 맞는 순간에 줄어듦
   await playEvents(takeEvents(battle));
   if (!battleCtx) return;
@@ -801,6 +812,8 @@ async function playEvents(events) {
           if (ev.crit) {
             popup(ev.target, `치명! -${ev.amount}`, 'crit');
             scene.shake(8);
+            flash('crit');
+            await wait(110);
           } else {
             popup(ev.target, `-${ev.amount}`, 'dmg');
           }
@@ -866,6 +879,7 @@ async function playEvents(events) {
         break;
       case 'phase':
         sfx('gong');
+        flash('phase');
         scene.buff('enemy');
         scene.shake(9);
         showBanner(ev.text, '#ff8a7a', 2200);
@@ -890,6 +904,8 @@ async function playEvents(events) {
       case 'lost':
         sfx(ev.type === 'won' ? 'victory' : 'defeat');
         renderStatus();
+        if (ev.type === 'won') bigWord('勝', '#f2c14e');
+        else flash('lost');
         await wait(900);
         endBattle(ev.type);
         return;
@@ -928,6 +944,62 @@ function showBanner(text, color = '#f4ead8', duration = 1000) {
   el.classList.remove('show');
   void el.offsetWidth;
   el.classList.add('show');
+}
+
+// ── 연출 도우미 ─────────────────────────
+// 카드가 손에서 적(초식) 또는 위(심법)로 날아감
+function flyCard(el, type) {
+  if (!el) return;
+  const stageRect = stage.getBoundingClientRect();
+  const scale = stageRect.width / 960;
+  const r = el.getBoundingClientRect();
+  const ghost = el.cloneNode(true);
+  ghost.classList.add('flying');
+  ghost.classList.remove('disabled', 'combo-on');
+  ghost.style.left = `${(r.left - stageRect.left) / scale}px`;
+  ghost.style.top = `${(r.top - stageRect.top) / scale}px`;
+  const target = type === 'attack' ? CHEST.enemy : { x: CHEST.player.x, y: CHEST.player.y - 60 };
+  ghost.style.setProperty('--dx', `${target.x - (r.left - stageRect.left) / scale - 53}px`);
+  ghost.style.setProperty('--dy', `${target.y - (r.top - stageRect.top) / scale - 72}px`);
+  $('popups').appendChild(ghost);
+  setTimeout(() => ghost.remove(), 420);
+}
+
+// 화면 전체 번쩍임: crit(흰빛) / phase(붉은빛) / lost(어두운 붉은빛)
+function flash(kind) {
+  const el = $('flash');
+  el.className = '';
+  void el.offsetWidth;
+  el.className = `on ${kind}`;
+}
+
+// 고수·두목 등장 이름표
+function nameCard(rank, name, title) {
+  const el = $('namecard');
+  el.innerHTML = `<small>${rank}</small><b>${name}</b><span>${title}</span>`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+// 큰 한 글자 (승리)
+function bigWord(text, color) {
+  const el = $('bigword');
+  el.textContent = text;
+  el.style.color = color;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+// 전투로 들어갈 때 잠깐 어두워졌다가 밝아짐
+function fadeOut() {
+  $('fade').classList.add('on');
+  return wait(220);
+}
+
+function fadeIn() {
+  $('fade').classList.remove('on');
 }
 
 function wait(ms) {
