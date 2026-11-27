@@ -630,10 +630,11 @@ function renderUnit(el, name, title, u, who) {
   el.querySelector('.hpbar .text').textContent = `${u.hp} / ${u.maxHp}`;
   const st = el.querySelector('.statuses');
   const chips = Object.entries(u.status)
-    .filter(([k, v]) => v > 0 && STATUS_INFO[k])
+    .filter(([k, v]) => (v > 0 || (k === 'strength' && v < 0)) && STATUS_INFO[k])
     .map(([k, v]) => {
       const label = k === 'evasion' ? `${playerEvasion(battle)}%` : k === 'stun' || k === 'insight' ? '' : v;
       const tipValue = k === 'stun' ? '' : k === 'counter' && who === 'enemy' ? counterDamage(battle) : v;
+      if (k === 'strength' && v < 0) return `<span class="st strength neg" title="${STATUS_INFO[k].name}: 기세를 빼앗겨 공격 피해 ${v}">${STATUS_INFO[k].glyph}<b>${v}</b></span>`;
       return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${tipValue}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
     });
   if (who === 'player') {
@@ -894,7 +895,7 @@ async function playEvents(events) {
           // 암기: 공격 동작 없이 날아가 꽂힘
           sfx('stab');
           scene.hit('enemy', ev.amount);
-          popup('enemy', `暗 -${ev.amount}`, 'thrown');
+          popup('enemy', `${ev.trap ? '陷' : '暗'} -${ev.amount}`, 'thrown');
           renderStatus();
           if (battle.enemy.hp <= 0) scene.die('enemy');
           await wait(380);
@@ -1040,7 +1041,7 @@ async function playEvents(events) {
       case 'stun':
         sfx('stun');
         scene.shake(6);
-        showBanner(ev.reason === 'bribe' ? '매수! 은자를 받고 이번 차례는 손을 놓는다' : '점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
+        showBanner(ev.reason === 'bribe' ? '매수! 은자를 받고 이번 차례는 손을 놓는다' : ev.next ? '점혈! 혈도가 막혔다 · 다음 차례에 굳는다' : '점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
         renderStatus();
         await wait(500);
         break;
@@ -1061,8 +1062,9 @@ async function playEvents(events) {
         break;
       case 'status':
         sfx({ strength: 'buff', evasion: 'buff', insight: 'buff', point: 'point', poison: 'poison', cleanse: 'heal', counter: 'debuff' }[ev.kind] ?? 'debuff');
-        if (ev.kind === 'strength') scene.buff(ev.target);
-        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) ? '+' : ''}${['insight', 'cleanse'].includes(ev.kind) ? '' : ev.amount}`, `st-${ev.kind}`, -50);
+        if (ev.kind === 'strength' && ev.amount > 0) scene.buff(ev.target);
+        // 훔치기처럼 줄어드는 값은 부호 그대로 (BUG-040)
+        popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) && ev.amount > 0 ? '+' : ''}${['insight', 'cleanse'].includes(ev.kind) ? '' : ev.amount}`, `st-${ev.kind}`, -50);
         renderStatus();
         await wait(180);
         break;

@@ -32,13 +32,35 @@ export function cardFace(card, { tag = 'div', showKey = false, preview = false }
   return el;
 }
 
-// 설명이 카드 틀을 넘치면 글자를 한두 단계 줄임 (BUG-027). 손패처럼 설명을 다시 쓰면 다시 부름
+// 설명이 카드 틀을 넘치면 줄임 (BUG-027·039). 손패처럼 설명을 다시 쓰면 다시 부름
+// 이름은 한 줄(넘치면 글자 축소) → 설명 글자 두 단계 → 그래도 넘치면 한자 그림 칸을 줄여 설명 칸을 넓힘
 export function fitCardText(el) {
   const d = el.querySelector('.desc');
   if (!d || !d.isConnected) return;
+  const n = el.querySelector('.cname');
+  if (n) {
+    n.classList.remove('nm1', 'nm2');
+    if (n.scrollWidth > n.clientWidth + 1) n.classList.add('nm1');
+    if (n.scrollWidth > n.clientWidth + 1) n.classList.add('nm2');
+  }
+  el.classList.remove('tight', 'tighter');
   d.classList.remove('dense', 'denser');
-  if (d.scrollHeight > d.clientHeight + 1) d.classList.add('dense');
-  if (d.scrollHeight > d.clientHeight + 1) d.classList.add('denser');
+  const over = () => d.scrollHeight > d.clientHeight + 1 || hitOverlap(el, d);
+  if (over()) d.classList.add('dense');
+  if (over()) d.classList.add('denser');
+  if (over()) el.classList.add('tight');
+  if (over()) el.classList.add('tighter');
+}
+
+// 손패 명중 표시가 설명 마지막 줄을 덮는지
+function hitOverlap(el, d) {
+  const h = el.querySelector('.hit');
+  if (!h || !h.textContent) return false;
+  const r = document.createRange();
+  r.selectNodeContents(d);
+  const rects = [...r.getClientRects()].filter((x) => x.height > 0);
+  if (!rects.length) return false;
+  return Math.max(...rects.map((x) => x.bottom)) > h.getBoundingClientRect().top + 0.5;
 }
 
 // 아이템 한 칸: kind = 'item'(행낭 물품, 일시적) | 'treasure'(보물, 영구적)

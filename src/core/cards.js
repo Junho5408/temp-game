@@ -442,7 +442,7 @@ export function describe(c) {
   if (c.strength) lines.push(`기세 +${c.strength}`);
   if (c.energy) lines.push(`내공 +${c.energy}`);
   if (c.swordQi) lines.push(`검기: 앞서 쓴 카드마다 +${c.swordQi}`);
-  if (c.bloodPact) lines.push(`혈계: 잃은 체력 10마다 +${c.bloodPact}`);
+  if (c.bloodPact) lines.push(`혈계 10당 +${c.bloodPact}`);
   if (c.consumeCurse) lines.push(`입마 1장 태워 +${c.consumeCurse}`);
   if (c.steal) lines.push(`적 기세 ${c.steal} 훔치기`);
   if (c.trap) lines.push(`함정: ${fxText(c.trap)}`);
@@ -491,7 +491,7 @@ export function cardKeywords(c) {
   if (c.dirty || c.dirtyBonus) k.push('약화: 적이 흐트러짐·중독·굳음 중 하나라도 걸린 상태');
   if (c.thrown) k.push(`암기: 쓰지 않고 손에서 버려지면(턴 종료 등) 저절로 던져져 피해 ${c.thrown}${c.thrownPoison ? `, 중독 ${c.thrownPoison}` : ''}`);
   if (c.goldCost || c.bribe) k.push(`은자: 이 판의 은자를 전투 중에 씀${c.bribe ? ' · 매수: 일반·고수는 한 차례 움직이지 않고, 두목은 흐트러짐 2' : ''}`);
-  if (c.magi || c.magiSpend || c.purge || c.bloodSea || c.magiDouble) k.push('마기: 체력을 대가로 쓰거나 맞으면 쌓임. 마기 6마다 초식 피해 +1, 마기를 쓰는 무공은 한꺼번에 피해로 바꿈');
+  if (c.magi || c.magiSpend || c.purge || c.bloodSea || c.magiDouble || (c.hpCost && c.faction === 'demonic')) k.push('마기: 체력을 대가로 쓰거나 맞으면 쌓임. 마기 6마다 초식 피해 +1, 마기를 쓰는 무공은 한꺼번에 피해로 바꿈');
   if (c.desperate) k.push('혈투: 내 체력이 최대의 절반 이하일 때');
   if (c.curse || c.unplayable) k.push('입마: 이번 전투 덱에 섞이는 쓸 수 없는 카드. 턴 끝에 손에 있으면 체력 -2, 마기 +1 (전투가 끝나면 사라짐)');
   if (c.exhaust) k.push('소멸: 쓰면 이번 전투에서 빠짐');
@@ -499,7 +499,7 @@ export function cardKeywords(c) {
   if (c.trap) k.push('함정: 적이 다음에 공격하는 순간 먼저 발동 (깔아 둔 함정은 한꺼번에 터짐)');
   if (c.swordQi) k.push('검기: 이번 턴에 앞서 쓴 카드(초식·심법) 한 장마다 피해 증가');
   if (c.steal) k.push('훔치기: 적의 기세를 깎고, 적에게 있던 만큼 내 기세로');
-  if (c.bloodPact) k.push('혈계: 내가 잃은 체력이 많을수록 강해짐');
+  if (c.bloodPact) k.push(`혈계: 내가 잃은 체력 10마다 한 타 피해 +${c.bloodPact}`);
   if (c.consumeCurse) k.push('입마 연료: 손패의 입마 1장을 태워 이번 초식을 강하게 (입마가 없으면 기본 피해)');
   return k.join('\n');
 }

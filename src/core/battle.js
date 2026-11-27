@@ -346,7 +346,8 @@ function addPoint(s, n) {
     e.status.point = 0;
     e.pointMax += POINT_STEP;
     e.status.stun = 1;
-    emit(s, { type: 'stun', reason: 'point' });
+    // 적 차례(함정) 중에 차면 이번 수는 그대로, 다음 차례에 굳음 (BUG-045)
+    emit(s, { type: 'stun', reason: 'point', next: s.phase === 'enemy' });
   }
 }
 
@@ -430,7 +431,7 @@ function springTraps(s) {
     if (t.damage) {
       const dmg = computeDamage(s.player, e, t.damage + tfx(s, 'trapBonus'));
       e.hp = Math.max(0, e.hp - dmg);
-      emit(s, { type: 'damage', target: 'enemy', amount: dmg, thrown: true });
+      emit(s, { type: 'damage', target: 'enemy', amount: dmg, thrown: true, trap: true });
       afterEnemyHurt(s, dmg);
     }
     if (e.hp > 0) {
@@ -492,7 +493,7 @@ export function cardBaseDamage(s, c) {
   return base;
 }
 
-// 마기 자체 효과: 쌓인 마기 5마다 초식 한 타 피해 +1 (마기를 쓰는 무공은 쓰기 전 마기 기준)
+// 마기 자체 효과: 쌓인 마기 6마다(MAGI_PER_BONUS) 초식 한 타 피해 +1 (마기를 쓰는 무공은 쓰기 전 마기 기준)
 export function magiBonus(s) {
   return Math.min(3, Math.floor((s.player.magi ?? 0) / MAGI_PER_BONUS));
 }
@@ -779,6 +780,7 @@ export function runEnemyTurn(s) {
   const e = s.enemy;
   const p = s.player;
   e.status.counter = 0; // 반격 자세는 적이 움직이면 풀림
+  let phaseShift = false;
 
   if (tickPoison(s, 'enemy')) return true;
 
@@ -787,59 +789,69 @@ export function runEnemyTurn(s) {
     emit(s, { type: 'enemyAct', name: '몸이 굳어 움직이지 못한다', stunned: true });
   } else {
     const act = e.intent;
+    const wasPhase2 = e.phase2Done;
     if (act.damage && springTraps(s)) return true;
-    emit(s, { type: 'enemyAct', name: act.name, charge: !!act.charge });
-    if (act.strength) addStatus(s, 'enemy', 'strength', act.strength);
-    if (act.heal) {
-      const before = e.hp;
-      e.hp = Math.min(e.maxHp, e.hp + act.heal);
-      emit(s, { type: 'heal', target: 'enemy', amount: e.hp - before });
-    }
-    if (act.damage) {
-      const hits = act.hits ?? 1;
-      let landed = 0;
-      for (let h = 0; h < hits && p.hp > 0; h++) {
-        if (!roll(s, enemyHitChance(s, act))) {
-          emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
-          continue;
-        }
-        if (p.shield) {
-          p.shield = false;
-          emit(s, { type: 'shield', target: 'player' });
-          continue;
-        }
-        landed += 1;
-        const crit = !owns(s, 'mirror') && rollCrit(s, e.crit);
-        let dmg = computeDamage(e, p, act.damage);
-        if (crit) dmg = Math.floor(dmg * CRIT_MULT);
-        p.hp = Math.max(0, p.hp - dmg);
-        emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
-        if (s.faction === 'demonic' && dmg > 0) addMagi(s, 1);
-        if (has(e, 'drain') && dmg > 0) {
-          const before = e.hp;
-          e.hp = Math.min(e.maxHp, e.hp + Math.ceil(dmg / 2));
-          if (e.hp > before) emit(s, { type: 'heal', target: 'enemy', amount: e.hp - before });
-        }
-        if (has(e, 'venom') && p.hp > 0) addStatus(s, 'player', 'poison', 1);
-      }
-      if (p.hp > 0 && landed > 0) {
-        if (act.weak) addStatus(s, 'player', 'weak', act.weak);
-        if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);
-        if (act.poison) addStatus(s, 'player', 'poison', act.poison);
-      }
-    } else if (p.hp > 0) {
-      if (act.weak) addStatus(s, 'player', 'weak', act.weak);
-      if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);
-      if (act.poison) addStatus(s, 'player', 'poison', act.poison);
-    }
-    if (act.counter) addStatus(s, 'enemy', 'counter', act.counter);
+    // 함정 피해로 2단계에 들어가면 이 차례는 전환으로 끝나고, 2단계 첫 수를 다음 의도로 보여 줌 (BUG-038)
+    if (!wasPhase2 && e.phase2Done) phaseShift = true;
+    else enemyAct(s, act);
   }
   tickStatus(e);
-  setNextIntent(s);
+  if (!phaseShift) setNextIntent(s);
 
   checkEnd(s);
   if (s.phase === 'enemy') startPlayerTurn(s);
   return true;
+}
+
+// 적의 한 수 (공격·기세·회복·디버프·반격 자세)
+function enemyAct(s, act) {
+  const e = s.enemy;
+  const p = s.player;
+  emit(s, { type: 'enemyAct', name: act.name, charge: !!act.charge });
+  if (act.strength) addStatus(s, 'enemy', 'strength', act.strength);
+  if (act.heal) {
+    const before = e.hp;
+    e.hp = Math.min(e.maxHp, e.hp + act.heal);
+    emit(s, { type: 'heal', target: 'enemy', amount: e.hp - before });
+  }
+  if (act.damage) {
+    const hits = act.hits ?? 1;
+    let landed = 0;
+    for (let h = 0; h < hits && p.hp > 0; h++) {
+      if (!roll(s, enemyHitChance(s, act))) {
+        emit(s, { type: 'miss', target: 'player', dodge: p.status.evasion > 0 });
+        continue;
+      }
+      if (p.shield) {
+        p.shield = false;
+        emit(s, { type: 'shield', target: 'player' });
+        continue;
+      }
+      landed += 1;
+      const crit = !owns(s, 'mirror') && rollCrit(s, e.crit);
+      let dmg = computeDamage(e, p, act.damage);
+      if (crit) dmg = Math.floor(dmg * CRIT_MULT);
+      p.hp = Math.max(0, p.hp - dmg);
+      emit(s, { type: 'damage', target: 'player', amount: dmg, crit });
+      if (s.faction === 'demonic' && dmg > 0) addMagi(s, 1);
+      if (has(e, 'drain') && dmg > 0) {
+        const before = e.hp;
+        e.hp = Math.min(e.maxHp, e.hp + Math.ceil(dmg / 2));
+        if (e.hp > before) emit(s, { type: 'heal', target: 'enemy', amount: e.hp - before });
+      }
+      if (has(e, 'venom') && p.hp > 0) addStatus(s, 'player', 'poison', 1);
+    }
+    if (p.hp > 0 && landed > 0) {
+      if (act.weak) addStatus(s, 'player', 'weak', act.weak);
+      if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);
+      if (act.poison) addStatus(s, 'player', 'poison', act.poison);
+    }
+  } else if (p.hp > 0) {
+    if (act.weak) addStatus(s, 'player', 'weak', act.weak);
+    if (act.vulnerable) addStatus(s, 'player', 'vulnerable', act.vulnerable);
+    if (act.poison) addStatus(s, 'player', 'poison', act.poison);
+  }
+  if (act.counter) addStatus(s, 'enemy', 'counter', act.counter);
 }
 
 // 반격 자세 한 번에 실제로 되받는 피해 (적 기세·흐트러짐, 내 내상 반영) — BUG-023

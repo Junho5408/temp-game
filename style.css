@@ -416,6 +416,7 @@ html, body {
 }
 .st b { font-family: var(--sans); font-size: 11px; }
 .st.strength { background: #b8701e; }
+.st.strength.neg { background: #4a5a78; }
 .st.vulnerable { background: #7c3aa0; }
 .st.weak { background: #2c7c78; }
 .intent .buf { color: #f0a54a; }
@@ -1195,6 +1196,12 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .card .desc { min-height: 0; overflow: hidden; }
 .card .desc.dense { font-size: 10.5px; line-height: 1.22; padding: 0 5px; }
 .card .desc.denser { font-size: 9.5px; line-height: 1.12; padding: 0 4px; letter-spacing: -0.02em; }
+/* BUG-039: 이름은 한 줄, 넘치면 글자 축소 / 설명이 더 넘치면 한자 칸을 줄임 */
+.card .cname { white-space: nowrap; overflow: hidden; }
+.card .cname.nm1 { font-size: 12px; letter-spacing: -0.02em; }
+.card .cname.nm2 { font-size: 10.5px; letter-spacing: -0.04em; }
+.card.tight .art { height: 30px; font-size: 24px; margin-top: 2px; }
+.card.tighter .art { height: 18px; font-size: 16px; margin-top: 1px; }
 #hand .card .ctype { padding-bottom: 11px; } /* 명중 표시 자리 */
 
 /* ── 회귀자의 선택지 (미래를 아는 선택) ─────────────────── */

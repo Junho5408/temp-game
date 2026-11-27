@@ -150,7 +150,7 @@ export const TREASURES = {
   },
   wardCharm: {
     name: '호신부', glyph: '符', kind: 'gear', rarity: 'common',
-    desc: '전투 첫 턴에 적에게 약화 1', fx: { startEnemy: { weak: 1 } },
+    desc: '전투 첫 턴에 적에게 흐트러짐 1', fx: { startEnemy: { weak: 1 } },
   },
   whetstone: {
     name: '숫돌', glyph: '砥', kind: 'gear', rarity: 'common',
@@ -228,7 +228,7 @@ export const TREASURES = {
   },
   mirrorHeart: {
     name: '명경지심', glyph: '明', kind: 'art', rarity: 'boss', faction: 'orthodox',
-    desc: '매 턴 시작 시 간파 1', fx: { turnStatus: { insight: 1 } },
+    desc: '매 턴 간파 1, 모든 초식 한 타 +1', fx: { turnStatus: { insight: 1 }, attackBonus: 1 },
   },
 
   // ── 7-D 사파 ──
@@ -250,7 +250,7 @@ export const TREASURES = {
   },
   shadeWindArt: {
     name: '음풍 비결', glyph: '陰', kind: 'art', rarity: 'uncommon', faction: 'unorthodox',
-    desc: '첫 턴 적 약화 1, 약화·중독 적에 한 타 +2', fx: { startEnemy: { weak: 1 }, debuffBonus: 2 },
+    desc: '첫 턴 적 흐트러짐 1, 약화된 적에 한 타 +2', fx: { startEnemy: { weak: 1 }, debuffBonus: 2 },
   },
   thousandHandPoison: {
     name: '천수 독경', glyph: '經', kind: 'art', rarity: 'rare', faction: 'unorthodox',
@@ -258,7 +258,7 @@ export const TREASURES = {
   },
   ghostKingHarness: {
     name: '귀왕 비도갑', glyph: '鬼', kind: 'gear', rarity: 'boss', faction: 'unorthodox',
-    desc: '매 턴 적에게 약화 1, 암기 피해 +2', fx: { turnEnemy: { weak: 1 }, thrownBonus: 2 },
+    desc: '매 턴 적에게 흐트러짐 1, 암기 피해 +2', fx: { turnEnemy: { weak: 1 }, thrownBonus: 2 },
   },
 
   // ── 7-D 마교 ──
@@ -276,7 +276,7 @@ export const TREASURES = {
   },
   madnessSutra: {
     name: '입마 경문', glyph: '魔', kind: 'art', rarity: 'uncommon', faction: 'demonic',
-    desc: '입마 대가 때 마기 +2, 시작 마기 1', fx: { curseMagi: 2, startMagi: 1 },
+    desc: '입마 대가 때 마기 +2 더(1장당 +3), 시작 마기 1', fx: { curseMagi: 2, startMagi: 1 },
   },
   demonBloodPill: {
     name: '마혈단', glyph: '血', kind: 'elixir', rarity: 'uncommon', faction: 'demonic',
@@ -288,7 +288,7 @@ export const TREASURES = {
   },
   demonGodSeal: {
     name: '마신 혈인', glyph: '神', kind: 'art', rarity: 'boss', faction: 'demonic',
-    desc: '최대 체력 -10, 매 턴 기세 +1·마기 +1', fx: { maxHp: -10, turnStatus: { strength: 1, magi: 1 } },
+    desc: '최대 체력 -5, 매 턴 기세 +1·마기 +1', fx: { maxHp: -5, turnStatus: { strength: 1, magi: 1 } },
   },
 };
 

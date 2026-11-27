@@ -138,7 +138,6 @@ async function startLife(page) {
     await page.waitForTimeout(3500);
     const turn = await page.evaluate(() => window.__game.battle?.turn);
     expect(turn >= 2 || (await state(page)).phase !== 'battle', `턴이 넘어가지 않음 (turn ${turn})`);
-    if ((await state(page)).phase === 'battle') await winBattle(page);
   });
 
   await check('F15', '모든 무공(연마 전후) 설명이 손패 카드 틀 안, 명중 표시 위에 들어감 (BUG-027)', page, errors, dir, async () => {
@@ -146,6 +145,8 @@ async function startLife(page) {
       const { CARDS } = await import('./src/core/cards.js');
       const { cardFace, fitCardText } = await import('./src/ui/screens.js');
       const hand = document.getElementById('hand');
+      // 손패가 실제로 보일 때만 잴 수 있음 (BUG-039: 보상 창 뒤에서 재면 늘 통과했음)
+      if (!hand.offsetParent || hand.getBoundingClientRect().height === 0) return ['손패가 보이지 않아 잴 수 없음'];
       const sample = hand.querySelector('.card');
       const out = [];
       for (const id of Object.keys(CARDS)) {
@@ -161,6 +162,9 @@ async function startLife(page) {
           const r = document.createRange();
           r.selectNodeContents(el.querySelector('.desc'));
           const rects = [...r.getClientRects()].filter((x) => x.height > 0);
+          const desc = el.querySelector('.desc');
+          if (!rects.length) { out.push(`${CARDS[id].name}${up ? '+' : ''}(글자 없음)`); el.remove(); continue; }
+          if (desc.scrollHeight > desc.clientHeight + 4) { out.push(`${CARDS[id].name}${up ? '+' : ''}(넘침 ${desc.scrollHeight - desc.clientHeight}px)`); el.remove(); continue; }
           const bottom = rects.length ? Math.max(...rects.map((x) => x.bottom)) : 0;
           const top = rects.length ? Math.min(...rects.map((x) => x.top)) : 0;
           const d = el.querySelector('.desc').getBoundingClientRect();
@@ -172,8 +176,9 @@ async function startLife(page) {
       }
       return out;
     });
-    expect(bad.length === 0, `넘친 카드: ${bad.join(', ')}`);
+    expect(bad.length === 0, `넘친 카드 ${bad.length}: ${bad.join(', ')}`);
   });
+  if ((await state(page)).phase === 'battle') await winBattle(page);
 
   await check('F05', '전투 승리 → 보상 화면 → 무공 고르기 → 지도', page, errors, dir, async () => {
     for (let i = 0; i < 10 && !(await page.isVisible('#panel')); i++) await page.waitForTimeout(300);

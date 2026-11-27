@@ -227,13 +227,13 @@ export const UNORTHODOX_CARDS_EXT = {
   // ── 훔치기 ──
   uHighwayman: {
     name: '날강도', type: 'attack', rarity: 'rare', glyph: '盜', faction: 'unorthodox',
-    cost: 2, damage: 7, steal: 3, sure: true,
-    upgrade: { damage: 9, steal: 4 },
+    cost: 2, damage: 7, steal: 2, sure: true,
+    upgrade: { damage: 9, steal: 3 },
   },
   uDivineThief: {
     name: '신투 묘수', type: 'skill', rarity: 'rare', glyph: '妙', faction: 'unorthodox',
     cost: 1, steal: 2, draw: 2, exhaust: true,
-    upgrade: { steal: 5 },
+    upgrade: { steal: 3 },
   },
 
   // ── 암기 ──
@@ -244,8 +244,8 @@ export const UNORTHODOX_CARDS_EXT = {
   },
   uPoisonHammer: {
     name: '독성추', type: 'attack', rarity: 'rare', glyph: '錘', faction: 'unorthodox',
-    cost: 2, damage: 10, thrown: 9, thrownPoison: 6,
-    upgrade: { damage: 12, thrown: 11 },
+    cost: 2, damage: 9, thrown: 5, thrownPoison: 2,
+    upgrade: { damage: 11, thrown: 7 },
   },
 
   // ── 독 ──
