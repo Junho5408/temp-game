@@ -5,13 +5,16 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 7단계 완료 (7-A~7-E 콘텐츠 확장: 주노 기연 세 길, 무공 세력마다 65장, 보물 56개) + QA qa-20261127-1119 티켓 처리
-- QA 티켓: BUG-001~049 모두 처리 — docs/qa/tickets/INDEX.md. 기준: 1구역 35~45%, 나머지 30~60% (마교 진엔딩 판 최종 26.6% 경계 아래, 다음 QA 에서 확인)
-- 다음 할 일: 사용자와 정할 일 (/qa quick 재확인, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기)
+- 진행 중: 8단계 류파 개편 (8-A~8-D 완료, 8-E 밸런스·QA 진행) — 세력 3 × 계열 3(검객·권사·살수) = 9개 길, 길마다 기본 + 류파 3개
+- 류파: src/core/schools.js (SCHOOLS[세력-계열]), 카드 데이터 src/core/rework-<세력>[-<계열>].js (cards.js 의 REWORK_LIST 순서로 적용, REWORKS[세력].decks/basic → routes.js classes). 판은 run.cls, 보상은 cardPool(세력·계열) + pickFromPool(류파 쏠림 SCHOOL_WEIGHT 3)
+- 새 규칙: 반격 riposte · 호신 guard (적 차례 동안, 내 턴 시작에 0) · 발도 opener (턴 첫 카드)
+- 주인공 그림: heroArt(세력, 계열) + HERO_READY (src/ui/characters.js), 적 전용 예전 그림은 foe-<세력>-<계열>. 선택 화면 초상은 tools/art/hero_portrait.py. 남은 주인공 그림 4장(정파 검객·권사·살수, 사파 검객)
+- QA 티켓: BUG-001~049 모두 처리 — docs/qa/tickets/INDEX.md. 기준: 1구역 35~45%, 나머지 30~60%
+- 다음 할 일: QA qa-20261127-1430 결과 처리, 남은 주인공 그림, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기
 - 회귀: 백일취(STORY.md 회귀의 비밀). 回 선택지 = events 의 needClue (run.knownClues), 회귀 직후 대사 wakeLines(n, meta) 는 meta.lastDeath·lastEnd·clues 로 갈림
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
-- 무공은 세력마다 따로 (공용 0장, cards.js faction + 확장 파일 cards-orthodox/unorthodox/demonic.js). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe)·함정(trap)·훔치기(steal), 마교 마기(magi/magiSpend, 6마다 초식 +1 최대 +3)·혈투(desperate)·입마(curse → qiDeviation)·혈계(bloodPact)·입마 연료(consumeCurse), 정파 검기(swordQi)·심법 유지(power)
+- 무공은 세력·계열마다 따로 (공용 0장, cards.js faction·cls + 확장 cards-*.js + 류파 재편 rework-*.js). 기믹: 사파 암기(thrown)·독 터뜨리기(burst)·은자(goldCost/bribe)·함정(trap)·훔치기(steal), 마교 마기(magi/magiSpend, 6마다 초식 +1 최대 +3)·혈투(desperate)·입마(curse → qiDeviation)·혈계(bloodPact)·입마 연료(consumeCurse), 정파 검기(swordQi)·심법 유지(power)
 - 보물 효과는 items.js 의 fx (battle.js tfx/applyTreasureFx, run.js 획득·승리·휴식·상점 쪽)
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 
