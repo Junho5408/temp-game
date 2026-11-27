@@ -41,10 +41,12 @@ export const ITEM_DROP_CHANCE = { normal: 0.35, elite: 0.6 };
 export const SNOW_LOTUS_HEAL = 6;
 
 // extraCards: 회귀하며 기억한 무공 (시작 덱에 추가), faction: 몸을 담은 세력 (routes.js)
-export function createRun({ seed = 1, extraCards = [], faction = 'orthodox' } = {}) {
+// knownClues: 회귀 기록이 아는 단서 (미래를 아는 자의 선택지 needClue 에 씀)
+export function createRun({ seed = 1, extraCards = [], faction = 'orthodox', knownClues = [] } = {}) {
   const route = ROUTES[faction] ?? ROUTES.orthodox;
   const run = {
     seed,
+    knownClues: [...knownClues],
     faction: ROUTES[faction] ? faction : 'orthodox',
     rng: null,
     rngCount: 0, // 저장·불러오기 때 난수 위치를 되살리기 위해 센다
@@ -128,7 +130,7 @@ export function parseRun(text) {
     if (!PHASES.includes(data.phase)) return null;
     const { v, ...run } = data;
     if (!FACTION_IDS.includes(run.faction)) run.faction = 'orthodox'; // 세력이 없던 옛 저장
-    for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents']) {
+    for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents', 'knownClues']) {
       if (!Array.isArray(run[key])) run[key] = [];
     }
     run.bag = run.bag.filter((id) => CONSUMABLES[id]).slice(0, BAG_SIZE);
@@ -539,10 +541,15 @@ export function leaveShop(run) {
 }
 
 // ── 기연 ─────────────────────────
+// 미래를 아는 자의 선택지: needClue 단서를 회귀 기록이 알고 있어야 보임
+export function optionKnown(run, option) {
+  return !option.needClue || (run.knownClues ?? []).includes(option.needClue);
+}
+
 export function chooseEventOption(run, index) {
   if (run.phase !== 'event' || run.event.result) return null;
   const option = EVENTS[run.event.id].options[index];
-  if (!option || option.disabled?.(run)) return null;
+  if (!option || option.disabled?.(run) || !optionKnown(run, option)) return null;
   const api = {
     addCard: (id) => addCard(run, id),
     removeFirst: (id) => {

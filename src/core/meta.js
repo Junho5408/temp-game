@@ -20,6 +20,7 @@ export function createMeta() {
     bestFloor: 0,
     met: {}, // 이야기 인물을 만난 횟수 (회차를 넘어 누적) { juno: 2, ... }
     pendingMemory: null, // 쓰러진 뒤 아직 고르지 않은 기억 후보 (새로고침해도 다시 고르게)
+    lastDeath: null, // 마지막으로 나를 죽인 적 id (회귀 직후 대사)
     pendingEnding: null, // 아직 끝까지 보지 못한 엔딩 { kind: 'true'|'normal', floor, battlesWon, deck, gold } — BUG-030
     routeStats: {}, // 세력별 { runs, bestZone, wins }
   };
@@ -48,6 +49,7 @@ export function parseMeta(text) {
       if (Number.isInteger(v) && v > 0) meta.met[k] = v;
     }
     setPendingMemory(meta, strList(data.pendingMemory));
+    meta.lastDeath = typeof data.lastDeath === 'string' ? data.lastDeath : null;
     const pe = data.pendingEnding;
     meta.pendingEnding = pe && typeof pe === 'object' && ['true', 'normal'].includes(pe.kind)
       ? { kind: pe.kind, floor: count(pe.floor), battlesWon: count(pe.battlesWon), deck: count(pe.deck), gold: count(pe.gold) }
@@ -110,7 +112,11 @@ export function startNewRun(meta) {
 
 export function recordRunEnd(meta, run) {
   meta.bestFloor = Math.max(meta.bestFloor, runFloor(run));
-  if (run.phase === 'defeat') meta.deaths += 1;
+  if (run.phase === 'defeat') {
+    meta.deaths += 1;
+    meta.lastDeath = run.encounter?.enemyId ?? null;
+  }
+  if (run.phase === 'victory') meta.lastDeath = null;
   for (let z = 1; z <= Math.min(3, run.zonesCleared ?? 0); z++) meta.clears[`zone${z}`] += 1;
   if (run.phase === 'victory') meta.clears.final += 1;
   if (run.phase === 'victory' && run.trueWin) meta.clears.trueEnd += 1;

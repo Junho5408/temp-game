@@ -252,7 +252,7 @@ async function beginLife() {
     hideFlow();
     startNewRun(meta);
     saveMeta();
-    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories, faction: artKey.split('-')[0] });
+    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories, faction: artKey.split('-')[0], knownClues: meta.clues });
     run.art = artKey;
     applyZoneLook();
     startZone();

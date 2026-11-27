@@ -3,7 +3,7 @@
 import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS, cardKeywords } from '../core/cards.js';
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
-import { availableNodes, canBuy, canRestHeal, restHealAmount } from '../core/run.js';
+import { availableNodes, canBuy, canRestHeal, restHealAmount, optionKnown } from '../core/run.js';
 import { josa } from '../core/josa.js';
 import { runFloor } from '../core/meta.js';
 import { mapHeader } from '../story/script.js';
@@ -280,7 +280,8 @@ export function renderEvent(run, { onChoose, onLeave }) {
   const list = document.createElement('div');
   list.className = 'event-options';
   ev.options.forEach((opt, i) => {
-    const b = button(`<span>${opt.label}</span><small>${opt.hint}</small>`, () => onChoose(i), 'option');
+    if (!optionKnown(run, opt)) return; // 아직 모르는 미래
+    const b = button(`<span>${opt.needClue ? '<b class="foresight">回</b> ' : ''}${opt.label}</span><small>${opt.hint}</small>`, () => onChoose(i), `option${opt.needClue ? ' foresight' : ''}`);
     b.disabled = !!opt.disabled?.(run);
     list.appendChild(b);
   });

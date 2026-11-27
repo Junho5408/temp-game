@@ -1196,3 +1196,7 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .card .desc.dense { font-size: 10.5px; line-height: 1.22; padding: 0 5px; }
 .card .desc.denser { font-size: 9.5px; line-height: 1.12; padding: 0 4px; letter-spacing: -0.02em; }
 #hand .card .ctype { padding-bottom: 11px; } /* 명중 표시 자리 */
+
+/* ── 회귀자의 선택지 (미래를 아는 선택) ─────────────────── */
+.option.foresight { border-color: #c9a24a; box-shadow: inset 0 0 0 1px rgba(242, 193, 78, .35); }
+.option .foresight { color: #ffcf6e; font-weight: 700; }
