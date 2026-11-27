@@ -5,9 +5,10 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 게임 완성 (정파 루트 전체 + 일반 엔딩), 최종 QA 티켓까지 모두 처리 → 사용자가 GitHub Pages 켜고 플레이 확인
+- 진행 중: 6단계 사파·마교 루트 — 6-A 공통 구조 완료 → 6-B 사파 루트 (그림 요청 중: 백리현·흑도 맹주·마교 경쟁자·무림맹 장로·객잔 주인)
 - QA 티켓: BUG-001~025 모두 처리 (BUG-018 보류) — docs/qa/tickets/INDEX.md
-- 다음 할 일: 최종 QA 결과 반영 → 배포 뒤 추가 콘텐츠(사파·마교 루트, 진엔딩) 계획 보여주고 승인받기
+- 다음 할 일: 6-B 사파 → 6-C 마교 → 6-D 진엔딩 → 밸런스 + /qa (계획 docs/PLAN.md 6단계, 승인됨)
+- 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/starter/ready), 대사 script.js ROUTE_TEXT
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 
 ## 작업 규칙

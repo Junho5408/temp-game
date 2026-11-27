@@ -20,6 +20,7 @@ export function createMeta() {
     bestFloor: 0,
     met: {}, // 이야기 인물을 만난 횟수 (회차를 넘어 누적) { juno: 2, ... }
     pendingMemory: null, // 쓰러진 뒤 아직 고르지 않은 기억 후보 (새로고침해도 다시 고르게)
+    routeStats: {}, // 세력별 { runs, bestZone, wins }
   };
 }
 
@@ -46,6 +47,9 @@ export function parseMeta(text) {
       if (Number.isInteger(v) && v > 0) meta.met[k] = v;
     }
     setPendingMemory(meta, strList(data.pendingMemory));
+    for (const [f, st] of Object.entries(data.routeStats && typeof data.routeStats === 'object' ? data.routeStats : {})) {
+      if (st && typeof st === 'object') meta.routeStats[f] = { runs: count(st.runs), bestZone: count(st.bestZone), wins: count(st.wins) };
+    }
     return meta;
   } catch {
     return createMeta();
@@ -104,6 +108,12 @@ export function recordRunEnd(meta, run) {
   if (run.phase === 'defeat') meta.deaths += 1;
   for (let z = 1; z <= Math.min(3, run.zonesCleared ?? 0); z++) meta.clears[`zone${z}`] += 1;
   if (run.phase === 'victory') meta.clears.final += 1;
+  const f = run.faction ?? 'orthodox';
+  const st = meta.routeStats[f] ?? { runs: 0, bestZone: 0, wins: 0 };
+  st.runs += 1;
+  st.bestZone = Math.max(st.bestZone, run.zonesCleared ?? 0);
+  if (run.phase === 'victory') st.wins += 1;
+  meta.routeStats[f] = st;
 }
 
 // 지금까지 오른 층 (구역마다 13층: 12층 + 두목)

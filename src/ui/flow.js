@@ -1,6 +1,7 @@
 // 판 바깥의 흐름 화면: 타이틀, 기록, 세력·계열 선택, 무공 기억, 회귀 연출
 import { CARDS } from '../core/cards.js';
 import { memorySlots } from '../core/meta.js';
+import { ROUTES, PASSIVE_TEXT, isFactionOpen } from '../core/routes.js';
 import { CLUES } from '../story/script.js';
 import { CLASSES, DESIGNS, FACTIONS } from './characters.js';
 import { cardFace } from './screens.js';
@@ -77,6 +78,12 @@ export function renderRecord(meta, onBack) {
         <div><b>${meta.clears.zone3 ?? 0}</b><span>3구역 돌파</span></div>
         <div><b>${meta.clears.final ?? 0}</b><span>그날 밤을 넘김</span></div>
       </div>
+      <div class="route-stats">
+        ${Object.entries(ROUTES).filter(([f]) => meta.routeStats?.[f]?.runs).map(([f, r]) => {
+    const st = meta.routeStats[f];
+    return `<span><b>${r.name}</b> ${st.runs}번 · 최고 ${st.bestZone >= 3 ? '그날 밤' : `${st.bestZone}구역 돌파`} · 넘김 ${st.wins}</span>`;
+  }).join('')}
+      </div>
       <h3>기억한 무공</h3>
       <div class="card-grid small"></div>
       <h3>알아낸 단서</h3>
@@ -92,7 +99,8 @@ export function renderRecord(meta, onBack) {
 }
 
 // ── 세력 · 계열 선택 + 들고 갈 기억 ─────────────────────────
-const OPEN = new Set(['orthodox-sword']); // 지금 열린 조합
+// 지금은 계열 중 검객만, 세력은 회귀 기록에 따라 열림 (routes.js)
+const OPEN_CLASSES = new Set(['sword']);
 
 export function renderSelect(meta, onDepart) {
   const el = overlay();
@@ -104,7 +112,7 @@ export function renderSelect(meta, onDepart) {
   el.innerHTML = `
     <div class="panel-box select">
       <h2>이번 생은 어디로 갈 것인가</h2>
-      <p class="panel-sub">세력과 무공 계열을 고르시오</p>
+      <p class="panel-sub">세력과 무공 계열을 고르시오 · <span class="passive">${PASSIVE_TEXT.orthodox}</span></p>
       <div class="select-body">
         <div class="select-grid"></div>
         <div class="memory-area">
@@ -132,15 +140,18 @@ export function renderSelect(meta, onDepart) {
     for (const cid of Object.keys(CLASSES)) {
       const key = `${fid}-${cid}`;
       const d = DESIGNS[key];
-      const open = OPEN.has(key);
+      const open = OPEN_CLASSES.has(cid) && isFactionOpen(meta, fid);
+      const why = !OPEN_CLASSES.has(cid) ? '아직 열리지 않은 길'
+        : ROUTES[fid].ready ? ROUTES[fid].unlock?.text ?? '' : '준비 중인 길';
       const b = document.createElement('button');
       b.type = 'button';
       b.className = `sg-cell${open ? '' : ' locked'}${key === pick ? ' picked' : ''}`;
       b.disabled = !open;
-      b.innerHTML = `<img src="${d.portrait}" alt=""><span>${d.title}</span>${open ? '' : '<em>아직 열리지 않은 길</em>'}`;
+      b.innerHTML = `<img src="${d.portrait}" alt=""><span>${d.title}</span>${open ? '' : `<em>${why}</em>`}`;
       b.addEventListener('click', () => {
         pick = key;
         grid.querySelectorAll('.sg-cell').forEach((x) => x.classList.toggle('picked', x === b));
+        el.querySelector('.passive').textContent = PASSIVE_TEXT[fid];
       });
       grid.append(b);
     }

@@ -129,8 +129,31 @@ export const CLUES = {
 };
 
 // ── 구역 시작 (2구역부터) ─────────────────────────
-export const ZONE_NAMES = ['제1구역 · 후기지수 비무대회', '제2구역 · 녹림 토벌', '제3구역 · 마교 침공 저지', '그날 밤 · 청운객잔'];
-export const ZONE_BACKGROUNDS = ['arena', 'forest', 'gate', 'inn'];
+// 세력별 구역 이름·배경 (마지막은 그날 밤의 객잔)
+export const ROUTE_TEXT = {
+  orthodox: {
+    zones: ['제1구역 · 후기지수 비무대회', '제2구역 · 녹림 토벌', '제3구역 · 마교 침공 저지', '그날 밤 · 청운객잔'],
+    backgrounds: ['arena', 'forest', 'gate', 'inn'],
+  },
+  unorthodox: {
+    zones: ['제1구역 · 흑도 패권 다툼', '제2구역 · 녹림 통합', '제3구역 · 무림맹 지부 습격', '그날 밤 · 청운객잔'],
+    backgrounds: ['arena', 'forest', 'gate', 'inn'],
+  },
+  demonic: {
+    zones: ['제1구역 · 서열 혈투', '제2구역 · 중원 진출', '제3구역 · 정마 결전', '그날 밤 · 청운객잔'],
+    backgrounds: ['arena', 'forest', 'gate', 'inn'],
+  },
+};
+export const ZONE_NAMES = ROUTE_TEXT.orthodox.zones;
+export const ZONE_BACKGROUNDS = ROUTE_TEXT.orthodox.backgrounds;
+
+export function zoneName(faction, zone) {
+  return (ROUTE_TEXT[faction] ?? ROUTE_TEXT.orthodox).zones[zone];
+}
+
+export function zoneBackground(faction, zone) {
+  return (ROUTE_TEXT[faction] ?? ROUTE_TEXT.orthodox).backgrounds[zone];
+}
 
 export function zoneIntro(zone, meta) {
   if (zone === 1) {

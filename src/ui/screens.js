@@ -3,7 +3,7 @@
 import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/cards.js';
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
-import { availableNodes, canBuy, canRestHeal } from '../core/run.js';
+import { availableNodes, canBuy, canRestHeal, restHealAmount } from '../core/run.js';
 import { josa } from '../core/josa.js';
 import { runFloor } from '../core/meta.js';
 import {
@@ -185,7 +185,7 @@ export function renderTreasure(run, onPick) {
 
 // ── 운기조식 ─────────────────────────
 export function renderRest(run, { onHeal, onUpgrade, onLeave }) {
-  const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * 0.3));
+  const heal = Math.min(run.maxHp - run.hp, restHealAmount(run));
   const { body } = openPanel('운기조식', '조용한 곳에서 기혈을 고른다. 한 가지만 할 수 있다.');
   body.classList.add('choice-row');
   const full = !canRestHeal(run);

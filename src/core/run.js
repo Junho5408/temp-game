@@ -2,7 +2,8 @@
 // 전투 자체는 battle.js 가 맡고, 여기서는 전투 전후만 다룸.
 import { createBattle, PLAYER_MAX_HP } from './battle.js';
 import { CARDS, STARTER_DECK, canUpgrade, cardsByRarity } from './cards.js';
-import { ENEMIES, ZONE_POOLS, FINAL_BOSS } from './enemies.js';
+import { ENEMIES } from './enemies.js';
+import { FACTION_IDS, ROUTES, routeOf } from './routes.js';
 import { EVENTS, EVENT_IDS } from './events.js';
 import { findNode, generateMap } from './map.js';
 import {
@@ -38,10 +39,12 @@ const TREASURE_WEIGHTS = [['common', 45], ['uncommon', 40], ['rare', 15]];
 export const ITEM_DROP_CHANCE = { normal: 0.35, elite: 0.6 };
 export const SNOW_LOTUS_HEAL = 6;
 
-// extraCards: 회귀하며 기억한 무공 (시작 덱에 추가)
-export function createRun({ seed = 1, extraCards = [] } = {}) {
+// extraCards: 회귀하며 기억한 무공 (시작 덱에 추가), faction: 몸을 담은 세력 (routes.js)
+export function createRun({ seed = 1, extraCards = [], faction = 'orthodox' } = {}) {
+  const route = ROUTES[faction] ?? ROUTES.orthodox;
   const run = {
     seed,
+    faction: ROUTES[faction] ? faction : 'orthodox',
     rng: null,
     rngCount: 0, // 저장·불러오기 때 난수 위치를 되살리기 위해 센다
     zone: 0, // 0~2 = 1~3구역, 3 = 최종 결전
@@ -49,7 +52,7 @@ export function createRun({ seed = 1, extraCards = [] } = {}) {
     pendingAdvance: false, // 두목을 이겨서 다음 구역으로 넘어갈 차례
     hp: PLAYER_MAX_HP,
     maxHp: PLAYER_MAX_HP,
-    gold: START_GOLD,
+    gold: START_GOLD + (route.passive.startGold ?? 0),
     deck: [],
     nextUid: 1,
     map: generateMap(seed),
@@ -70,9 +73,30 @@ export function createRun({ seed = 1, extraCards = [] } = {}) {
     battlesWon: 0,
   };
   attachRng(run);
-  for (const id of STARTER_DECK) addCard(run, id);
+  for (const id of starterDeck(route)) addCard(run, id);
   for (const id of extraCards) addCard(run, id);
   return run;
+}
+
+// 세력별 시작 덱: 공통 시작 덱에서 starter.remove 를 빼고 starter.add 를 넣음
+export function starterDeck(route) {
+  const deck = [...STARTER_DECK];
+  for (const id of route.starter?.remove ?? []) {
+    const i = deck.indexOf(id);
+    if (i >= 0) deck.splice(i, 1);
+  }
+  return [...deck, ...(route.starter?.add ?? [])];
+}
+
+// 이 판에서 나올 수 있는 무공: 공통 무공 + 내 세력의 고유 무공
+export function cardPool(run, rarity) {
+  return cardsByRarity(rarity).filter((id) => !CARDS[id].faction || CARDS[id].faction === run.faction);
+}
+
+// 세력 고유 규칙으로 바뀐 객잔 값
+function shopPrice(run, price) {
+  const off = routeOf(run).passive.shopDiscount ?? 0;
+  return Math.max(1, Math.round(price * (1 - off)));
 }
 
 // 난수: 몇 번 썼는지 세어 두면 저장한 판을 같은 흐름으로 되살릴 수 있음
@@ -107,6 +131,7 @@ export function parseRun(text) {
     if (!finiteNum(data.hp) || !finiteNum(data.maxHp, 1) || !finiteNum(data.gold) || !finiteNum(data.seed, -Infinity)) return null;
     if (!PHASES.includes(data.phase)) return null;
     const { v, ...run } = data;
+    if (!FACTION_IDS.includes(run.faction)) run.faction = 'orthodox'; // 세력이 없던 옛 저장
     for (const key of ['bag', 'treasures', 'cluesFound', 'visited', 'seenEvents']) {
       if (!Array.isArray(run[key])) run[key] = [];
     }
@@ -142,7 +167,8 @@ export function meetEventNpc(run, meta) {
 }
 
 export function zonePools(run) {
-  return ZONE_POOLS[Math.min(run.zone, ZONE_POOLS.length - 1)];
+  const pools = routeOf(run).pools;
+  return pools[Math.min(run.zone, pools.length - 1)];
 }
 
 function randInt(rng, [lo, hi]) {
@@ -211,6 +237,7 @@ export function enterNode(run, id) {
 // 이야기 기연(주노, 흰 옷의 사내)은 조건이 맞으면 그 판에서 먼저 한 번씩 나오고, 나머지는 무작위
 function pickEvent(run, row) {
   const story = EVENT_IDS.find((e) => EVENTS[e].story && (EVENTS[e].zone ?? 0) === run.zone
+    && (EVENTS[e].route ?? 'orthodox') === run.faction
     && !run.seenEvents.includes(e) && row >= (EVENTS[e].minRow ?? 0));
   if (story) return story;
   const normal = EVENT_IDS.filter((e) => !EVENTS[e].story);
@@ -285,6 +312,8 @@ export function finishBattle(run, battle) {
   run.hp = battle.player.hp;
   run.bag = [...battle.bag]; // 쓴 물품은 사라짐
   if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
+  const winHeal = routeOf(run).passive.winHeal ?? 0; // 마교 혈공
+  if (winHeal) run.hp = Math.min(run.maxHp, run.hp + winHeal);
   run.battlesWon += 1;
   const tier = run.encounter.tier;
   const final = !!run.encounter.final;
@@ -345,7 +374,7 @@ function rollCards(run, weights, n) {
   const picked = [];
   let guard = 0;
   while (picked.length < n && guard++ < 100) {
-    const pool = cardsByRarity(pickWeighted(run.rng, weights));
+    const pool = cardPool(run, pickWeighted(run.rng, weights));
     const id = pool[Math.floor(run.rng() * pool.length)];
     if (!picked.includes(id)) picked.push(id);
   }
@@ -375,7 +404,7 @@ export function advanceZone(run) {
   run.visited = [];
   run.lastEnemy = null;
   if (run.zone >= ZONE_COUNT) {
-    run.encounter = { enemyId: FINAL_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
+    run.encounter = { enemyId: routeOf(run).finalBoss, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
     run.phase = 'battle';
     return true;
   }
@@ -396,6 +425,10 @@ export function swapRewardItem(run, bagIndex) {
 }
 
 // ── 운기조식 ─────────────────────────
+export function restHealAmount(run) {
+  return Math.ceil(run.maxHp * (routeOf(run).passive.restHealRatio ?? REST_HEAL_RATIO));
+}
+
 export function canRestHeal(run) {
   return run.hp < run.maxHp;
 }
@@ -404,7 +437,7 @@ export function canRestHeal(run) {
 export function restHeal(run) {
   if (run.phase !== 'rest' || !canRestHeal(run)) return false;
   const before = run.hp;
-  run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * REST_HEAL_RATIO));
+  run.hp = Math.min(run.maxHp, run.hp + restHealAmount(run));
   run.phase = 'map';
   return run.hp - before;
 }
@@ -431,17 +464,17 @@ function makeShop(run) {
   const items = [];
   const plan = ['common', 'common', 'uncommon', 'uncommon', 'rare'];
   for (const rarity of plan) {
-    const pool = cardsByRarity(rarity).filter((id) => !items.some((it) => it.id === id));
+    const pool = cardPool(run, rarity).filter((id) => !items.some((it) => it.id === id));
     const id = pool[Math.floor(run.rng() * pool.length)];
-    items.push({ kind: 'card', id, price: randInt(run.rng, PRICE[rarity]), sold: false });
+    items.push({ kind: 'card', id, price: shopPrice(run, randInt(run.rng, PRICE[rarity])), sold: false });
   }
   for (let i = 0; i < 2; i++) {
     let id = rollItem(run);
     if (items.some((it) => it.id === id)) id = rollItem(run);
-    items.push({ kind: 'item', id, price: randInt(run.rng, ITEM_PRICE[CONSUMABLES[id].rarity]), sold: false });
+    items.push({ kind: 'item', id, price: shopPrice(run, randInt(run.rng, ITEM_PRICE[CONSUMABLES[id].rarity])), sold: false });
   }
   const [tid] = rollTreasures(run, 1);
-  if (tid) items.push({ kind: 'treasure', id: tid, price: randInt(run.rng, TREASURE_PRICE[TREASURES[tid].rarity]), sold: false });
+  if (tid) items.push({ kind: 'treasure', id: tid, price: shopPrice(run, randInt(run.rng, TREASURE_PRICE[TREASURES[tid].rarity])), sold: false });
   return { items, removed: false };
 }
 

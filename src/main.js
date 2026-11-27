@@ -19,7 +19,7 @@ import {
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
   wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
-  zoneIntro, zoneClearLines, ZONE_NAMES, ZONE_BACKGROUNDS,
+  zoneIntro, zoneClearLines, zoneName, zoneBackground,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -29,6 +29,7 @@ import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
 import { DESIGNS } from './ui/characters.js';
 import { installTouchTips } from './ui/touch.js';
+import { ROUTES } from './core/routes.js';
 import { josa } from './core/josa.js';
 import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
@@ -144,7 +145,7 @@ function showTitle() {
   }
   const saved = meta.prologueDone ? loadRun() : null;
   renderTitle(meta, {
-    saved: saved ? { zone: ZONE_NAMES[saved.zone], hp: saved.hp, maxHp: saved.maxHp } : null,
+    saved: saved ? { zone: `${ROUTES[saved.faction]?.name ?? '정파'} · ${zoneName(saved.faction, saved.zone)}`, hp: saved.hp, maxHp: saved.maxHp } : null,
     onContinue: () => {
       hideFlow();
       run = saved;
@@ -234,7 +235,7 @@ async function beginLife() {
     hideFlow();
     startNewRun(meta);
     saveMeta();
-    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories });
+    run = createRun({ seed: (Math.random() * 2 ** 31) | 0, extraCards: memories, faction: artKey.split('-')[0] });
     run.art = artKey;
     applyZoneLook();
     startZone();
@@ -243,9 +244,9 @@ async function beginLife() {
 
 // 구역에 맞는 이름과 배경
 function applyZoneLook() {
-  setZone(ZONE_NAMES[run.zone]);
-  scene.setBackground(ZONE_BACKGROUNDS[run.zone]);
-  playMusic(run.zone >= 3 ? 'boss' : ZONE_BACKGROUNDS[run.zone]);
+  setZone(zoneName(run.faction, run.zone));
+  scene.setBackground(zoneBackground(run.faction, run.zone));
+  playMusic(run.zone >= 3 ? 'boss' : zoneBackground(run.faction, run.zone));
 }
 
 async function startZone() {
@@ -400,7 +401,7 @@ async function showStep() {
       applyZoneLook();
       saveRun();
       if (run.phase === 'map') {
-        showBanner(ZONE_NAMES[run.zone], '#f2c14e', 1800);
+        showBanner(zoneName(run.faction, run.zone), '#f2c14e', 1800);
         await playDialogue(zoneIntro(run.zone, meta));
       }
       show();
@@ -556,7 +557,7 @@ function render() {
 function renderStatus() {
   const s = battle;
   $('turn-label').textContent = `제 ${s.turn} 턴`;
-  renderUnit($('player-info'), '나', run ? '정파 · 떠돌이 무인' : '떠돌이 무인', s.player, 'player');
+  renderUnit($('player-info'), '나', run ? `${ROUTES[run.faction]?.name ?? '정파'} · 떠돌이 무인` : '떠돌이 무인', s.player, 'player');
   renderUnit($('enemy-info'), s.enemy.name, s.enemy.title, s.enemy, 'enemy');
   renderIntent();
   renderRunInfo();
