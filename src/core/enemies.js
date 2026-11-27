@@ -51,7 +51,7 @@ export const ENEMIES = {
   },
   // 버티기형: 맞을수록 광폭해짐, 박치기는 크지만 잘 빗나감
   brawler: {
-    name: '왕삼', title: '흑도 주먹패', art: 'unorthodox-fist', tier: 'normal',
+    name: '왕삼', title: '흑도 주먹패', art: 'npc-drunk-thug', tier: 'normal',
     maxHp: 42, traits: ['berserk'],
     pattern: [
       { name: '주먹질', damage: 7 },
@@ -321,7 +321,7 @@ Object.assign(ENEMIES, {
 // 지도에는 나오지 않음
 Object.assign(ENEMIES, {
   drunkThug: {
-    name: '왕삼', title: '술 취한 흑도 주먹패', art: 'unorthodox-fist', tier: 'tutorial',
+    name: '왕삼', title: '술 취한 흑도 주먹패', art: 'npc-drunk-thug', tier: 'tutorial',
     maxHp: 22,
     pattern: [
       { name: '주먹질', damage: 4 },
@@ -454,7 +454,7 @@ Object.assign(ENEMIES, {
     ],
   },
   patrolCaptain: {
-    name: '한소', title: '무림맹 순찰대장', art: 'orthodox-assassin', tier: 'elite',
+    name: '한소', title: '무림맹 순찰대장', art: 'elite-patrol-captain', tier: 'elite',
     maxHp: 105, evasion: 15, traits: ['killer'],
     pattern: [
       { name: '비도 삼연', damage: 5, hits: 3 },
@@ -464,7 +464,7 @@ Object.assign(ENEMIES, {
     ],
   },
   ironInstructor: {
-    name: '석무', title: '철권문 교두', art: 'orthodox-fist', tier: 'elite',
+    name: '석무', title: '철권문 교두', art: 'elite-iron-instructor', tier: 'elite',
     maxHp: 112, traits: ['ironBody', 'berserk'],
     pattern: [
       { name: '철권', damage: 13 },
@@ -551,7 +551,7 @@ Object.assign(ENEMIES, {
     ],
   },
   twinFang: {
-    name: '쌍아', title: '혈영대 견습 살수', art: 'demonic-assassin', tier: 'elite',
+    name: '쌍아', title: '혈영대 견습 살수', art: 'elite-twin-fang', tier: 'elite',
     maxHp: 62, evasion: 20, traits: ['feint', 'venom'],
     pattern: [
       { name: '쌍아 찌르기', damage: 4, hits: 2 },
@@ -561,7 +561,7 @@ Object.assign(ENEMIES, {
     ],
   },
   redLash: {
-    name: '적편', title: '마교 검각 제자', art: 'demonic-sword', tier: 'elite',
+    name: '적편', title: '마교 검각 제자', art: 'elite-red-lash', tier: 'elite',
     maxHp: 66, traits: ['drain'],
     pattern: [
       { name: '혈편검', damage: 7, hits: 2 },

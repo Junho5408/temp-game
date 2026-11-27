@@ -145,6 +145,26 @@ const NPCS = {
     title: '녹림 행동대장 쌍도귀', note: '2구역 고수. 흉터투성이 팔, 대도 두 자루', cls: 'sword', color: '#8a6040',
     sprite: { image: 'assets/characters/elite-twin-blade.webp', footX: 0.4996 },
   },
+  'elite-patrol-captain': {
+    title: '무림맹 순찰대장 한소', note: '사파 3구역 고수. 흰 학 견장, 은빛 비도와 승표', cls: 'assassin', color: '#6f8fb8',
+    sprite: { image: 'assets/characters/elite-patrol-captain.webp', footX: 0.4839 },
+  },
+  'elite-iron-instructor': {
+    title: '철권문 교두 석무', note: '3구역 고수. 철장갑, 깊은 마보 자세', cls: 'fist', color: '#d8dde4',
+    sprite: { image: 'assets/characters/elite-iron-instructor.webp', footX: 0.4772 },
+  },
+  'elite-twin-fang': {
+    title: '혈영대 견습 살수 쌍아', note: '마교 1구역 고수. 쌍상투 소녀, 송곳니 단검 두 자루', cls: 'assassin', color: '#7a1a28',
+    sprite: { image: 'assets/characters/elite-twin-fang.webp', footX: 0.4904 },
+  },
+  'elite-red-lash': {
+    title: '마교 검각 제자 적편', note: '마교 1구역 고수. 붉은 기운의 채찍검', cls: 'sword', color: '#c22a36',
+    sprite: { image: 'assets/characters/elite-red-lash.webp', footX: 0.4643 },
+  },
+  'npc-drunk-thug': {
+    title: '술 취한 흑도 주먹패 왕삼', note: '프롤로그 첫 상대. 호리병을 든 주정뱅이', cls: 'fist', color: '#8e7050',
+    sprite: { image: 'assets/characters/npc-drunk-thug.webp', footX: 0.4868 },
+  },
   'npc-innkeeper': {
     title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a',
     sprite: { image: 'assets/characters/npc-innkeeper.webp', footX: 0.4919 },

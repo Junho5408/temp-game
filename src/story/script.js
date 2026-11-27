@@ -10,7 +10,7 @@ export const SPEAKERS = {
   narr: { name: '' },
   boki: { name: '복이', art: 'npc-boki', glyph: '福' },
   juno: { name: '주노', art: 'npc-juno' },
-  thug: { name: '왕삼', art: 'unorthodox-fist' },
+  thug: { name: '왕삼', art: 'npc-drunk-thug' },
   assassin: { name: '혈영대원', art: 'demonic-assassin' },
   gwimyeon: { name: '귀면', art: 'boss-gwimyeon' },
   sooha: { name: '흰 옷의 사내', art: 'npc-sooha' }, // 진소하 (아직 이름 모름)
@@ -30,7 +30,7 @@ export const SPEAKERS = {
   allianceElder: { name: '우문혁', art: 'boss-elder', glyph: '盟' },
   innkeeper: { name: '객잔 주인', art: 'npc-innkeeper', glyph: '店' },
   axeLord: { name: '마삼', art: 'elite-axe-lord' },
-  patrolCaptain: { name: '한소', art: 'orthodox-assassin' },
+  patrolCaptain: { name: '한소', art: 'elite-patrol-captain' },
   gangBro: { name: '흑도 졸개', art: 'npc-gangbro', glyph: '卒' },
   rival: { name: '연화', art: 'boss-rival', glyph: '華' },
   baekri: { name: '백리현', art: 'boss-baekri', glyph: '鶴' },

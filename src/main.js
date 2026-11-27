@@ -198,7 +198,7 @@ async function playPrologue() {
   scene.clearEnemy();
   scene.reset();
   setScreen('story');
-  await scene.setEnemy('unorthodox-fist');
+  await scene.setEnemy(ENEMIES.drunkThug.art);
   await playDialogue(PROLOGUE_INTRO);
 
   // 튜토리얼 전투 1: 술 취한 주먹패
