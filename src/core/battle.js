@@ -53,6 +53,7 @@ export const MAX_EVASION = 70;
 export const MIN_HIT = 20;
 export const POINT_STEP = 6; // 점혈로 한 번 굳을 때마다 게이지 최대치 증가
 export const MAGI_MAX = 20;
+export const MAGI_PER_BONUS = 6; // 마기 자체 효과: 마기 6마다 초식 피해 +1 (최대 +3)
 export const CURSE_HP = 2; // 입마가 손에 남았을 때 잃는 체력
 
 const newStatus = () => ({
@@ -388,9 +389,14 @@ export function cardBaseDamage(s, c) {
   return base;
 }
 
+// 마기 자체 효과: 쌓인 마기 5마다 초식 한 타 피해 +1 (마기를 쓰는 무공은 쓰기 전 마기 기준)
+export function magiBonus(s) {
+  return Math.min(3, Math.floor((s.player.magi ?? 0) / MAGI_PER_BONUS));
+}
+
 // 보물까지 더한 한 타 기본 피해 (기세·내상 적용 전)
 function cardDamageBase(s, c) {
-  let base = cardBaseDamage(s, c);
+  let base = cardBaseDamage(s, c) + magiBonus(s);
   if (owns(s, 'chainArt') && comboActive(s)) base += 2;
   if (owns(s, 'drunkenFist')) base += s.player.missStreak * 3;
   return base;

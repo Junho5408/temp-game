@@ -639,7 +639,7 @@ function renderUnit(el, name, title, u, who) {
   if (who === 'player') {
     el.querySelector('.magi')?.remove();
     if (battle.faction === 'demonic' || u.magi > 0) {
-      el.insertAdjacentHTML('beforeend', `<div class="magi" title="마기(魔氣): 체력을 대가로 쓰거나 맞으면 쌓이고, 마기를 쓰는 무공이 한꺼번에 피해로 바꾼다 (최대 ${MAGI_MAX})"><span>魔</span><i><b style="width:${(u.magi / MAGI_MAX) * 100}%"></b></i><em>${u.magi}</em></div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="magi" title="마기(魔氣): 체력을 대가로 쓰거나 맞으면 쌓인다. 마기 6마다 초식 피해 +1 (최대 +3), 마기를 쓰는 무공은 한꺼번에 피해로 바꾼다 (최대 ${MAGI_MAX})"><span>魔</span><i><b style="width:${(u.magi / MAGI_MAX) * 100}%"></b></i><em>${u.magi}</em></div>`);
     }
   }
   if (who === 'enemy') {

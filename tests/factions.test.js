@@ -211,3 +211,15 @@ test('혈해: 체력 대가마다 마기 +2 더 / 천마해체대법: 마기 두
   playCard(s, 902);
   assert.equal(s.player.magi, 16);
 });
+
+test('7-B 마기 자체 효과: 마기 6마다 초식 피해 +1 (최대 +3)', async () => {
+  const { magiBonus } = await import('../src/core/battle.js');
+  const s = battle({ faction: 'demonic' });
+  const c = cardStats({ id: 'bloodClaw' });
+  assert.equal(cardPreviewDamage(s, c), 7);
+  s.player.magi = 12;
+  assert.equal(magiBonus(s), 2);
+  assert.equal(cardPreviewDamage(s, c), 9);
+  s.player.magi = 20;
+  assert.equal(magiBonus(s), 3);
+});

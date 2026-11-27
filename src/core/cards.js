@@ -274,7 +274,7 @@ export const CARDS = {
   demonHeart: {
     name: '천마심법', type: 'skill', rarity: 'starter', glyph: '心', faction: 'demonic',
     cost: 1, hpCost: 3, magi: 3, draw: 1,
-    upgrade: { magi: 4, draw: 2 },
+    upgrade: { cost: 0, magi: 4 },
   },
   bloodSword: {
     name: '혈검', type: 'attack', rarity: 'common', glyph: '血', faction: 'demonic',
@@ -387,10 +387,10 @@ export const UNORTHODOX_DECK = [
   'venomBlade', 'venomBlade', 'sandThrow',
   'flyingKnife', 'switchGrip',
 ];
-// 마교 시작 덱: 혈조 4 + 혈검 2 + 혈무 2 + 마기 흡수 1 + 천마심법 1
+// 마교 시작 덱: 혈조 4 + 혈검 2 + 마기 일격 1 + 혈무 1 + 마기 흡수 1 + 천마심법 1 (7-B: 마기를 쓰는 무공을 처음부터)
 export const DEMONIC_DECK = [
   'bloodClaw', 'bloodClaw', 'bloodClaw', 'bloodClaw',
-  'bloodSword', 'bloodSword', 'bloodMist', 'bloodMist',
+  'bloodSword', 'bloodSword', 'magiBlade', 'bloodMist',
   'magiAbsorb', 'demonHeart',
 ];
 
@@ -472,7 +472,7 @@ export function cardKeywords(c) {
   if (c.dirty || c.dirtyBonus) k.push('약화: 적이 흐트러짐·중독·굳음 중 하나라도 걸린 상태');
   if (c.thrown) k.push(`암기: 쓰지 않고 손에서 버려지면(턴 종료 등) 저절로 던져져 피해 ${c.thrown}${c.thrownPoison ? `, 중독 ${c.thrownPoison}` : ''}`);
   if (c.goldCost || c.bribe) k.push(`은자: 이 판의 은자를 전투 중에 씀${c.bribe ? ' · 매수: 일반·고수는 한 차례 움직이지 않고, 두목은 흐트러짐 2' : ''}`);
-  if (c.magi || c.magiSpend || c.purge || c.bloodSea || c.magiDouble) k.push('마기: 체력을 대가로 쓰거나 맞으면 쌓이고, 마기를 쓰는 무공이 피해로 바꿈');
+  if (c.magi || c.magiSpend || c.purge || c.bloodSea || c.magiDouble) k.push('마기: 체력을 대가로 쓰거나 맞으면 쌓임. 마기 6마다 초식 피해 +1, 마기를 쓰는 무공은 한꺼번에 피해로 바꿈');
   if (c.desperate) k.push('혈투: 내 체력이 최대의 절반 이하일 때');
   if (c.curse || c.unplayable) k.push('입마: 이번 전투 덱에 섞이는 쓸 수 없는 카드. 턴 끝에 손에 있으면 체력 -2, 마기 +1 (전투가 끝나면 사라짐)');
   if (c.exhaust) k.push('소멸: 쓰면 이번 전투에서 빠짐');
