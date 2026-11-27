@@ -7,10 +7,10 @@
 ## 현재 상태
 - 진행 중: 8단계 류파 개편 (8-A~8-D 완료, 8-E 밸런스·QA 진행) — 세력 3 × 계열 3(검객·권사·살수) = 9개 길, 길마다 기본 + 류파 3개
 - 류파: src/core/schools.js (SCHOOLS[세력-계열]), 카드 데이터 src/core/rework-<세력>[-<계열>].js (cards.js 의 REWORK_LIST 순서로 적용, REWORKS[세력].decks/basic → routes.js classes). 판은 run.cls, 보상은 cardPool(세력·계열) + pickFromPool(류파 쏠림 SCHOOL_WEIGHT 3)
-- 새 규칙: 반격 riposte · 호신 guard (적 차례 동안, 내 턴 시작에 0) · 발도 opener (턴 첫 카드)
-- 주인공 그림: heroArt(세력, 계열) + HERO_READY (src/ui/characters.js), 적 전용 예전 그림은 foe-<세력>-<계열>. 선택 화면 초상은 tools/art/hero_portrait.py. 남은 주인공 그림 4장(정파 검객·권사·살수, 사파 검객)
-- QA 티켓: BUG-001~049 모두 처리 — docs/qa/tickets/INDEX.md. 기준: 1구역 35~45%, 나머지 30~60%
-- 다음 할 일: QA qa-20261127-1430 결과 처리, 남은 주인공 그림, 위극 옷 무늬 다시 그리기 검토, GitHub Pages 켜기
+- 새 규칙: 반격 riposte · 호신 guard (적 차례 동안, 내 턴 시작에 0, 다 막은 타는 안 맞은 것) · 발도 opener (턴 첫 초식)
+- 주인공 그림: heroArt(세력, 계열) + HERO_READY (src/ui/characters.js), 적 전용 예전 그림은 foe-<세력>-<계열>. 선택 화면 초상은 tools/art/hero_portrait.py. 주인공 9칸 모두 같은 얼굴 (사파 검객은 얼굴 시트에서 자른 임시)
+- QA 티켓: BUG-001~066 처리 (BUG-064 보류: 한 장 넣기 재측정) — docs/qa/tickets/INDEX.md. 기준: 1구역 35~45%, 나머지 30~60%. 밸런스 조정 모음 src/core/balance-8e.js
+- 다음 할 일: /qa quick 재확인(마교 진엔딩 최종·정파 3구역 경계), 사파 검객 전투 자세 그림(지금은 얼굴 시트 임시), 위극 옷 무늬 검토, GitHub Pages 켜기
 - 회귀: 백일취(STORY.md 회귀의 비밀). 回 선택지 = events 의 needClue (run.knownClues), 회귀 직후 대사 wakeLines(n, meta) 는 meta.lastDeath·lastEnd·clues 로 갈림
 - 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/deck/basic/ready), 대사 script.js ROUTE_TEXT
