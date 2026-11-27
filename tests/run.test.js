@@ -238,7 +238,8 @@ test('자동 플레이로 한 판이 끝까지 진행됨 + 승률이 너무 높�
   const rate = zone1 / N;
   console.log(`  자동 플레이: 1구역 돌파 ${(rate * 100).toFixed(0)}%, 최종 결전 승리 ${wins}/${N}, 3층 이하에서 쓰러짐 ${earlyDeaths}판`);
   // 단순한 봇 기준 (사람은 이보다 잘함). 1구역 돌파율로 확인, 전체 돌파는 훨씬 드묾
-  assert.ok(rate >= 0.12 && rate <= 0.6, `1구역 돌파율 ${rate}`);
+  // 늘 첫 보상을 고르는 단순 봇 (8-B 류파로 나뉜 뒤 첫 보상이 덱과 안 맞을 때가 많아 하한을 낮춤 — 실제 측정은 tools/qa/balance.mjs)
+  assert.ok(rate >= 0.08 && rate <= 0.6, `1구역 돌파율 ${rate}`);
   assert.ok(wins <= zone1, '최종 승리가 1구역 돌파보다 많을 수 없음');
   assert.ok(earlyDeaths <= N * 0.05, `초반에 너무 많이 쓰러짐: ${earlyDeaths}`);
 });

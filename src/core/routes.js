@@ -8,7 +8,7 @@
 // - classes: 계열별 { ready, deck, basic } (8-A). 계열은 처음부터 고를 수 있음 (세력만 회귀로 열림)
 // 이름·배경·대사는 src/story/script.js 의 ROUTE_TEXT
 import { ZONE_POOLS, UNORTHODOX_POOLS, DEMONIC_POOLS, FINAL_BOSS } from './enemies.js';
-import { STARTER_DECK, UNORTHODOX_DECK, DEMONIC_DECK } from './cards.js';
+import { STARTER_DECK, UNORTHODOX_DECK, DEMONIC_DECK, REWORKS } from './cards.js';
 
 export const FACTION_IDS = ['orthodox', 'unorthodox', 'demonic'];
 
@@ -20,9 +20,11 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: null,
     passive: {},
-    deck: STARTER_DECK,
-    basic: 'strike',
-    classes: { sword: { ready: true, deck: STARTER_DECK, basic: 'strike' } },
+    deck: REWORKS.orthodox.decks.sword,
+    basic: REWORKS.orthodox.basic.sword,
+    classes: {
+      sword: { ready: true, deck: REWORKS.orthodox.decks.sword, basic: REWORKS.orthodox.basic.sword },
+    },
   },
   // 사파 · 암수(暗手): 돈과 비열한 수
   unorthodox: {
@@ -32,9 +34,12 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: { zone: 1, text: '어느 길로든 1구역을 한 번 돌파하면 열린다' },
     passive: { startGold: 40, shopDiscount: 0.2 },
-    deck: UNORTHODOX_DECK,
-    basic: 'dagger',
-    classes: { sword: { ready: true, deck: UNORTHODOX_DECK, basic: 'dagger' } },
+    deck: REWORKS.unorthodox.decks.sword,
+    basic: REWORKS.unorthodox.basic.sword,
+    classes: {
+      sword: { ready: true, deck: REWORKS.unorthodox.decks.sword, basic: REWORKS.unorthodox.basic.sword },
+      assassin: { ready: false, deck: UNORTHODOX_DECK, basic: 'dagger' }, // 8-D 에서 엶 (옛 사파 시작 덱)
+    },
   },
   // 마교 · 혈공(血功): 피를 대가로 한 힘
   demonic: {
@@ -44,9 +49,12 @@ export const ROUTES = {
     finalBoss: FINAL_BOSS,
     unlock: { zone: 2, text: '어느 길로든 2구역을 한 번 돌파하면 열린다' },
     passive: { winHeal: 6, restHealRatio: 0.2 },
-    deck: DEMONIC_DECK,
-    basic: 'bloodClaw',
-    classes: { sword: { ready: true, deck: DEMONIC_DECK, basic: 'bloodClaw' } },
+    deck: REWORKS.demonic.decks.sword,
+    basic: REWORKS.demonic.basic.sword,
+    classes: {
+      sword: { ready: true, deck: REWORKS.demonic.decks.sword, basic: REWORKS.demonic.basic.sword },
+      fist: { ready: false, deck: DEMONIC_DECK, basic: 'bloodClaw' }, // 8-C 에서 엶 (옛 마교 시작 덱, 혈조)
+    },
   },
 };
 

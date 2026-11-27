@@ -18,11 +18,11 @@ function battle(opts = {}) {
 }
 const hand = (s, ids) => { s.hand = ids.map((id, i) => ({ uid: 900 + i, id, upgraded: false })); s.player.energy = 9; };
 
-test('사파 시작 덱: 정파와 겹치는 무공 없음 (단도·독 바른 칼·모래·비수·칼 바꿔 쥐기)', () => {
+test('사파 검객 시작 덱: 정파와 겹치는 무공 없음 (기본 도법·칼등 치기·막베기·눈치 걸음, 8-B)', () => {
   const run = createRun({ seed: 1, faction: 'unorthodox' });
   const ids = run.deck.map((c) => c.id);
-  assert.ok(ids.every((id) => CARDS[id].faction === 'unorthodox'));
-  assert.equal(ids.filter((id) => id === 'dagger').length, 5);
+  assert.ok(ids.every((id) => CARDS[id].faction === 'unorthodox' && CARDS[id].cls === 'sword'));
+  assert.equal(ids.filter((id) => id === 'uSaber').length, 5);
   assert.equal(run.deck.length, 10);
 });
 

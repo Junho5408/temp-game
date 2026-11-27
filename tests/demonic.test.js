@@ -17,11 +17,11 @@ function battle(opts = {}) {
 }
 const hand = (s, ids) => { s.hand = ids.map((id, i) => ({ uid: 900 + i, id, upgraded: false })); s.player.energy = 9; };
 
-test('마교 시작 덱: 정파와 겹치는 무공 없음 (혈조·혈검·혈무·마기 흡수·천마심법)', () => {
+test('마교 검객 시작 덱: 정파와 겹치는 무공 없음 (마검 베기·혈참·혈무·마기 흡수·천마심법, 8-B)', () => {
   const ids = createRun({ seed: 1, faction: 'demonic' }).deck.map((c) => c.id);
   assert.equal(ids.length, 10);
-  assert.ok(ids.every((id) => CARDS[id].faction === 'demonic'));
-  assert.equal(ids.filter((id) => id === 'bloodClaw').length, 4);
+  assert.ok(ids.every((id) => CARDS[id].faction === 'demonic' && CARDS[id].cls === 'sword'));
+  assert.equal(ids.filter((id) => id === 'dMaCut').length, 4);
 });
 
 test('혈검: 체력 3을 내고 피해 12', () => {
