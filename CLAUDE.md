@@ -33,4 +33,5 @@
 - 테스트에서 확률을 끄려면 createBattle({ luck: false }), 규칙 확인용 적은 dummy / dummyMulti
 - QA: `/qa` (QA Manager) → 에이전트 .claude/agents/qa-*.md → 보고서 docs/qa/reports, 티켓 docs/qa/tickets → `/fix-bugs` 로 수정. 형식은 docs/qa/README.md, 도구 tools/qa/ (npm run qa:smoke / qa:monkey / qa:balance), 원자료 qa-output/(git 제외)
 - 스토리: `/story` (Story Director) 점검 · `/story write <요청>` 작성 · `/story fix` 수정 → 에이전트 .claude/agents/story-*.md (lore 설정 감수, reader 대사 감수, writer 작가, editor 보고) → 보고서 docs/story/reports, 티켓 docs/story/tickets/STORY-###, 초안 docs/story/drafts. 형식 docs/story/README.md, 대본 추출·기계 검사 `npm run story:dump -- --run=이름`
+- 그림: `/art <인물>` (Art Director) → 에이전트 .claude/agents/art-maker.md 가 Gemini 로 후보 생성·점검(tools/art/gemini.mjs, 키는 환경 네트워크 비밀 generativelanguage.googleapis.com · x-goog-api-key) → 사용자 승인 → 등록. 그림 규칙 docs/art/STYLE.md, 후보는 qa-output/<run>/art/
 - 새 그림 처리: `python3 tools/prepare_sprite.py <원본> <세력-계열 또는 npc-이름> [--despill all]` 후 src/ui/characters.js 의 SPRITES 에 footX 등록

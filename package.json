@@ -8,6 +8,7 @@
     "qa:smoke": "node tools/qa/smoke.cjs",
     "qa:monkey": "node tools/qa/monkey.cjs",
     "qa:balance": "node tools/qa/balance.mjs",
-    "story:dump": "node tools/story/dump.mjs"
+    "story:dump": "node tools/story/dump.mjs",
+    "art:gen": "node tools/art/gemini.mjs"
   }
 }

@@ -110,6 +110,7 @@ def main():
     ap.add_argument('--height', type=int, default=640)
     ap.add_argument('--pad', type=int, default=8)
     ap.add_argument('--despill', choices=['edge', 'all'], default='edge')
+    ap.add_argument('--out-dir', default='assets/characters', help='저장 폴더 (후보 점검용은 qa-output/... 에)')
     args = ap.parse_args()
 
     img = Image.open(args.src).convert('RGB')
@@ -137,7 +138,7 @@ def main():
     canvas = Image.new('RGBA', (out.width + pad * 2, out.height + pad), (0, 0, 0, 0))
     canvas.paste(out, (pad, pad))
 
-    path = f'assets/characters/{args.name}.webp'
+    path = f'{args.out_dir.rstrip("/")}/{args.name}.webp'
     canvas.save(path, quality=90, method=6)
     meta = {
         'image': path,
