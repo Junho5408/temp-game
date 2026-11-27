@@ -23,6 +23,7 @@ const arg = (name, def) => {
   return a ? a.split('=')[1] : def;
 };
 const N = Number(arg('n', 400));
+const FACTION = arg('faction', 'orthodox'); // 세력 루트 (routes.js)
 const RUN = arg('run', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
 const OUT = path.join(ROOT, 'qa-output', RUN, 'balance');
 fs.mkdirSync(OUT, { recursive: true });
@@ -31,7 +32,8 @@ function score(card, attacking) {
   const c = cardStats(card);
   const v = (c.damage ?? 0) * (c.hits ?? 1) + (c.strength ?? 0) * 6 + (c.draw ?? 0) * 3 + (c.energy ?? 0) * 8
     + (c.weak ?? 0) * (attacking ? 4 : 1.5) + (c.vulnerable ?? 0) * 3
-    + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6;
+    + (c.evasion ?? 0) * (attacking ? 3 : 0.5) + (c.point ?? 0) * 0.7 + (c.insight ?? 0) * 6
+    + (c.poison ?? 0) * 1.5 + (c.gold ?? 0) * 0.3;
   return v / Math.max(1, c.cost);
 }
 
@@ -78,7 +80,7 @@ function autoBattle(b) {
 }
 
 for (let seed = 1; seed <= N; seed++) {
-  const run = createRun({ seed });
+  const run = createRun({ seed, faction: FACTION });
   const picked = [];
   let steps = 0;
   stats.zoneEnter[0]++;
@@ -174,7 +176,7 @@ const result = {
 };
 fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify(result, null, 2));
 
-console.log(`봇 ${N}판`);
+console.log(`봇 ${N}판 · ${FACTION}`);
 for (const z of zones) console.log(`  ${z.zone}: 들어간 ${z.entered} → 돌파 ${z.cleared} (${z.rate}%)`);
 console.log(`  3층 이하 사망 ${stats.earlyDeaths}판, 판당 전투 ${result.avgBattles}회`);
 console.log('사망률 높은 적:', enemies.slice(0, 6).map((e) => `${e.name} ${e.deathRate}%`).join(', '));

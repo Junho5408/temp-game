@@ -68,6 +68,16 @@ export const DESIGN_IDS = Object.keys(DESIGNS);
 // ── 이야기 인물 (세력·계열 밖) ─────────────────────────
 // 그림 원본: docs/reference/npc-*-raw.webp → tools/prepare_sprite.py <원본> npc-<id>
 const NPCS = {
+  // 그림 대기 중 (sprite: null → 전투는 실루엣, 대사는 한자 인장)
+  'boss-gang': {
+    title: '흑도 맹주 조광', note: '사파 1구역 두목. 곰방대와 대감도, 금니', cls: 'sword', color: '#8e7050', sprite: null,
+  },
+  'boss-elder': {
+    title: '무림맹 장로 우문혁', note: '사파·마교 3구역 두목. 쇠지팡이와 호신강기', cls: 'fist', color: '#3e7cc8', sprite: null,
+  },
+  'npc-innkeeper': {
+    title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a', sprite: null,
+  },
   'boss-nokrim': {
     title: '녹림 총채주 곽패', note: '2구역 두목. 개산부를 휘두르는 산군',
     cls: 'fist', color: '#8e7050', sprite: { image: 'assets/characters/boss-nokrim.webp', footX: 0.4055 },
@@ -88,7 +98,7 @@ const NPCS = {
 for (const [key, n] of Object.entries(NPCS)) {
   DESIGNS[key] = {
     key, faction: 'npc', cls: n.cls, title: n.title, note: n.note,
-    portrait: n.sprite.image, sprite: n.sprite, factionColor: n.color, fxColor: '#e8dcc0',
+    portrait: n.sprite?.image ?? null, sprite: n.sprite, factionColor: n.color, fxColor: '#e8dcc0',
   };
 }
 export const NPC_IDS = Object.keys(NPCS);

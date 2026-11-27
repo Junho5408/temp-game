@@ -5,7 +5,7 @@
 // - starter: 시작 덱에서 바꿀 카드 { remove: [...], add: [...] }
 // - ready: 내용이 다 만들어진 루트만 고를 수 있음
 // 이름·배경·대사는 src/story/script.js 의 ROUTE_TEXT
-import { ZONE_POOLS, FINAL_BOSS } from './enemies.js';
+import { ZONE_POOLS, UNORTHODOX_POOLS, FINAL_BOSS } from './enemies.js';
 
 export const FACTION_IDS = ['orthodox', 'unorthodox', 'demonic'];
 
@@ -22,12 +22,12 @@ export const ROUTES = {
   // 사파 · 암수(暗手): 돈과 비열한 수
   unorthodox: {
     name: '사파',
-    ready: false,
-    pools: ZONE_POOLS, // 6-B 에서 사파 루트 적으로 교체
+    ready: true,
+    pools: UNORTHODOX_POOLS,
     finalBoss: FINAL_BOSS,
     unlock: { zone: 1, text: '어느 길로든 1구역을 한 번 돌파하면 열린다' },
     passive: { startGold: 40, shopDiscount: 0.2 },
-    starter: null,
+    starter: { remove: ['strike', 'strike'], add: ['venomBlade', 'sandThrow'] },
   },
   // 마교 · 혈공(血功): 피를 대가로 한 힘
   demonic: {

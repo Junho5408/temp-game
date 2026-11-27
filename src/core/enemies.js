@@ -359,6 +359,165 @@ Object.assign(ENEMIES, {
   },
 });
 
+
+// ══ 사파 루트 ══════════════════════════════
+// 1구역: 흑도 패권 다툼 (뒷골목·도박장)
+Object.assign(ENEMIES, {
+  gangThug: {
+    name: '두칠', title: '흑도 칼잡이', art: 'unorthodox-sword', tier: 'normal',
+    maxHp: 38,
+    pattern: [
+      { name: '칼질', damage: 6 },
+      { name: '침 뱉기', damage: 3, weak: 1 },
+      { name: '막칼', damage: 3, hits: 2 },
+    ],
+  },
+  gambler: {
+    name: '손씨', title: '도박장 타짜', art: 'unorthodox-assassin', tier: 'normal',
+    maxHp: 32, evasion: 15, traits: ['feint'], patternMode: 'random',
+    pattern: [
+      { name: '주사위 던지기', damage: 4, hits: 2 },
+      { name: '속임수', vulnerable: 2 },
+      { name: '숨긴 비수', damage: 9 },
+    ],
+  },
+  axeLord: {
+    name: '마삼', title: '도끼파 두목', art: 'unorthodox-fist', tier: 'elite',
+    maxHp: 70, traits: ['ironBody', 'berserk'],
+    pattern: [
+      { name: '도끼 내려찍기', damage: 12 },
+      { name: '함성 · 기를 모은다', strength: 2 },
+      { name: '휘두르기', damage: 4, hits: 3 },
+      { name: '돌진', damage: 18, charge: true, breakAt: 12 },
+    ],
+  },
+  gangLord: {
+    name: '조광', title: '흑도 맹주', art: 'boss-gang', tier: 'boss',
+    maxHp: 170, traits: ['killer'],
+    pattern: [
+      { name: '대감도', damage: 11 },
+      { name: '부하들아! · 기를 모은다', strength: 2 },
+      { name: '연환도', damage: 5, hits: 2, weak: 1 },
+      { name: '반격 자세', counter: 6 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '본색을 드러낸 흑도 맹주',
+      text: '조광이 곰방대를 내던지고 칼에 독을 바른다 — "이제부터는 진짜 싸움이다!"',
+      strength: 2,
+      pattern: [
+        { name: '독 바른 칼', damage: 7, poison: 3 },
+        { name: '담배 연기', weak: 2, strength: 2 },
+        { name: '파산도', damage: 22, charge: true, breakAt: 18 },
+        { name: '막싸움', damage: 4, hits: 4 },
+      ],
+    },
+  },
+});
+
+// 2구역: 녹림 통합 — 녹림 무리는 정파 루트와 같고, 두목은 총채주 자리를 지키는 곽패
+ENEMIES.nokrimRival = {
+  ...ENEMIES.nokrimKing,
+  title: '녹림 총채주 · 자리를 지키는 산군',
+  clue: null,
+};
+
+// 3구역: 무림맹 지부 습격 — 이번엔 정파 고수들이 적
+Object.assign(ENEMIES, {
+  allianceGuard: {
+    name: '맹 위사', title: '무림맹 지부 수비', art: 'orthodox-fist', tier: 'normal',
+    maxHp: 60, traits: ['ironBody'],
+    pattern: [
+      { name: '철권', damage: 11 },
+      { name: '정심결', strength: 2 },
+      { name: '연환권', damage: 4, hits: 3 },
+    ],
+  },
+  allianceScout: {
+    name: '맹 밀정', title: '무림맹 감찰원', art: 'orthodox-assassin', tier: 'normal',
+    maxHp: 52, evasion: 20, traits: ['feint'], patternMode: 'random',
+    pattern: [
+      { name: '암기 연사', damage: 4, hits: 3 },
+      { name: '혈도 찌르기', damage: 5, weak: 2 },
+      { name: '급소 일격', damage: 13 },
+    ],
+  },
+  shaolinMonk: {
+    name: '각성', title: '무림맹 소속 무승', art: 'orthodox-fist', tier: 'normal',
+    maxHp: 66, traits: ['ironBody'],
+    pattern: [
+      { name: '나한권', damage: 9 },
+      { name: '금강불괴 · 운기', heal: 10 },
+      { name: '사자후', weak: 2, vulnerable: 1 },
+      { name: '백보신권', damage: 20, charge: true, breakAt: 16 },
+    ],
+  },
+  patrolCaptain: {
+    name: '한소', title: '무림맹 순찰대장', art: 'orthodox-assassin', tier: 'elite',
+    maxHp: 105, evasion: 15, traits: ['killer'],
+    pattern: [
+      { name: '비도 삼연', damage: 5, hits: 3 },
+      { name: '반격 자세', counter: 9 },
+      { name: '추혼비', damage: 26, charge: true, breakAt: 18 },
+      { name: '포박', damage: 8, weak: 2 },
+    ],
+  },
+  ironInstructor: {
+    name: '석무', title: '철권문 교두', art: 'orthodox-fist', tier: 'elite',
+    maxHp: 112, traits: ['ironBody', 'berserk'],
+    pattern: [
+      { name: '철권', damage: 13 },
+      { name: '진각 · 기를 모은다', strength: 3 },
+      { name: '붕산권', damage: 24, charge: true, breakAt: 16 },
+      { name: '연환권', damage: 5, hits: 3 },
+    ],
+  },
+  allianceElder: {
+    name: '우문혁', title: '무림맹 장로', art: 'boss-elder', tier: 'boss',
+    maxHp: 275, traits: ['ironBody'],
+    clue: 'payer',
+    pattern: [
+      { name: '현무장', damage: 15 },
+      { name: '정기 회복', heal: 18 },
+      { name: '반격 자세', counter: 10 },
+      { name: '타구봉법', damage: 6, hits: 3, weak: 1 },
+    ],
+    phase2: {
+      at: 0.5,
+      title: '호신강기를 끌어올린 장로',
+      text: '우문혁의 몸에서 금빛 기운이 솟는다 — "사파 잡배 따위가 맹을 넘보느냐!"',
+      strength: 3,
+      pattern: [
+        { name: '기 모으기 · 현무진천', strength: 3 },
+        { name: '현무진천', damage: 34, charge: true, breakAt: 26 },
+        { name: '금강장', damage: 16, vulnerable: 2 },
+        { name: '연환장', damage: 7, hits: 3 },
+      ],
+    },
+  },
+});
+
+export const UNORTHODOX_POOLS = [
+  {
+    easy: ['gangThug', 'ronin'],
+    normal: ['gangThug', 'ronin', 'brawler', 'gambler'],
+    elite: ['oneEye', 'axeLord'],
+    boss: ['gangLord'],
+  },
+  {
+    easy: ['bandit', 'blackWind'],
+    normal: ['bandit', 'snakeWoman', 'blackWind', 'fallenMonk'],
+    elite: ['twinBlade', 'poisonKing'],
+    boss: ['nokrimRival'],
+  },
+  {
+    easy: ['allianceGuard', 'allianceScout'],
+    normal: ['allianceGuard', 'allianceScout', 'shaolinMonk'],
+    elite: ['patrolCaptain', 'ironInstructor'],
+    boss: ['allianceElder'],
+  },
+];
+
 for (const [id, e] of Object.entries(ENEMIES)) e.id = id;
 
 export const ENEMY_IDS = Object.keys(ENEMIES);

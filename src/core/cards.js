@@ -15,6 +15,10 @@
 //   evasion             경공 +n (적의 다음 차례 동안 회피율 +10%씩)
 //   insight             간파: 다음 초식 한 장이 반드시 명중하고 치명
 //   draw / energy / strength / vulnerable / weak
+//   poison              중독 n (초식은 맞았을 때, 심법은 바로)
+//   dirty               비열한 수: 적이 흐트러짐·중독·굳음 상태면 한 타 피해 2배
+//   gold                은자 +n (전투가 끝나면 판에 더해짐)
+//   faction             그 세력 판에서만 보상·객잔에 나옴 (routes.js)
 // upgrade: 연마(+)했을 때 바뀌는 값
 
 export const CARDS = {
@@ -160,6 +164,38 @@ export const CARDS = {
     cost: 2, damage: 13, point: 9, sure: true,
     upgrade: { damage: 17, point: 13 },
   },
+
+  // ── 사파 고유 (암수) ─────────────────
+  venomBlade: {
+    name: '독 바른 칼', type: 'attack', rarity: 'common', glyph: '毒', faction: 'unorthodox',
+    cost: 1, damage: 4, poison: 3,
+    upgrade: { damage: 6, poison: 4 },
+  },
+  sandThrow: {
+    name: '모래 뿌리기', type: 'skill', rarity: 'common', glyph: '沙', faction: 'unorthodox',
+    cost: 0, weak: 1,
+    upgrade: { weak: 1, draw: 1 },
+  },
+  lowBlow: {
+    name: '비열한 일격', type: 'attack', rarity: 'uncommon', glyph: '卑', faction: 'unorthodox',
+    cost: 1, damage: 6, dirty: true,
+    upgrade: { damage: 8 },
+  },
+  extort: {
+    name: '협박', type: 'skill', rarity: 'uncommon', glyph: '脅', faction: 'unorthodox',
+    cost: 1, gold: 12, draw: 1,
+    upgrade: { gold: 18 },
+  },
+  switchGrip: {
+    name: '칼 바꿔 쥐기', type: 'skill', rarity: 'common', glyph: '換', faction: 'unorthodox',
+    cost: 0, draw: 1, evasion: 2,
+    upgrade: { draw: 2 },
+  },
+  backstab: {
+    name: '뒤통수', type: 'attack', rarity: 'rare', glyph: '背', faction: 'unorthodox',
+    cost: 2, damage: 12, sure: true, crit: 30, dirty: true,
+    upgrade: { damage: 16 },
+  },
 };
 
 for (const [id, c] of Object.entries(CARDS)) c.id = id;
@@ -197,6 +233,9 @@ export function describe(c) {
   if (c.perAttack) lines.push(`앞선 초식마다 +${c.perAttack}`);
   if (c.bonusIfAttacking) lines.push(`공격 예고 시 +${c.bonusIfAttacking}`);
   if (c.point) lines.push(`점혈 ${c.point}`);
+  if (c.poison) lines.push(`중독 ${c.poison}`);
+  if (c.dirty) lines.push('흐트러짐·중독·굳음이면 2배');
+  if (c.gold) lines.push(`은자 +${c.gold}`);
   if (c.vulnerable) lines.push(`내상 ${c.vulnerable}턴`);
   if (c.weak) lines.push(`흐트러짐 ${c.weak}턴`);
   if (c.evasion) lines.push(`경공 +${c.evasion}`);

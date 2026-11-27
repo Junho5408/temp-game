@@ -48,9 +48,9 @@ export function playDialogue(lines) {
       portraitEl.replaceChildren();
       portraitEl.hidden = narr;
       if (!narr) {
-        if (sp.art) {
-          const pic = await getPortrait(sp.art);
-          if (pic && i === idx) {
+        const pic = sp.art ? await getPortrait(sp.art) : null;
+        if (pic) {
+          if (i === idx) {
             pic.classList.toggle('flip', line.who !== 'me');
             portraitEl.appendChild(pic);
           }

@@ -282,7 +282,8 @@ function rollTreasures(run, n) {
   let guard = 0;
   while (picked.length < n && guard++ < 100) {
     const pool = treasuresByRarity(pickWeighted(run.rng, TREASURE_WEIGHTS))
-      .filter((id) => !run.treasures.includes(id) && !picked.includes(id));
+      .filter((id) => !run.treasures.includes(id) && !picked.includes(id))
+      .filter((id) => !TREASURES[id].faction || TREASURES[id].faction === run.faction);
     if (pool.length) picked.push(pool[Math.floor(run.rng() * pool.length)]);
   }
   return picked;
@@ -311,6 +312,8 @@ export function finishBattle(run, battle) {
   if (battle.phase !== 'won') throw new Error('전투가 끝나지 않음');
   run.hp = battle.player.hp;
   run.bag = [...battle.bag]; // 쓴 물품은 사라짐
+  run.gold += battle.goldGained ?? 0; // 협박 등
+  if (run.treasures.includes('gangSeal')) run.gold += 8;
   if (run.treasures.includes('snowLotus')) run.hp = Math.min(run.maxHp, run.hp + SNOW_LOTUS_HEAL);
   const winHeal = routeOf(run).passive.winHeal ?? 0; // 마교 혈공
   if (winHeal) run.hp = Math.min(run.maxHp, run.hp + winHeal);

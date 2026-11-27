@@ -252,7 +252,7 @@ function applyZoneLook() {
 async function startZone() {
   renderRunInfo();
   setScreen('story');
-  await playDialogue(zone1Start(meta));
+  await playDialogue(zone1Start(meta, run.faction));
   show();
 }
 
@@ -396,13 +396,13 @@ async function showStep() {
     case 'zoneClear':
       // 구역 돌파 → 다음 구역 (마지막 구역 뒤에는 그날 밤의 객잔)
       setScreen('story');
-      await playDialogue(zoneClearLines(run.zone));
+      await playDialogue(zoneClearLines(run.zone, run.faction));
       advanceZone(run);
       applyZoneLook();
       saveRun();
       if (run.phase === 'map') {
         showBanner(zoneName(run.faction, run.zone), '#f2c14e', 1800);
-        await playDialogue(zoneIntro(run.zone, meta));
+        await playDialogue(zoneIntro(run.zone, meta, run.faction));
       }
       show();
       break;
@@ -885,6 +885,11 @@ async function playEvents(events) {
         sfx('stun');
         popup('player', '衣 천잠보의 — 막았다!', 'treasure');
         await wait(350);
+        break;
+      case 'gold':
+        sfx('coin');
+        popup('player', `銀 +${ev.amount}`, 'treasure', -70);
+        await wait(200);
         break;
       case 'heal':
         sfx('heal');

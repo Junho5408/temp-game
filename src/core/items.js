@@ -105,6 +105,15 @@ export const TREASURES = {
     name: '호심경', glyph: '鏡', kind: 'gear', rarity: 'common',
     desc: '적의 치명타를 받지 않는다',
   },
+  // ── 사파 고유 ─────────────────
+  gangSeal: {
+    name: '흑도 인장', glyph: '印', kind: 'gear', rarity: 'common', faction: 'unorthodox',
+    desc: '전투에서 이길 때마다 은자 +8',
+  },
+  poisonSac: {
+    name: '독낭', glyph: '囊', kind: 'gear', rarity: 'uncommon', faction: 'unorthodox',
+    desc: '적에게 거는 중독 +2',
+  },
   blueSteel: {
     name: '청강검', glyph: '鋼', kind: 'gear', rarity: 'uncommon',
     desc: '치명 확률 +10%',

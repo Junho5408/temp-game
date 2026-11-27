@@ -24,6 +24,12 @@ export const SPEAKERS = {
   heavenDemon: { name: '천마검귀', art: 'demonic-sword' },
   bloodElder: { name: '위극', art: 'demonic-fist' },
   officer: { name: '토벌대장', glyph: '令' },
+  gangLord: { name: '조광', art: 'boss-gang', glyph: '黑' },
+  allianceElder: { name: '우문혁', art: 'boss-elder', glyph: '盟' },
+  innkeeper: { name: '객잔 주인', art: 'npc-innkeeper', glyph: '店' },
+  axeLord: { name: '마삼', art: 'unorthodox-fist' },
+  patrolCaptain: { name: '한소', art: 'orthodox-assassin' },
+  gangBro: { name: '흑도 졸개', glyph: '卒' },
 };
 
 // ── 프롤로그 ─────────────────────────
@@ -125,6 +131,8 @@ export const CLUES = {
   note: { title: '백 일 뒤, 청운객잔', text: '객잔 습격은 백 일 전부터 계획된 일이다. 노린 것은 흰 옷의 밀사와 그가 가진 밀서.' },
   leak: { title: '무림맹 안에서 정보가 샌다', text: '녹림 총채주는 토벌대의 진로를 미리 알고 있었다. 맹 안의 누군가가 흘렸다.' },
   traitor: { title: '배신자는 맹의 높은 자리', text: '혈마 장로는 "맹의 높으신 분"과 약속을 했다고 했다. 배신자는 말단이 아니다.' },
+  innkeeper: { title: '객잔 주인이 돈을 받았다', text: '청운객잔 주인은 "그날 밤 문을 잠그면 큰돈을 준다"는 말에 넘어갔다. 습격은 안에서부터 준비되어 있었다.' },
+  payer: { title: '돈을 준 쪽은 정파', text: '무림맹 장로의 품에서 흰 학 문양 전낭과 "청운객잔 주인에게 은자 오백 냥" 이라 적힌 장부가 나왔다. 흰 학은 무림맹 수뇌부의 문양이다.' },
   sender: { title: '귀면을 보낸 자', text: '귀면은 죽기 전에 "누가 우리를 보냈는지 아느냐"고 물었다. 혈영대를 움직인 것은 교주가 아니다.' },
 };
 
@@ -137,7 +145,7 @@ export const ROUTE_TEXT = {
   },
   unorthodox: {
     zones: ['제1구역 · 흑도 패권 다툼', '제2구역 · 녹림 통합', '제3구역 · 무림맹 지부 습격', '그날 밤 · 청운객잔'],
-    backgrounds: ['arena', 'forest', 'gate', 'inn'],
+    backgrounds: ['alley', 'forest', 'hall', 'inn'],
   },
   demonic: {
     zones: ['제1구역 · 서열 혈투', '제2구역 · 중원 진출', '제3구역 · 정마 결전', '그날 밤 · 청운객잔'],
@@ -155,7 +163,46 @@ export function zoneBackground(faction, zone) {
   return (ROUTE_TEXT[faction] ?? ROUTE_TEXT.orthodox).backgrounds[zone];
 }
 
-export function zoneIntro(zone, meta) {
+// 사파 루트 구역 대사
+const UNORTHODOX_TEXT = {
+  start: (meta) => [
+    { who: 'narr', text: '흑도의 밤거리. 도박장과 주먹패가 골목마다 영역을 다툰다.' },
+    { who: 'me', text: '(정파의 길은 이미 걸어 봤다. 이번엔 그늘에서 그날 밤을 본다.)', thought: true },
+    { who: 'gangBro', text: '어이, 흰 옷. 여긴 조광 맹주님 땅이다. 통행세 내고 가.' },
+    { who: 'me', text: '…통행세는 칼로 내지.' },
+    ...(meta.clues.includes('innkeeper')
+      ? [{ who: 'me', text: '(청운객잔 주인이 이 근처 도박장에 드나든다. 이번에도.)', thought: true }]
+      : []),
+  ],
+  intro: {
+    1: (meta) => [
+      { who: 'narr', text: '흑도를 손에 넣자 녹림 칠십이채가 술렁였다.\n산채들을 하나로 묶으면, 그날 밤까지 누구도 함부로 못 한다.' },
+      { who: 'me', text: '(녹림 총채주 곽패. 정파의 길에서는 토벌할 적이었지. 이번엔 자리를 두고 겨룰 상대다.)', thought: true },
+      ...(meta.clues.includes('payer') ? [{ who: 'me', text: '(흰 학의 전낭. 끝은 무림맹이다.)', thought: true }] : []),
+    ],
+    2: () => [
+      { who: 'narr', text: '녹림을 묶은 사파 연합이 무림맹 지부로 향한다.\n명분은 복수, 속셈은 약탈. 내 목적은 하나다.' },
+      { who: 'me', text: '그날 밤 객잔에 돈을 댄 자. 그 흔적이 맹 안에 있다.' },
+    ],
+  },
+  clear: {
+    0: [
+      { who: 'narr', text: '조광이 쓰러지고, 흑도의 골목들이 새 주인을 맞았다.' },
+      { who: 'me', text: '흑도는 손에 넣었다. 하지만 그날 밤의 돈줄은 이보다 높은 곳에 있다.' },
+    ],
+    1: [
+      { who: 'narr', text: '곽패가 무릎을 꿇었다. 녹림 칠십이채의 깃발이 하나로 바뀌었다.' },
+      { who: 'me', text: '이제 무림맹이다. 그날 밤 돈을 댄 자가 거기 있다.' },
+    ],
+    2: [
+      { who: 'narr', text: '불타는 지부를 뒤로하고, 하늘에서 비가 내리기 시작했다.\n사흘 동안 그치지 않을 비가.' },
+      { who: 'me', text: '…오늘 밤이다. 이번엔 객잔 문이 잠기기 전에 간다.' },
+    ],
+  },
+};
+
+export function zoneIntro(zone, meta, faction = 'orthodox') {
+  if (faction === 'unorthodox') return UNORTHODOX_TEXT.intro[zone]?.(meta) ?? [];
   if (zone === 1) {
     return [
       { who: 'narr', text: '비무대회가 끝나고 한 달.\n무림맹은 녹림 칠십이채를 치기 위해 토벌대를 꾸렸다.' },
@@ -177,7 +224,8 @@ export function zoneIntro(zone, meta) {
 }
 
 // 구역을 깬 뒤 넘어가는 대사
-export function zoneClearLines(zone) {
+export function zoneClearLines(zone, faction = 'orthodox') {
+  if (faction === 'unorthodox') return UNORTHODOX_TEXT.clear[zone] ?? [];
   if (zone === 0) {
     return [
       { who: 'narr', text: '비무대회는 주인 없는 우승으로 끝났다.\n누구도 무명씨의 이름을 기억하지 못했다.' },
@@ -222,7 +270,8 @@ export const ENDING = [
 
 // ── 1구역 · 후기지수 비무대회 ─────────────────────────
 // 구역 시작: 처음 / 그 뒤
-export function zone1Start(meta) {
+export function zone1Start(meta, faction = 'orthodox') {
+  if (faction === 'unorthodox') return UNORTHODOX_TEXT.start(meta);
   if (meta.runs <= 1) {
     return [
       { who: 'narr', text: '무림맹이 주최하는 후기지수 비무대회.\n이름을 알리려는 젊은 고수들이 구름처럼 모여들었다.' },
@@ -309,6 +358,34 @@ export function battleIntro(enemyId, known) {
           { who: 'me', text: '(안에서…? 맹 안에서 마교를 들였다고?)', thought: true },
           { who: 'bloodElder', text: '네 피로 이 혈마공을 마무리하마!' },
         ];
+    case 'axeLord':
+      return [{ who: 'axeLord', text: '흰 옷 입은 애송이가 도끼파 구역을 휘젓고 다닌다고? 도끼 맛을 보여 주마!' }];
+    case 'gangLord':
+      return [
+        { who: 'narr', text: '도박장 이층. 금니를 번뜩이며 곰방대를 문 사내가 웃는다.' },
+        { who: 'gangLord', text: '내 골목을 이렇게 시끄럽게 만든 놈이 너냐. 배짱 하나는 마음에 드는군.' },
+        { who: 'me', text: '청운객잔. 그 주인장이 누구한테 돈을 빌렸지?' },
+        { who: 'gangLord', text: '크크. 그걸 알고 싶으면 내 목부터 가져가 봐라!' },
+      ];
+    case 'nokrimRival':
+      return [
+        { who: 'nokrimKing', text: '흑도에서 굴러먹던 놈이 녹림 총채주 자리를 넘봐? 크하하, 배짱은 인정하마!' },
+        { who: 'me', text: '자리는 관심 없다. 산채들이 그날 밤까지 내 말을 들으면 된다.' },
+      ];
+    case 'patrolCaptain':
+      return [{ who: 'patrolCaptain', text: '사파 잡배가 맹의 문턱을 넘다니. 여기서 끝이다.' }];
+    case 'allianceElder':
+      return known
+        ? [
+          { who: 'allianceElder', text: '사파 잡배가 맹의 장로 앞에 서다니.' },
+          { who: 'me', text: '흰 학 문양 전낭. 품에 있겠지. 오늘은 그것만 가져간다.' },
+        ]
+        : [
+          { who: 'narr', text: '불길 속 지부 대청. 백발의 장로가 쇠지팡이를 짚고 서 있다.' },
+          { who: 'allianceElder', text: '맹의 지부를 불태우다니. 사파 잡배의 죄는 목숨으로 씻어야 한다.' },
+          { who: 'me', text: '(이 노인의 품에서 무언가가 반짝였다. 흰 학 문양…?)', thought: true },
+          { who: 'allianceElder', text: '정의는 맹에 있다. 오너라.' },
+        ];
     case 'gwimyeon':
       return FINAL_INTRO;
     default:
@@ -371,6 +448,29 @@ export function battleOutro(enemyId, known) {
           { who: 'me', text: '(밀사의 길… 그날 밤의 일까지 다 한 줄로 이어져 있다. 높은 자리의 누군가가.)', thought: true },
           { who: 'narr', text: '― 단서: 배신자는 맹의 높은 자리 ―' },
         ];
+    case 'gangLord':
+      return [
+        { who: 'gangLord', text: '크윽… 졌다, 졌어. 흑도는 네 것이다.' },
+        { who: 'gangLord', text: '청운객잔 주인장 말이냐… 그 노름꾼한테 큰손이 붙었다더군. 정파 냄새가 나는 놈이었다고 하던데…' },
+        { who: 'me', text: '(정파… 사파의 길에서도 결국 그쪽으로 이어진다.)', thought: true },
+      ];
+    case 'nokrimRival':
+      return [
+        { who: 'nokrimKing', text: '크윽… 좋다, 녹림은 네 깃발을 따르마. 대신 무림맹 놈들 목은 우리가 먼저다!' },
+      ];
+    case 'allianceElder':
+      return known
+        ? [
+          { who: 'allianceElder', text: '크헉… 이 늙은이가… 사파에게…' },
+          { who: 'narr', text: '품에서 떨어진 흰 학 문양 전낭. 이미 아는 장부가 들어 있다.' },
+        ]
+        : [
+          { who: 'allianceElder', text: '크헉… 이 늙은이가… 사파 잡배에게…' },
+          { who: 'narr', text: '쓰러진 장로의 품에서 전낭 하나가 굴러 나왔다. 흰 학 문양이 수놓아져 있다.' },
+          { who: 'narr', text: '안에는 접힌 장부 한 장.\n『청운객잔 주인에게 은자 오백 냥. 문은 그날 밤 해시에.』' },
+          { who: 'me', text: '…객잔에 돈을 댄 건 정파였다. 흰 학은 맹 수뇌부의 문양이다.' },
+          { who: 'narr', text: '― 단서: 돈을 준 쪽은 정파 ―' },
+        ];
     case 'gwimyeon':
       return ENDING;
     default:
@@ -421,6 +521,19 @@ export function npcIntro(npc, n, meta) {
       { who: 'me', text: '(그 사내다. 그날 밤 뒷문으로 빠져나가던.)', thought: true },
       { who: 'soohaNamed', text: '…어디서 본 얼굴 같소만. 무림맹 순찰사 진소하라 하오.' },
       { who: 'me', text: '(진소하. 드디어 이름을 알았다.)', thought: true },
+    ];
+  }
+  if (npc === 'innkeeperDebt') {
+    return [
+      { who: 'narr', text: '자욱한 담배 연기 속, 낯익은 얼굴이 빚쟁이들에게 둘러싸여 있다.' },
+      { who: 'me', text: '(청운객잔 주인… 그날 밤 객잔 문은 왜 잠겨 있었을까.)', thought: true },
+      { who: 'innkeeper', text: '조, 조금만! 석 달만 기다려 주시오! 큰돈이 들어올 데가 있다니까!' },
+    ];
+  }
+  if (npc === 'soohaAmbush') {
+    return [
+      { who: 'narr', text: '산길 아래로 무림맹 행렬이 지나간다. 녹림 무리가 숨을 죽이고 신호를 기다린다.' },
+      { who: 'me', text: '(행렬 맨 앞의 흰 옷… 진소하다. 여기서 죽으면 그날 밤도 없다.)', thought: true },
     ];
   }
   if (npc === 'junoGate') {

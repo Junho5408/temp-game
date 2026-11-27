@@ -70,6 +70,8 @@ export async function createScene(canvas, { player }) {
     arena: renderBackground('arena'),
     forest: renderBackground('forest'),
     gate: renderBackground('gate'),
+    alley: renderBackground('alley'),
+    hall: renderBackground('hall'),
     inn: renderInnBackground(),
   };
   let mode = 'arena';
@@ -497,8 +499,9 @@ export async function createScene(canvas, { player }) {
       const flicker = 0.55 + Math.sin(now / 160 + e.phase) * 0.35;
       // 숲에서는 반딧불, 관문에서는 굵은 불티
       const [glow, core] = mode === 'forest' ? ['170, 230, 120', '220, 255, 170']
-        : mode === 'gate' ? ['255, 80, 30', '255, 170, 90'] : ['255, 120, 40', '255, 195, 120'];
-      const big = mode === 'gate' ? 1.4 : 1;
+        : mode === 'gate' || mode === 'hall' ? ['255, 80, 30', '255, 170, 90']
+          : mode === 'alley' ? ['255, 90, 150', '255, 190, 210'] : ['255, 120, 40', '255, 195, 120'];
+      const big = mode === 'gate' || mode === 'hall' ? 1.4 : 1;
       g.fillStyle = `rgba(${glow}, ${0.16 * flicker})`;
       g.beginPath();
       g.arc(e.x, e.y, e.size * 3 * big, 0, Math.PI * 2);
@@ -567,6 +570,18 @@ const THEMES = {
     banners: [['#5b6b2a', '#38421a'], ['#7a5a32', '#4e3a20']],
     trees: true,
   },
+  alley: {
+    sky: ['#0d0b14', '#1b1424', '#2a1c2a', '#140f16'], haze: '200, 90, 160', hazeA: 0.25,
+    ridges: [['#1c1724', '#17121e'], ['#151019', '#100c14'], ['#0f0b12', '#0a080d']],
+    banners: [['#6b2a4a', '#41182c'], ['#2c2c36', '#18181f']],
+    roofs: true,
+  },
+  hall: {
+    sky: ['#121a24', '#1e2c3c', '#3a3030', '#171416'], haze: '255, 120, 60', hazeA: 0.4,
+    ridges: [['#26313e', '#1f2833'], ['#1c242e', '#161c24'], ['#141a21', '#0f1318']],
+    banners: [['#2f5ea8', '#1d3b6e'], ['#e8e2d4', '#a49c8c']],
+    wall: true,
+  },
   gate: {
     sky: ['#140909', '#2a1110', '#3d1712', '#1a0c0b'], haze: '230, 70, 30', hazeA: 0.55,
     ridges: [['#2a1714', '#22120f'], ['#1f100e', '#190c0a'], ['#150b0a', '#0f0807']],
@@ -601,6 +616,7 @@ function renderBackground(theme = 'arena') {
   ridge(g, 245, 60, 0.009, 3.7, t.ridges[1]);
   mist(g, 240, 50, 0.14);
   if (t.trees) drawPines(g);
+  if (t.roofs) drawRoofs(g);
   ridge(g, 282, 34, 0.013, 5.2, t.ridges[2]);
 
   drawBanner(g, 198, 300, ...t.banners[0]);
@@ -636,6 +652,32 @@ function drawPines(g) {
     }
     g.fill();
     g.fillRect(x - 2, base - 4, 4, 10);
+  }
+}
+
+// 사파 1구역: 뒷골목 지붕들과 홍등
+function drawRoofs(g) {
+  let seed = 3;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = 0; i < 9; i++) {
+    const x = i * 112 - 20 + rnd() * 30;
+    const w = 90 + rnd() * 40;
+    const base = 262 + rnd() * 18;
+    const h = 34 + rnd() * 26;
+    g.fillStyle = '#0c0910';
+    g.fillRect(x, base - h, w, h + 20);
+    g.beginPath();
+    g.moveTo(x - 14, base - h);
+    g.quadraticCurveTo(x + w / 2, base - h - 26, x + w + 14, base - h);
+    g.fill();
+    if (rnd() < 0.7) {
+      const lx = x + 14 + rnd() * (w - 28);
+      const glow = g.createRadialGradient(lx, base - h + 12, 1, lx, base - h + 12, 22);
+      glow.addColorStop(0, 'rgba(255, 90, 70, 0.75)');
+      glow.addColorStop(1, 'rgba(255, 90, 70, 0)');
+      g.fillStyle = glow;
+      g.fillRect(lx - 22, base - h - 10, 44, 44);
+    }
   }
 }
 

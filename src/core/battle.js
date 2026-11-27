@@ -78,6 +78,7 @@ export function createBattle({
     turn: 0,
     phase: 'start', // start → player → enemy → player ... → won | lost
     turnAttacks: 0, // 이번 턴에 쓴 초식 수 (연계)
+    goldGained: 0, // 협박 등으로 얻은 은자 (전투가 끝나면 판에 더함)
     bag: [...bag], // 행낭 물품 id
     treasures: new Set(treasures), // 보물 id
     player: {
@@ -309,6 +310,7 @@ export function cardBaseDamage(s, c) {
   if (c.bonusIfAttacking && s.enemy.intent.damage && !s.enemy.intentHidden) base += c.bonusIfAttacking;
   if (c.combo && comboActive(s)) base += c.combo;
   if (c.perAttack) base += c.perAttack * s.turnAttacks;
+  if (c.dirty && isDebuffed(s.enemy)) base *= 2;
   return base;
 }
 
@@ -324,6 +326,16 @@ function cardDamageBase(s, c) {
 export function cardPreviewDamage(s, c) {
   if (!c.damage) return 0;
   return computeDamage(s.player, s.enemy, cardDamageBase(s, c));
+}
+
+// 비열한 수의 조건: 흐트러짐·중독·굳음
+export function isDebuffed(unit) {
+  return unit.status.weak > 0 || unit.status.poison > 0 || unit.status.stun > 0;
+}
+
+// 적에게 거는 중독 (독낭이 있으면 +2)
+function poisonEnemy(s, n) {
+  addStatus(s, 'enemy', 'poison', n + (owns(s, 'poisonSac') ? 2 : 0));
 }
 
 export function cardHits(s, c) {
@@ -376,6 +388,7 @@ export function playCard(s, uid) {
     if (e.hp > 0 && landed > 0) {
       if (c.vulnerable) addStatus(s, 'enemy', 'vulnerable', c.vulnerable);
       if (c.weak) addStatus(s, 'enemy', 'weak', c.weak);
+      if (c.poison) poisonEnemy(s, c.poison);
       if (c.point) addPoint(s, c.point + (owns(s, 'meridianChart') ? 3 : 0));
     }
     // 반격 자세: 초식 한 장마다 되받아침
@@ -385,8 +398,16 @@ export function playCard(s, uid) {
       emit(s, { type: 'damage', target: 'player', amount: dmg, counter: true });
     }
     s.turnAttacks += 1;
-  } else if (c.point) {
-    addPoint(s, c.point + (owns(s, 'meridianChart') ? 3 : 0));
+  } else if (e.hp > 0) {
+    // 심법으로 거는 약화 (모래 뿌리기 등)
+    if (c.weak) addStatus(s, 'enemy', 'weak', c.weak);
+    if (c.vulnerable) addStatus(s, 'enemy', 'vulnerable', c.vulnerable);
+    if (c.poison) poisonEnemy(s, c.poison);
+    if (c.point) addPoint(s, c.point + (owns(s, 'meridianChart') ? 3 : 0));
+  }
+  if (c.gold) {
+    s.goldGained += c.gold;
+    emit(s, { type: 'gold', amount: c.gold });
   }
   if (c.insight) addStatus(s, 'player', 'insight', c.insight);
   if (c.energy) p.energy += c.energy;
@@ -429,7 +450,7 @@ export function useItem(s, index) {
     afterEnemyHurt(s, dmg);
   }
   if (e.hp > 0) {
-    if (it.poison) addStatus(s, 'enemy', 'poison', it.poison);
+    if (it.poison) poisonEnemy(s, it.poison);
     if (it.point) addPoint(s, it.point);
   }
   checkEnd(s);

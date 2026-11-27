@@ -26,7 +26,7 @@ export const EVENTS = {
         label: '집어 든다',
         hint: '고급 무공 1장 얻음 · 체력 -6',
         effect(run, rng, api) {
-          const pool = cardsByRarity('uncommon');
+          const pool = cardsByRarity('uncommon').filter((x) => !CARDS[x].faction || CARDS[x].faction === run.faction);
           const id = pool[Math.floor(rng() * pool.length)];
           api.addCard(id);
           damage(run, 6);
@@ -174,6 +174,77 @@ export const EVENTS = {
           if (!id) return '"자네한테 더 가르칠 게 없구먼." 노인은 술값만 받아 갔다.';
           api.addTreasure(id);
           return `"잘 봐 두게. 두 번은 안 보여 줘." — 보물 ${josa(`『${TREASURES[id].name}』`, '을/를')} 얻었다.`;
+        },
+      },
+    ],
+  },
+  // 사파 1구역: 도박장에서 빚에 몰린 청운객잔 주인
+  innkeeperDebt: {
+    story: true,
+    npc: 'innkeeper',
+    intro: 'innkeeperDebt',
+    route: 'unorthodox',
+    zone: 0,
+    minRow: 3,
+    title: '도박장의 객잔 주인',
+    text: '청운객잔 주인이 도박장 구석에서 빚쟁이들에게 둘러싸여 있다.\n"조, 조금만 기다려 주시오! 곧 큰돈이 들어올 데가 있소!"',
+    options: [
+      {
+        label: '빚을 대신 갚아 준다',
+        hint: '은자 -40 · 그가 털어놓는다 (단서)',
+        disabled: (run) => run.gold < 40,
+        effect(run, rng, api) {
+          run.gold -= 40;
+          api.addClue('innkeeper');
+          return '주인은 연신 머리를 조아리다 목소리를 낮췄다.\n"…석 달쯤 뒤 비 오는 밤에 객잔 문을 걸어 잠그기만 하면, 빚을 다 갚고도 남을 돈을 준다는 손님이 있었소. 얼굴은 못 봤지만… 말씨가 점잖았소."';
+        },
+      },
+      {
+        label: '멱살을 잡고 캐묻는다',
+        hint: '사파식 · 은자 +15 · 단서',
+        effect(run, rng, api) {
+          run.gold += 15;
+          api.addClue('innkeeper');
+          return '주인은 품에 숨겨 둔 은자를 내놓으며 벌벌 떨었다.\n"무, 문만 잠그라 했소! 그날 밤 객잔 문을 잠그면 큰돈을 준다고! 누가 시켰는지는 정말 모르오!"';
+        },
+      },
+      {
+        label: '모른 척한다',
+        hint: '아무 일도 없음',
+        effect() {
+          return '남의 빚까지 신경 쓸 여유는 없다.';
+        },
+      },
+    ],
+  },
+  // 사파 2구역: 녹림이 덮치려는 무림맹 행렬 속의 진소하
+  soohaAmbush: {
+    story: true,
+    npc: 'sooha',
+    intro: 'soohaAmbush',
+    route: 'unorthodox',
+    zone: 1,
+    minRow: 3,
+    title: '산길의 무림맹 행렬',
+    text: '녹림 무리가 무림맹 행렬을 덮칠 채비를 하고 있다.\n행렬 맨 앞, 흰 옷에 검을 찬 사내가 보인다.',
+    options: [
+      {
+        label: '몰래 길을 터 준다',
+        hint: '체력 +10 · 진소하가 무언가를 건넨다',
+        effect(run, rng, api) {
+          const healed = Math.min(run.maxHp - run.hp, 10);
+          run.hp += healed;
+          const kept = api.addItem('geumchang');
+          return `산채 무리를 다른 길로 돌려보냈다. 진소하가 멀리서 고개를 숙이고, 길가에 금창약을 놓고 갔다.${kept ? '' : ' (행낭이 가득 차 두고 왔다.)'}\n"…사파에도 이런 자가 있었군."`;
+        },
+      },
+      {
+        label: '행렬의 짐을 턴다',
+        hint: '사파식 · 은자 +45, 체력 -8',
+        effect(run) {
+          run.gold += 45;
+          run.hp = Math.max(1, run.hp - 8);
+          return '혼전 속에 짐수레를 털었다. 진소하의 검이 스쳐 팔이 베였다.\n그는 품속의 서찰만은 끝까지 놓지 않았다.';
         },
       },
     ],
