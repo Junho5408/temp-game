@@ -14,6 +14,16 @@ function heal(run, n) {
   return run.hp - before;
 }
 
+// 무작위 카드 1장 연마 (없으면 null) — 미래를 아는 자의 선택지에서 씀
+function upgradeOne(run, rng) {
+  const options = run.deck.filter(canUpgrade);
+  if (options.length === 0) return null;
+  const card = options[Math.floor(rng() * options.length)];
+  card.upgraded = true;
+  return CARDS[card.id].name;
+}
+
+
 function damage(run, n) {
   run.hp = Math.max(1, run.hp - n); // 기연으로는 죽지 않음
 }
@@ -83,6 +93,24 @@ export const EVENTS = {
           return '지팡이가 번개처럼 정강이를 때렸다. "아직 멀었네." 체력을 10 잃었다.';
         },
       },
+      {
+        label: '"백 일"이 무슨 뜻인지 따져 묻는다',
+        hint: '체력 +10 · 무작위 카드 1장 연마 · 노인이 털어놓는다 (단서)',
+        needClue: 'note',
+        effect(run, rng, api) {
+          const knew = (run.knownClues ?? []).includes('wine');
+          api.addClue('wine');
+          const healed = heal(run, 10);
+          const name = upgradeOne(run, rng);
+          const tail = `체력을 ${healed} 회복했다.${name ? ` 『${name}』 연마.` : ''}`;
+          if (knew) {
+            return `"두 번 말하게 하지 말게. 원한이 풀려야 술이 깬다니까."\n노인은 투덜대면서도 잔을 채워 주었다. ${tail}`;
+          }
+          return '"습격 쪽지에도 백 일, 제가 눈을 뜨는 것도 백 일 전입니다." 노인이 웃음을 거두었다.\n'
+            + '"…그날 밤 내가 따른 술은 백일취(百日醉)일세. 원한을 품고 죽은 자를 백 일 전 아침으로 돌려보내지."\n'
+            + `"원한이 풀리면 깨네. 나도 오래전에 마셔 봐서 알아." 노인은 그 이상 말하지 않고 잔을 채웠다.\n${tail}`;
+        },
+      },
     ],
   },
   sooha: {
@@ -107,6 +135,18 @@ export const EVENTS = {
         effect(run) {
           heal(run, 6);
           return '지금 쫓아 봐야 얻을 것은 없다. 숨을 고르고 다음 비무를 준비했다.';
+        },
+      },
+      {
+        label: '맹의 사람임을 짚어 불러 세운다',
+        hint: '체력 +10 · 행낭에 연막탄',
+        needClue: 'envoy',
+        effect(run, rng, api) {
+          const healed = heal(run, 10);
+          const kept = api.addItem('smoke');
+          return '"무림맹의 일이라면 서두르시오." 사내가 우뚝 멈췄다. "…내가 맹 사람인 걸 어찌 아시오?"\n'
+            + '"흰 옷에 검. 눈에 띄거든." 사내는 잠시 나를 보다가 품에서 연막탄 하나를 꺼내 건넸다.\n'
+            + `"…충고 고맙소. 당신도 흰 옷이구려." 체력을 ${healed} 회복했다.${kept ? '' : ' (행낭이 가득 차 돌려주었다.)'}`;
         },
       },
     ],
@@ -143,6 +183,18 @@ export const EVENTS = {
             names.push(CARDS[card.id].name);
           }
           return `정파의 정석 같은 검이었다. 몇 번 베였지만 배운 것이 있다.${names.length ? `\n『${names.join('』, 『')}』 연마.` : ''}`;
+        },
+      },
+      {
+        label: '토벌대 진로가 새고 있다고 귀띔한다',
+        hint: '은자 +30 · 무작위 카드 1장 연마',
+        needClue: 'leak',
+        effect(run, rng) {
+          run.gold += 30;
+          const name = upgradeOne(run, rng);
+          return '"…맹 안에서 샌다고? 증좌 없이 할 말은 아니오." 진소하의 눈빛이 굳었다.\n'
+            + '그는 지도를 접고, 아무에게도 말하지 않은 샛길 하나를 짚어 주었다. 정찰 몫으로 은자 30냥도.\n'
+            + `"칼끝도 한번 봐 드리리다. 그 길로 가려면 살아 있어야 하니."${name ? `\n『${name}』 연마.` : ''}`;
         },
       },
     ],
@@ -216,6 +268,20 @@ export const EVENTS = {
           return '남의 빚까지 신경 쓸 여유는 없다.';
         },
       },
+      {
+        label: '그날 밤 문을 잠그면 당신도 죽는다고 못 박는다',
+        hint: '은자 +30 · 행낭 물품 1개',
+        needClue: 'innkeeper',
+        effect(run, rng, api) {
+          run.gold += 30;
+          const id = api.randomItem();
+          const kept = api.addItem(id);
+          return '주인의 얼굴이 하얗게 질렸다. "다, 당신이 그걸 어떻게…!"\n'
+            + '"문이 잠기면 자객은 안에 있는 자를 가리지 않는다. 당신도." 주인이 무릎을 꿇었다.\n'
+            + `"모, 목숨만은…!" 비상금 30냥과 ${josa(CONSUMABLES[id].name, '을/를')} 떠안기고 그는 줄행랑쳤다.`
+            + `${kept ? '' : ' (행낭이 가득 차 물품은 두고 왔다.)'}`;
+        },
+      },
     ],
   },
   // 사파 2구역: 녹림이 덮치려는 무림맹 행렬 속의 진소하
@@ -248,6 +314,20 @@ export const EVENTS = {
           return '혼전 속에 짐수레를 털었다. 진소하의 검이 스쳐 팔이 베였다.\n그는 품속의 서찰만은 끝까지 놓지 않았다.';
         },
       },
+      {
+        label: '흰 학 문양을 조심하라고 전한다',
+        hint: '체력 +12 · 은자 +20 · 진소하가 무언가를 건넨다',
+        needClue: 'payer',
+        effect(run, rng, api) {
+          const healed = heal(run, 12);
+          run.gold += 20;
+          const kept = api.addItem('geumchang');
+          return '산채 무리를 돌려보내고, 행렬 끝에 쪽지 한 장을 떨어뜨렸다. 『흰 학을 조심하시오.』\n'
+            + '쪽지를 펼친 진소하의 얼굴이 굳었다. 그가 지나간 길가에 금창약과 은자 20냥이 놓여 있었다.\n'
+            + `"…흰 학은 맹 수뇌부의 문양이오. 누군지 모르나, 새겨 두리다." 체력을 ${healed} 회복했다.`
+            + `${kept ? '' : ' (행낭이 가득 차 금창약은 두고 왔다.)'}`;
+        },
+      },
     ],
   },
   // 마교 1구역: 혈공 비전을 내리는 장로
@@ -277,6 +357,18 @@ export const EVENTS = {
         effect(run) {
           run.hp = Math.min(run.maxHp, run.hp + 10);
           return '장로는 단지를 거두며 혀를 찼다. "혈영대? 교주님은 요 몇 해 혈영대를 움직이신 적이 없다. 그런데 요즘 녀석들이 자꾸 밖으로 나간단 말이지…"\n장로가 내준 약차로 기운을 차렸다.';
+        },
+      },
+      {
+        label: '혈영대를 움직이는 다른 손을 묻는다',
+        hint: '체력 +12 · 무작위 카드 1장 연마',
+        needClue: 'sender',
+        effect(run, rng) {
+          const healed = heal(run, 12);
+          const name = upgradeOne(run, rng);
+          return '"교주님이 아닌 다른 손이라…" 장로가 단지를 젓던 손을 멈췄다. "떠돌이가 그걸 어찌 아느냐."\n'
+            + '"좋다. 그 눈치 값으로 혈공 한 자락을 거저 보여 주마. 피는 다음에 받지."\n'
+            + `장로의 약차로 체력을 ${healed} 회복했다.${name ? ` 『${name}』 연마.` : ''}`;
         },
       },
     ],

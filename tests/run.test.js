@@ -163,7 +163,7 @@ test('객잔: 은자가 있으면 구매, 부족하면 실패, 제거는 한 번
 test('기연: 모든 선택지가 오류 없이 결과를 돌려줌', () => {
   for (const [id, ev] of Object.entries(EVENTS)) {
     ev.options.forEach((_, i) => {
-      const run = createRun({ seed: 11 + i });
+      const run = createRun({ seed: 11 + i, knownClues: ev.options[i].needClue ? [ev.options[i].needClue] : [] });
       run.gold = 100;
       run.phase = 'event';
       run.event = { id, result: null };

@@ -3,6 +3,7 @@
 // thought: true 면 속마음 (괄호로 표시)
 // 장면 사이의 전투·연출은 main.js 가 순서대로 이어 붙임
 import { josa } from '../core/josa.js';
+import { TRUE_CLUES } from '../core/routes.js';
 
 export const SPEAKERS = {
   me: { name: '나', art: 'orthodox-sword' },
@@ -46,6 +47,10 @@ export const PROLOGUE_INTRO = [
   { who: 'me', text: '(말이 많은 점소이군.)', thought: true },
   { who: 'juno', text: '(딸꾹) 젊은이… 흰 옷은 비 오는 날 입는 게 아니야. 눈에 띄거든.' },
   { who: 'me', text: '(무슨 소리야, 저 노인네.)', thought: true },
+  { who: 'juno', text: '말 나온 김에 한 잔 받게. 오래 묵힌 술이야. 이런 밤엔 약이 되지.' },
+  { who: 'me', text: '…안 마신다.' },
+  { who: 'juno', text: '노인이 따른 잔을 물리면 재수가 없다네. 딱 한 잔만. (딸꾹)' },
+  { who: 'narr', text: '마지못해 받아 넘긴 술은 쓰고, 이상하리만치 뜨거웠다.' },
   { who: 'thug', text: '어이, 거기 흰둥이! 내 술상에 물 튀었잖아! 이거 어쩔 거야?' },
   { who: 'me', text: '…튄 적 없다.' },
   { who: 'thug', text: '튀었다면 튄 거야! 주먹 맛 좀 볼래?' },
@@ -84,10 +89,91 @@ export const PROLOGUE_DEATH = [
   { who: 'gwimyeon', text: '…가짜인가. 쫓아라!' },
   { who: 'me', text: '…나는… 그냥 국수를 먹고 있었을 뿐인데…' },
   { who: 'narr', text: '억울하다.\n억울해서, 이대로는 눈을 감을 수가 없다―' },
+  { who: 'narr', text: '혀끝에 남은 쓴 술맛만이, 꺼져 가는 숨을 붙들고 있었다.' },
 ];
 
-// ── 회귀 직후 (회차에 따라) ─────────────────────────
-export function wakeLines(runNumber) {
+// ── 회귀 직후 (회차 · 직전 죽음 · 알아낸 단서에 따라) ─────────────────────────
+// meta.lastDeath: 직전 생에서 나를 죽인 적 id (null = 그날 밤을 넘기고 살아서 끝남)
+// 다른 길에서 다시 만나는 같은 인물(…D, nokrimRival)은 본래 id 의 대사를 씀
+const DEATH_ALIAS = { gangLordD: 'gangLord', allianceElderD: 'allianceElder', bloodWolfD: 'bloodWolf', nokrimRival: 'nokrimKing' };
+const WAKE_AFTER_DEATH = {
+  gwimyeon: [
+    { who: 'me', text: '…그날 밤. 또 그 칼이었다.' },
+    { who: 'me', text: '(앞에서 오라고 해 놓고, 한 발 늦은 건 나였다.)', thought: true },
+  ],
+  spy: [
+    { who: 'me', text: '부채 끝이 목을 스치던 감각이 아직 남아 있다.' },
+    { who: 'me', text: '(연무혁. 웃는 얼굴로 사람을 베는 놈이다.)', thought: true },
+  ],
+  masked: [
+    { who: 'me', text: '귀면 가면… 하필 그 가면 앞에서 무릎을 꿇었다.' },
+    { who: 'me', text: '(가면만 보면 몸이 굳는다. 그날 밤이 떠올라서다.)', thought: true },
+  ],
+  oneEye: [
+    { who: 'me', text: '목덜미가 시리다. 외눈의 비도가 들어온 자리다.' },
+    { who: 'me', text: '(그림자에 숨을 때가 위험하다. 다음엔 그 틈에 몰아친다.)', thought: true },
+  ],
+  nokrimKing: [
+    { who: 'me', text: '산채 꼭대기의 도끼. 함정투성이 길 끝에서 당했다.' },
+    { who: 'me', text: '(길목마다 함정이었다. 우리가 올 길을 미리 안 것처럼.)', thought: true },
+  ],
+  twinBlade: [
+    { who: 'me', text: '칼 두 자루. 하나를 막으면 하나가 들어왔다.' },
+    { who: 'me', text: '(쌍도귀가 살기를 끌어올릴 때, 그때가 끝이었다.)', thought: true },
+  ],
+  poisonKing: [
+    { who: 'me', text: '…아직도 숨이 비릿하다.' },
+    { who: 'me', text: '(당철의 독. 다음엔 해독산부터 챙긴다.)', thought: true },
+  ],
+  bloodElder: [
+    { who: 'me', text: '불타는 관문. 핏빛 노인의 웃음소리가 귓가에 남았다.' },
+    { who: 'me', text: '(관문이 너무 쉽게 열렸다. 그게 자꾸 걸린다.)', thought: true },
+  ],
+  bloodWolf: [
+    { who: 'me', text: '혈랑의 이빨. "대주님이 찾던 얼굴"이라고 했지.' },
+    { who: 'me', text: '(놈들은 처음부터 흰 옷을 찾고 있었다. 내가 아니라.)', thought: true },
+  ],
+  heavenDemon: [
+    { who: 'me', text: '천마검귀. 피 맛이 싱겁다더니.' },
+    { who: 'me', text: '(…그 싱거운 피에 진 건 나다. 분하군.)', thought: true },
+  ],
+  gangLord: [
+    { who: 'me', text: '곰방대 연기와 금니. 도박장 이층에서 끝났다.' },
+    { who: 'me', text: '(조광은 웃으면서 친다. 웃음이 멎을 때를 조심하자.)', thought: true },
+  ],
+  axeLord: [
+    { who: 'me', text: '도끼파 두목 마삼. …도끼에 졌다.' },
+    { who: 'me', text: '(어디 가서 말도 못 하겠군.)', thought: true },
+  ],
+  allianceElder: [
+    { who: 'me', text: '쇠지팡이 끝에서 숨이 멎었다. 정의는 맹에 있다던 그 노인.' },
+    { who: 'me', text: '(그 품에서 반짝이던 것. 다음엔 꼭 확인한다.)', thought: true },
+  ],
+  rivalProdigy: [
+    { who: 'me', text: '붉은 끈의 곡도. 서열 1위 자리는 정말 싸지 않았다.' },
+    { who: 'me', text: '(…다음엔 이기고 나서 묻는다.)', thought: true },
+  ],
+  baekri: [
+    { who: 'me', text: '흰 학의 검. 다 와서, 마지막에 또 졌다.' },
+    { who: 'me', text: '(백리현. 여기까지 몇 번을 돌아왔다. 한 번 더 간다.)', thought: true },
+  ],
+};
+
+// 알아낸 단서에 따른 마음가짐 (백일취는 진상 조각으로 세지 않음)
+function wakeResolve(clues) {
+  if (Object.values(TRUE_CLUES).every((id) => clues.includes(id))) {
+    return { who: 'me', text: '흰 학의 전낭, 혈영대를 부른 서찰, 맹의 높은 자리. 조각은 다 모였다. 이번 생에서 끝낸다.' };
+  }
+  if (clues.filter((id) => id !== 'wine').length >= 3) {
+    return { who: 'me', text: '(조각이 하나씩 맞물린다. 그날 밤의 모양이 조금씩 보인다.)', thought: true };
+  }
+  return { who: 'me', text: '(아직 아는 게 너무 적다. 이번엔 하나라도 더 건져 온다.)', thought: true };
+}
+
+export function wakeLines(runNumber, meta = {}) {
+  const clues = meta.clues ?? [];
+  const lastDeath = meta.lastDeath ?? null;
+  const header = { who: 'narr', text: `― 百日前 · ${runNumber}번째 아침 ―` };
   if (runNumber === 1) {
     return [
       { who: 'narr', text: '― 百日前 ―' },
@@ -95,8 +181,29 @@ export function wakeLines(runNumber) {
       { who: 'me', text: '(가슴을 만져 본다. 구멍이 없다. 피도 없다.)', thought: true },
       { who: 'narr', text: '낯익은 여인숙 천장. 벽에 걸린 달력은 그날 밤으로부터 꼭 백 일 전을 가리키고 있었다.' },
       { who: 'me', text: '꿈이었나…? 아니. 그 칼의 차가움은 진짜였다.' },
+      { who: 'me', text: '(…입 안이 쓰다. 어젯밤 그 한 잔의 맛이 아직 남아 있다.)', thought: true },
       { who: 'me', text: '흰 옷의 사내, 밀서, 귀면 가면… 그리고 나는 엉뚱하게 죽었다.' },
       { who: 'me', text: '…좋다. 백 일이다. 이번엔 그냥 당하지 않는다.' },
+    ];
+  }
+  // 진엔딩 뒤 다시 시작한 생 (이야기는 끝났지만 판은 계속된다)
+  if (!lastDeath && (meta.clears?.trueEnd ?? 0) >= 1) {
+    return [
+      header,
+      { who: 'me', text: '…백 일 전? 분명 끊겼을 텐데.' },
+      { who: 'me', text: '(그 노인네, 한 잔 더 따른 게 틀림없다.)', thought: true },
+      { who: 'me', text: '…좋다. 국수 한 그릇 값이라 치지.' },
+    ];
+  }
+  // 일반 엔딩 뒤: 살아남았지만 원한이 풀리지 않아 다시 백 일 전
+  if (!lastDeath && (meta.clears?.final ?? 0) >= 1) {
+    return [
+      header,
+      { who: 'me', text: '…햇빛. 살았다. 그날 밤을 넘겼으니―' },
+      { who: 'narr', text: '낯익은 여인숙 천장. 달력은 다시, 그날 밤으로부터 백 일 전을 가리키고 있었다.' },
+      { who: 'me', text: '…아니, 아직이다.' },
+      { who: 'me', text: '(귀면은 쓰러졌는데 억울함은 그대로다. 그놈들을 보낸 자가 남아 있으니까.)', thought: true },
+      wakeResolve(clues),
     ];
   }
   if (runNumber === 2) {
@@ -113,12 +220,15 @@ export function wakeLines(runNumber) {
     ['백 일. 길다면 길고, 짧다면 짧다.', '이번 생은 조금 더 멀리 가 보자.'],
     ['손에 익은 검이 조금 가볍게 느껴진다.', '죽으면서도 배우는 게 있긴 한가 보군.'],
   ];
+  const death = WAKE_AFTER_DEATH[DEATH_ALIAS[lastDeath] ?? lastDeath];
   const [a, b] = pool[runNumber % pool.length];
-  return [
-    { who: 'narr', text: `― 百日前 · ${runNumber}번째 아침 ―` },
-    { who: 'me', text: a },
-    { who: 'me', text: b },
-  ];
+  const lines = [header, ...(death ?? [{ who: 'me', text: a }, { who: 'me', text: b }])];
+  const allTrue = Object.values(TRUE_CLUES).every((id) => clues.includes(id));
+  if (clues.includes('wine') && !allTrue) {
+    lines.push({ who: 'me', text: '(백일취. 원한이 풀리지 않는 한, 이 아침은 몇 번이고 온다.)', thought: true });
+  }
+  lines.push(wakeResolve(clues));
+  return lines;
 }
 
 // ── 죽음 ─────────────────────────
@@ -140,6 +250,7 @@ export const CLUES = {
   payer: { title: '돈을 준 쪽은 정파', text: '무림맹 장로의 품에서 흰 학 문양 전낭과 "청운객잔 주인에게 은자 오백 냥" 이라 적힌 장부가 나왔다. 흰 학은 무림맹 수뇌부의 문양이다.' },
   request: { title: '혈영대를 부른 것은 무림맹', text: '혈영대 막사의 서찰: "백 일 뒤 청운객잔, 흰 옷의 밀사. 밀서를 회수해 주면 약조대로 관문을 열겠소." 찍힌 인장은 흰 학 — 무림맹이었다.' },
   traitorName: { title: '배신자는 부맹주 백리현', text: '밀서의 첩자 명단 맨 위에 적힌 이름 — 무림맹 부맹주 백리현. 그날 밤 객잔의 문, 혈영대, 밀사의 길은 모두 그의 손에서 나왔다.' },
+  wine: { title: '백일취(百日醉)', text: '그날 밤 주노가 따라 준 술. 원한을 품고 죽은 자를 그날로부터 백 일 전 아침으로 돌려보낸다. 원한이 풀려야 깬다. 노인도 오래전 이 술을 마셨다.' },
   sender: { title: '귀면을 보낸 자', text: '귀면은 죽기 전에 "누가 우리를 보냈는지 아느냐"고 물었다. 혈영대를 움직인 것은 교주가 아니다.' },
 };
 
@@ -327,6 +438,7 @@ export const TRUE_BRIDGE = [
   { who: 'me', text: '그리고 맹의 높은 자리. 백 일을 몇 번이나 다시 살면서 모은 조각이다.' },
   { who: 'baekri', text: '…재미있는 떠돌이로군. 밀서만 조용히 넘어왔으면 아무도 다치지 않았을 텐데.' },
   { who: 'baekri', text: '좋네. 오늘 밤 이 객잔에서 일어난 일은, 마교의 습격으로 기록될 걸세. 자네들 모두의 이름과 함께.' },
+  { who: 'juno', text: '(딸꾹) 젊은이. 이번엔 하나도 남기지 말고 다 풀고 가게.' },
 ];
 
 export const TRUE_ENDING = [
@@ -335,10 +447,21 @@ export const TRUE_ENDING = [
   { who: 'soohaNamed', text: '…백리현. 부맹주가 첩자의 우두머리였다니.' },
   { who: 'soohaNamed', text: '당신이 아니었으면 이 밀서는 오늘 밤 사라졌을 거요. 대체 당신은 누구요?' },
   { who: 'me', text: '국수 먹던 떠돌이.' },
+  { who: 'narr', text: '그 말을 하는 순간, 가슴 한복판에 박혀 있던 것이 스르르 풀려 나갔다.\n칼에 찔린 자리가 아니었다. 그보다 훨씬 오래된 자리였다.' },
+  { who: 'juno', text: '(딸꾹) …풀렸구먼.' },
+  { who: 'me', text: '…술 말입니까.' },
+  { who: 'juno', text: '백일취(百日醉). 그날 밤 내가 따라 준 술 이름일세.\n원한을 품고 죽은 자를 백 일 전 아침으로 돌려보내지. 원한이 풀릴 때까지.' },
+  { who: 'juno', text: '나도 젊을 적에 마셨네. 몇 번을 죽고 몇 번을 깨어났는지는… 세다가 말았지.' },
+  { who: 'me', text: '…왜 하필 나였습니까.' },
+  { who: 'juno', text: '흰 옷에 검 차고 하필 그 자리에 앉았길래. 오늘 밤 억울하게 갈 얼굴이더군.' },
+  { who: 'me', text: '(…그럼 말리든가.)', thought: true },
+  { who: 'juno', text: '말렸잖나. 흰 옷은 비 오는 날 입는 게 아니라고. 허허.' },
   { who: 'boki', text: '소, 손님…! 국수가 아직 따뜻해요! 한 그릇 더 하실래요?' },
   { who: 'me', text: '…그래. 이번엔 다 먹고 가지.' },
+  { who: 'narr', text: '면을 건지고, 국물을 들이켜고, 마지막 한 가닥까지.\n백 일을 몇 번이나 돌아서야 비운 그릇은, 생각보다 짰다.' },
+  { who: 'boki', text: '와… 국물까지 싹 비우신 손님은 처음이에요!' },
   { who: 'juno', text: '(딸꾹) 백 일이란 건 말이야… 이번엔 술이 잘 익었군.' },
-  { who: 'me', text: '(…역시 알고 있었던 건가, 이 노인네.)', thought: true },
+  { who: 'me', text: '(…끝까지 술 얘기군, 이 노인네.)', thought: true },
   { who: 'narr', text: '비가 그쳤다.\n그리고 나는 처음으로, 백 일 뒤의 아침을 맞았다.' },
   { who: 'narr', text: '― 진엔딩 · 백일회귀 ―' },
 ];
@@ -349,9 +472,12 @@ export const ENDING = [
   { who: 'narr', text: '귀면은 끝내 대답하지 않고 숨을 거두었다.\n깨진 가면 아래의 얼굴은, 아무도 알아보지 못했다.' },
   { who: 'soohaNamed', text: '…목숨을 빚졌소. 당신은 대체 누구요?' },
   { who: 'me', text: '국수 먹던 떠돌이.' },
-  { who: 'juno', text: '허허. 이번엔 국수가 식지 않았구먼.' },
-  { who: 'narr', text: '그날 밤, 나는 처음으로 살아서 아침을 맞았다.\n그러나 혈영대를 보낸 자는 여전히 무림맹 어딘가에 있다.' },
-  { who: 'narr', text: '― 일반 엔딩 · 그날 밤을 넘기다 ―\n(진엔딩: 세 세력의 길에서 단서를 모두 모아야 한다)' },
+  { who: 'juno', text: '허허. 이번엔 국수가 식지 않았구먼. …그런데 얼굴은 아직 억울해 보이는군.' },
+  { who: 'juno', text: '(딸꾹) 한 길만 걸어서는 안 보이는 대답도 있지. 술도 여러 독을 맛봐야 아는 법이야.' },
+  { who: 'narr', text: '비가 그치고, 처음 보는 새벽빛이 객잔 문틈으로 스며들었다.\n그런데 눈꺼풀이 자꾸만 무거워진다. 혀끝에 그 쓴 술맛이 돌아온다.' },
+  { who: 'me', text: '(누가 우리를 보냈는지… 그 대답을, 나는 아직 모른다.)', thought: true },
+  { who: 'me', text: '…아직, 끝나지 않았다.' },
+  { who: 'narr', text: '― 일반 엔딩 · 그날 밤을 넘기다 ―' },
 ];
 
 
@@ -603,6 +729,7 @@ export function battleOutro(enemyId, known) {
 // 이야기 기연 앞 대사 (n = 이번 포함 만난 횟수, 회차를 넘어 누적)
 export function npcIntro(npc, n, meta) {
   if (npc === 'juno') {
+    // 1: 의심 → 2: 술 얘기를 슬쩍 → 3+: 고백 (백일취 단서를 얻기 전엔 자기 과거까지만)
     if (n === 1) {
       return [
         { who: 'narr', text: '비무대 뒤편 술독 옆에, 낯익은 노인이 드러누워 있다.' },
@@ -615,29 +742,49 @@ export function npcIntro(npc, n, meta) {
     if (n === 2) {
       return [
         { who: 'juno', text: '또 그 얼굴이군. 이상하지, 자네만 보면 술이 확 깨는 기분이야.' },
-        { who: 'me', text: '(이 노인… 정말 기억하는 건가?)', thought: true },
-        { who: 'juno', text: '표정을 보니 한 번 크게 데였구먼. 앉게, 앉아.' },
+        { who: 'juno', text: '(킁킁) …그리고 자네한테선 술 냄새가 나. 오래 묵힌 놈으로, 딱 한 잔.' },
+        { who: 'me', text: '…마신 적 없습니다. 오늘은.' },
+        { who: 'juno', text: '오늘은, 이라. 허허. 앉게, 앉아. 한 번 크게 데인 얼굴이구먼.' },
+      ];
+    }
+    if (!meta.clues.includes('wine')) {
+      return [
+        { who: 'narr', text: '노인이 웬일로 호리병을 내려놓았다. 눈빛이 맑다.' },
+        { who: 'juno', text: '자네, 몇 번째 아침인지 세다가 그만뒀지? 나도 그랬네.' },
+        { who: 'me', text: '…노인장도?' },
+        { who: 'juno', text: '아주 오래전 일이야. 같은 백 일을, 같은 원한을 안고 몇 번이고 살았지.' },
+        { who: 'juno', text: '"백 일"이란 숫자가 어디서 또 나오는지 알게 되면, 그때 물어보게. (딸꾹)' },
       ];
     }
     const pool = [
       [
-        { who: 'juno', text: '(딸꾹) 왔나. 이번엔 몇 번째지? …아니, 대답하지 말게. 숫자는 술맛을 버려.' },
-        { who: 'me', text: '…정말 아시는 겁니까.' },
-        { who: 'juno', text: '늙은이가 아는 건 술 익는 냄새뿐일세. 허허.' },
+        { who: 'juno', text: '(딸꾹) 왔나. 원한은 좀 덜었나? …얼굴 보니 아직이구먼.' },
+        { who: 'me', text: '(백일취. 이 노인이 따른 한 잔에서 이 모든 아침이 시작됐다.)', thought: true },
+      ],
+      [
+        { who: 'juno', text: '술은 원한을 먹고 익는다네. 자네 술은 아직 덜 익었어.' },
+        { who: 'me', text: '…다 익으면 어떻게 됩니까.' },
+        { who: 'juno', text: '깨지. 술이든, 꿈이든. 허허.' },
       ],
       [
         { who: 'juno', text: '자네 검, 지난번보다 조금 덜 정직해졌군. 좋아, 좋아.' },
-        { who: 'me', text: '(지난번…?)', thought: true },
-      ],
-      [
-        { who: 'juno', text: '백 일이란 건 말이야, 술 한 독 익히기에 딱 좋은 시간이지.' },
-        { who: 'me', text: '…그 말, 무슨 뜻입니까.' },
-        { who: 'juno', text: '뜻은 무슨. 술 얘기지. (딸꾹)' },
+        { who: 'me', text: '(지난번… 이 노인은 기억이 아니라 술 냄새로 그걸 안다.)', thought: true },
       ],
     ];
     return pool[n % pool.length];
   }
   if (npc === 'soohaCamp') {
+    // n = 진소하를 만난 횟수 (비무대회·막사·산길 모두 셈). 만날수록 기시감
+    if (n >= 3) {
+      return [
+        { who: 'narr', text: '토벌대 막사. 낯익은 흰 옷이 지도를 들여다보고 있다.' },
+        { who: 'soohaNamed', text: '무림맹 순찰사 진소하라 하오. …이상하군. 처음 보는 얼굴인데, 목소리가 귀에 익소.' },
+        ...(n >= 6
+          ? [{ who: 'soohaNamed', text: '우리… 어디서 본 적 있소? 비 오는 밤 꿈에서 본 얼굴 같기도 하고.' }]
+          : []),
+        { who: 'me', text: '(진소하. 그날 밤, 내 대신 살아 나간 사내의 이름.)', thought: true },
+      ];
+    }
     return [
       { who: 'narr', text: '토벌대 막사. 낯익은 흰 옷이 지도를 들여다보고 있다.' },
       { who: 'me', text: '(그 사내다. 그날 밤 뒷문으로 빠져나가던.)', thought: true },
@@ -668,9 +815,23 @@ export function npcIntro(npc, n, meta) {
     return [
       { who: 'narr', text: '산길 아래로 무림맹 행렬이 지나간다. 녹림 무리가 숨을 죽이고 신호를 기다린다.' },
       { who: 'me', text: '(행렬 맨 앞의 흰 옷… 진소하다. 여기서 죽으면 그날 밤도 없다.)', thought: true },
+      ...(n >= 3
+        ? [
+          { who: 'narr', text: '흰 옷의 사내가 문득 이쪽 숲을 돌아본다. 누가 있는 줄 안다는 듯이.' },
+          { who: 'me', text: '(…설마. 기억할 리가 없다.)', thought: true },
+        ]
+        : []),
     ];
   }
   if (npc === 'junoGate') {
+    if (meta.clues.includes('wine')) {
+      return [
+        { who: 'narr', text: '불타는 관문 뒤, 무너진 담벼락에 노인이 기대앉아 있다.' },
+        { who: 'juno', text: '(딸꾹) 또 만났군. 이번 생은 꽤 멀리까지 왔어.' },
+        { who: 'me', text: '백일취는 아직 깨지 않았습니다.' },
+        { who: 'juno', text: '그건 술이 아니라 자네가 정하는 거야. 그날 밤, 누가 자네를 죽였는지 끝까지 아는가?' },
+      ];
+    }
     return [
       { who: 'narr', text: '불타는 관문 뒤, 무너진 담벼락에 노인이 기대앉아 있다.' },
       { who: 'juno', text: '(딸꾹) 또 만났군. 이번 생은 꽤 멀리까지 왔어.' },
@@ -679,16 +840,23 @@ export function npcIntro(npc, n, meta) {
     ];
   }
   if (npc === 'sooha') {
+    const deja = n >= 3; // 여러 번 스친 뒤로는 그쪽도 걸음을 멈춘다
     if (meta.clues.includes('envoy')) {
       return [
         { who: 'narr', text: '관중석 끝, 흰 옷의 사내가 서둘러 자리를 뜬다.' },
         { who: 'me', text: '(무림맹의 그 사내다. 이번 생에서도 아무것도 모르는 얼굴이군.)', thought: true },
+        ...(deja
+          ? [
+            { who: 'sooha', text: '…실례지만, 우리 어디서 본 적 있소?' },
+            { who: 'me', text: '(있지. 당신은 기억 못 하겠지만.)', thought: true },
+          ]
+          : []),
       ];
     }
     return [
       { who: 'narr', text: '관중석 끝, 흰 옷에 검을 찬 사내가 서둘러 자리를 뜬다.' },
       { who: 'me', text: '(흰 옷… 검… 그날 밤 뒷문으로 빠져나가던 그 사내?!)', thought: true },
-      { who: 'sooha', text: '……' },
+      { who: 'sooha', text: deja ? '……우리, 어디서 본 적 있소?' : '……' },
       { who: 'narr', text: '눈이 마주치자, 사내는 품속의 무언가를 감싸 쥐고 몸을 돌렸다.' },
     ];
   }

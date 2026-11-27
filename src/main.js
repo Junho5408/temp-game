@@ -245,7 +245,7 @@ async function beginLife() {
   scene.clearEnemy();
   scene.reset();
   setScreen('story');
-  await playDialogue(wakeLines(meta.runs + 1));
+  await playDialogue(wakeLines(meta.runs + 1, meta));
   setScreen('title');
   renderSelect(meta, (artKey, memories) => {
     if (!validateLoadout(meta, memories, 1)) return;

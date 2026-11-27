@@ -33,3 +33,27 @@ test('쓰러지면 나를 죽인 적을 회귀 기록에 남기고, 그날 밤�
   recordRunEnd(meta, win);
   assert.equal(meta.lastDeath, null);
 });
+
+test('회귀 직후 대사: 직전에 죽인 적, 일반 엔딩 뒤, 진상 조각을 다 모았을 때', async () => {
+  const { wakeLines, CLUES } = await import('../src/story/script.js');
+  const text = (ls) => ls.map((l) => l.text).join('\n');
+  assert.match(text(wakeLines(5, { lastDeath: 'gangLordD', clues: [], clears: {} })), /곰방대/);
+  assert.match(text(wakeLines(5, { lastDeath: null, clues: [], clears: { final: 1 } })), /…아니, 아직이다\./);
+  assert.match(text(wakeLines(5, { lastDeath: 'spy', clues: ['traitor', 'payer', 'request'], clears: {} })), /이번 생에서 끝낸다/);
+  assert.ok(wakeLines(1, {}).length > 0 && wakeLines(2).length > 0);
+  assert.ok(CLUES.wine);
+});
+
+test('미래를 아는 자의 선택지: 필요한 단서는 모두 실제 단서, 주노에게 물으면 백일취 단서', () => {
+  return import('../src/story/script.js').then(({ CLUES }) => {
+    for (const [id, ev] of Object.entries(EVENTS)) {
+      for (const o of ev.options) if (o.needClue) assert.ok(CLUES[o.needClue], `${id}: ${o.needClue}`);
+    }
+    const run = createRun({ seed: 4, knownClues: ['note'] });
+    run.phase = 'event';
+    run.event = { id: 'juno' };
+    const i = EVENTS.juno.options.findIndex((o) => o.needClue === 'note');
+    assert.ok(chooseEventOption(run, i));
+    assert.ok(run.cluesFound.includes('wine'));
+  });
+});

@@ -295,8 +295,8 @@ export function renderEnd(run, onRestart) {
   const { body, actions } = openPanel(
     !win ? '쓰러졌다' : run.trueWin ? '진엔딩 · 백 일 뒤의 아침' : '그날 밤을 넘기다',
     !win ? '눈앞이 어두워진다…'
-      : run.trueWin ? '배신자 백리현을 쓰러뜨리고, 밀서와 진소하를 지켜 냈다.\n억울하게 죽었던 떠돌이는 비로소 백 일 뒤의 아침을 맞았다.'
-        : '귀면을 쓰러뜨리고 처음으로 살아서 아침을 맞았다.\n그러나 혈영대를 보낸 자는 아직 무림맹 어딘가에 있다. (일반 엔딩)',
+      : run.trueWin ? '배신자 백리현을 쓰러뜨리고, 밀서와 진소하를 지켜 냈다.\n원한이 풀리자 백일취도 깼다. 떠돌이는 처음으로 백 일 뒤의 아침을 맞았다.'
+        : '귀면을 쓰러뜨리고 처음으로 살아서 새벽을 보았다.\n그러나 원한은 풀리지 않았다. 눈을 감으면, 다시 백 일 전이다. (일반 엔딩)\n진상의 조각은 세 세력의 길에 흩어져 있다.',
   );
   $('panel').querySelector('.panel-box').classList.add(win ? 'win' : 'lose');
   body.innerHTML = `
