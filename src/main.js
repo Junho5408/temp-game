@@ -26,6 +26,8 @@ import {
   renderTitle, renderRecord, renderSelect, renderMemoryPick, playRegression, hideFlow,
 } from './ui/flow.js';
 import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
+import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
+import { DESIGNS } from './ui/characters.js';
 import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
   openDeck, closePanel,
@@ -122,6 +124,7 @@ function setScreen(name) {
 function showTitle() {
   run = null;
   battle = null;
+  playMusic(meta.prologueDone ? 'title' : 'inn');
   closePanel();
   hideMap();
   hint(null);
@@ -167,6 +170,7 @@ function showTitle() {
 
 // ── 프롤로그 (1회차, 튜토리얼 겸) ─────────────────────────
 async function playPrologue() {
+  playMusic('inn');
   setZone('청운객잔 · 그날 밤');
   scene.setBackground('inn');
   scene.clearEnemy();
@@ -186,6 +190,8 @@ async function playPrologue() {
   await scene.setEnemy('demonic-assassin');
   scene.reset();
   scene.shake(8);
+  sfx('door');
+  playMusic('boss');
   await playDialogue(PROLOGUE_AFTER_THUG.slice(burst));
 
   // 튜토리얼 전투 2: 혈영대원 — 이겨도 지는 싸움 (3턴이 지나거나 크게 몰아붙이면 끊김)
@@ -202,6 +208,7 @@ async function playPrologue() {
 
   finishPrologue(meta);
   saveMeta();
+  sfx('regress');
   await playRegression();
   beginLife();
 }
@@ -209,6 +216,7 @@ async function playPrologue() {
 // ── 한 생의 시작: 회귀 → 세력 선택 → 지도 ─────────────────────────
 async function beginLife() {
   setZone('백 일 전');
+  playMusic('title');
   // 회차는 세력을 골라 판을 실제로 시작할 때 올림 (선택 화면에서 새로고침해도 늘지 않게) — BUG-003
   battle = null;
   scene.setBackground('arena');
@@ -233,6 +241,7 @@ async function beginLife() {
 function applyZoneLook() {
   setZone(ZONE_NAMES[run.zone]);
   scene.setBackground(ZONE_BACKGROUNDS[run.zone]);
+  playMusic(run.zone >= 3 ? 'boss' : ZONE_BACKGROUNDS[run.zone]);
 }
 
 async function startZone() {
@@ -301,6 +310,7 @@ async function showStep() {
           await scene.setEnemy(b.enemy.art);
           scene.reset();
           scene.shake(8);
+          sfx('door');
           await playDialogue(intro.slice(burst));
         } else {
           await scene.setEnemy(b.enemy.art);
@@ -427,6 +437,7 @@ async function pickMemoryAndRegress() {
   });
   hideFlow();
   renderRunInfo();
+  sfx('regress');
   await playRegression();
   beginLife();
 }
@@ -453,12 +464,34 @@ function renderRunInfo() {
 
 $('deck-button').addEventListener('click', () => run && openDeck(run));
 
+// 버튼·칸을 누를 때 작은 소리 (카드는 따로)
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.btn, .map-node, .choice, .option, .item-face, .sg-cell, #deck-button, .bag-slot')) sfx('click');
+});
+
+// 소리 설정 (위쪽 막대의 音 버튼)
+$('sound-button').addEventListener('click', () => {
+  const panel = $('sound-panel');
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) {
+    panel.querySelector('[data-kind="music"]').value = Math.round(getVolume('music') * 100);
+    panel.querySelector('[data-kind="sfx"]').value = Math.round(getVolume('sfx') * 100);
+  }
+});
+document.querySelectorAll('#sound-panel input[type="range"]').forEach((input) => {
+  input.addEventListener('input', () => {
+    setVolume(input.dataset.kind, Number(input.value) / 100);
+    if (input.dataset.kind === 'sfx') sfx('click');
+  });
+});
+
 // ── 전투 ─────────────────────────
 // 전투 하나를 진행하고, 끝나면(승리·패배·연출로 중단) 결과를 돌려줌
 async function runBattle(b, { title, hints = null, interrupt = null, boss = false }) {
   busy = true;
   battle = b;
   if (run) run.lastEnemyName = b.enemy.name;
+  if (b.enemy.tier === 'elite' || b.enemy.tier === 'boss') playMusic('boss');
   await scene.setEnemy(b.enemy.art);
   scene.reset();
   setScreen('battle');
@@ -683,6 +716,7 @@ async function onCard(uid, el) {
     return;
   }
   busy = true;
+  sfx('card');
   renderControls(); // 카드는 바로 손에서 빠지고, 체력은 맞는 순간에 줄어듦
   await playEvents(takeEvents(battle));
   if (!battleCtx) return;
@@ -749,6 +783,7 @@ async function playEvents(events) {
         if (ev.poison) {
           // 중독: 공격 동작 없이 독 피해
           scene.hit(ev.target, 2);
+          sfx('poison');
           popup(ev.target, `毒 -${ev.amount}`, 'poison');
           renderStatus();
           if (battle[ev.target].hp <= 0) scene.die(ev.target);
@@ -758,8 +793,10 @@ async function playEvents(events) {
         // 타격마다 공격 모션 → 닿는 순간 피격 연출 (다단 공격은 여러 번 휘두름)
         const from = ev.target === 'player' ? 'enemy' : 'player';
         if (ev.counter) popup(from, '반격!', 'st-counter', -60);
+        swingSound(from, ev.item);
         await wait(scene.attack(from));
         if (ev.amount > 0) {
+          sfx(ev.crit ? 'crit' : 'hit');
           scene.hit(ev.target, ev.crit ? ev.amount + 6 : ev.amount);
           if (ev.crit) {
             popup(ev.target, `치명! -${ev.amount}`, 'crit');
@@ -777,6 +814,7 @@ async function playEvents(events) {
       case 'miss': {
         const from = ev.target === 'player' ? 'enemy' : 'player';
         await wait(scene.attack(from) - 60);
+        sfx('miss');
         scene.dodge(ev.target);
         popup(ev.target, ev.target === 'player' ? '회피!' : '빗나감', 'miss');
         await wait(360);
@@ -784,6 +822,7 @@ async function playEvents(events) {
       }
       case 'item': {
         const it = CONSUMABLES[ev.id];
+        sfx('item');
         showBanner(`${it.name} · ${it.desc}`, '#e8dcc0', 1000);
         await wait(250);
         break;
@@ -793,33 +832,40 @@ async function playEvents(events) {
         await wait(150);
         break;
       case 'shield':
+        swingSound('enemy');
         await wait(scene.attack('enemy'));
+        sfx('stun');
         popup('player', '衣 천잠보의 — 막았다!', 'treasure');
         await wait(350);
         break;
       case 'heal':
+        sfx('heal');
         popup(ev.target, `+${ev.amount}`, 'heal', -40);
         renderStatus();
         await wait(250);
         break;
       case 'break':
+        sfx('gong');
         scene.shake(10);
         showBanner(`파기(破氣)! ${ev.name}이(가) 끊겼다`, '#9cd7ff', 1300);
         renderStatus();
         await wait(500);
         break;
       case 'stun':
+        sfx('stun');
         scene.shake(6);
         showBanner('점혈! 혈도가 막혀 몸이 굳었다', '#9cd7ff', 1300);
         renderStatus();
         await wait(500);
         break;
       case 'trait':
+        sfx('buff');
         scene.buff('enemy');
         showBanner(`${TRAITS[ev.trait].name}! ${TRAITS[ev.trait].desc}`, '#ff8a7a', 1300);
         await wait(400);
         break;
       case 'phase':
+        sfx('gong');
         scene.buff('enemy');
         scene.shake(9);
         showBanner(ev.text, '#ff8a7a', 2200);
@@ -827,12 +873,14 @@ async function playEvents(events) {
         await wait(1100);
         break;
       case 'status':
+        sfx({ strength: 'buff', evasion: 'buff', insight: 'buff', point: 'point', poison: 'poison', cleanse: 'heal', counter: 'debuff' }[ev.kind] ?? 'debuff');
         if (ev.kind === 'strength') scene.buff(ev.target);
         popup(ev.target, `${STATUS_POPUP[ev.kind]} ${['strength', 'evasion', 'point'].includes(ev.kind) ? '+' : ''}${['insight', 'cleanse'].includes(ev.kind) ? '' : ev.amount}`, `st-${ev.kind}`, -50);
         renderStatus();
         await wait(180);
         break;
       case 'turnStart':
+        sfx('turn');
         enemyActing = false;
         render();
         await wait(200);
@@ -840,6 +888,7 @@ async function playEvents(events) {
         break;
       case 'won':
       case 'lost':
+        sfx(ev.type === 'won' ? 'victory' : 'defeat');
         renderStatus();
         await wait(900);
         endBattle(ev.type);
@@ -848,6 +897,16 @@ async function playEvents(events) {
         break;
     }
   }
+}
+
+function swingSound(from, item = false) {
+  if (item) {
+    sfx('stab');
+    return;
+  }
+  const art = from === 'player' ? PLAYER_ART : battle?.enemy.art;
+  const cls = DESIGNS[art]?.cls ?? 'sword';
+  sfx({ sword: 'slash', fist: 'impact', assassin: 'stab' }[cls] ?? 'slash');
 }
 
 function popup(target, text, cls, offsetY = 0) {

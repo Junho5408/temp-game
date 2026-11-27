@@ -1028,3 +1028,26 @@ button.item-face:disabled { cursor: default; }
 .shop-body .item-row.shop .item-face .ig { font-size: 24px; }
 .record .end-stats { flex-wrap: wrap; justify-content: center; gap: 10px 22px; }
 .title-actions .btn small { display: block; font-size: 11px; opacity: .8; font-weight: 600; }
+
+/* ── 4-A 소리 설정 ─────────────────── */
+#topbar { padding-right: 56px; }
+#sound-button {
+  position: absolute; right: 16px; top: 6px; z-index: 10;
+  width: 28px; height: 28px;
+  border: 1px solid #6b5a3a; border-radius: 50%;
+  background: #1a1714; color: #e8c46a;
+  font-family: var(--serif); font-size: 14px; font-weight: 900;
+  cursor: pointer;
+}
+#sound-button:hover { border-color: #e8c46a; }
+#sound-panel {
+  position: absolute; right: 14px; top: 44px; z-index: 10;
+  padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: linear-gradient(170deg, #23262d, #121318);
+  border: 1px solid #6b5a3a; border-radius: 4px;
+  color: var(--bone); font-size: 13px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.5);
+}
+#sound-panel label { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+#sound-panel input { width: 120px; accent-color: #e8c46a; }
