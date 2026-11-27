@@ -47,6 +47,13 @@ export const PASSIVE_TEXT = {
   demonic: '혈공(血功): 적을 쓰러뜨릴 때마다 체력 6 회복, 대신 운기조식 회복이 줄어듦 (30% → 20%)',
 };
 
+// 진엔딩 조건: 세 세력의 길에서 하나씩 얻는 핵심 단서
+export const TRUE_CLUES = { orthodox: 'traitor', unorthodox: 'payer', demonic: 'request' };
+
+export function hasTrueClues(clues) {
+  return Object.values(TRUE_CLUES).every((id) => clues.includes(id));
+}
+
 export function routeOf(run) {
   return ROUTES[run?.faction] ?? ROUTES.orthodox;
 }

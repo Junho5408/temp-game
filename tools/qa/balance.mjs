@@ -16,6 +16,7 @@ import { cardStats, CARDS } from '../../src/core/cards.js';
 import { ENEMIES } from '../../src/core/enemies.js';
 import { EVENTS } from '../../src/core/events.js';
 import { CONSUMABLES, TREASURES } from '../../src/core/items.js';
+import { TRUE_CLUES } from '../../src/core/routes.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const arg = (name, def) => {
@@ -24,6 +25,7 @@ const arg = (name, def) => {
 };
 const N = Number(arg('n', 400));
 const FACTION = arg('faction', 'orthodox'); // 세력 루트 (routes.js)
+const TRUE_RUN = arg('true', '0') === '1'; // 1 이면 진엔딩 판 (세 길의 단서를 다 모은 회귀 — 귀면 뒤 백리현)
 const RUN = arg('run', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
 const OUT = path.join(ROOT, 'qa-output', RUN, 'balance');
 fs.mkdirSync(OUT, { recursive: true });
@@ -88,7 +90,7 @@ for (let seed = 1; seed <= N; seed++) {
   while (!['victory', 'defeat'].includes(run.phase) && steps++ < 400) {
     if (run.phase === 'zoneClear') {
       stats.zoneClear[run.zone]++;
-      advanceZone(run);
+      advanceZone(run, TRUE_RUN ? { clues: Object.values(TRUE_CLUES) } : null);
       stats.zoneEnter[run.zone]++;
       continue;
     }
@@ -177,7 +179,7 @@ const result = {
 };
 fs.writeFileSync(path.join(OUT, 'result.json'), JSON.stringify(result, null, 2));
 
-console.log(`봇 ${N}판 · ${FACTION}`);
+console.log(`봇 ${N}판 · ${FACTION}${TRUE_RUN ? ' · 진엔딩 판' : ''}`);
 for (const z of zones) console.log(`  ${z.zone}: 들어간 ${z.entered} → 돌파 ${z.cleared} (${z.rate}%)`);
 console.log(`  3층 이하 사망 ${stats.earlyDeaths}판, 판당 전투 ${result.avgBattles}회`);
 console.log('사망률 높은 적:', enemies.slice(0, 6).map((e) => `${e.name} ${e.deathRate}%`).join(', '));

@@ -1,7 +1,7 @@
 // 판 바깥의 흐름 화면: 타이틀, 기록, 세력·계열 선택, 무공 기억, 회귀 연출
 import { CARDS } from '../core/cards.js';
 import { memorySlots } from '../core/meta.js';
-import { ROUTES, PASSIVE_TEXT, isFactionOpen } from '../core/routes.js';
+import { ROUTES, PASSIVE_TEXT, isFactionOpen, TRUE_CLUES } from '../core/routes.js';
 import { CLUES } from '../story/script.js';
 import { CLASSES, DESIGNS, FACTIONS } from './characters.js';
 import { cardFace } from './screens.js';
@@ -86,6 +86,9 @@ export function renderRecord(meta, onBack) {
       </div>
       <h3>기억한 무공</h3>
       <div class="card-grid small"></div>
+      <h3>그날 밤의 진상 <small>${Object.values(TRUE_CLUES).filter((id) => meta.clues.includes(id)).length} / 3</small></h3>
+      <p class="truth">${Object.entries(TRUE_CLUES).map(([f, id]) => `<span class="${meta.clues.includes(id) ? 'got' : ''}">${ROUTES[f].name}: ${meta.clues.includes(id) ? CLUES[id].title : '? ? ?'}</span>`).join('')}</p>
+      ${meta.clears.trueEnd ? `<p class="truth-done">진엔딩 ${meta.clears.trueEnd}번 — ${CLUES.traitorName.title}</p>` : ''}
       <h3>알아낸 단서</h3>
       ${meta.clues.length
     ? `<ul class="clue-list">${meta.clues.map((id) => `<li><b>${CLUES[id]?.title ?? id}</b><span>${CLUES[id]?.text ?? ''}</span></li>`).join('')}</ul>`

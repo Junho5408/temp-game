@@ -622,6 +622,34 @@ export const DEMONIC_POOLS = [
   },
 ];
 
+
+// ══ 진엔딩: 귀면 뒤에 숨어 있던 자 ══════════════
+ENEMIES.baekri = {
+  name: '백리현', title: '무림맹 부맹주 · 청명검', art: 'boss-baekri', tier: 'boss',
+  maxHp: 220, evasion: 15, traits: ['feint'],
+  clue: 'traitorName',
+  pattern: [
+    { name: '청명검 · 일검', damage: 12 },
+    { name: '반격 자세', counter: 10 },
+    { name: '청명검 · 운류', damage: 5, hits: 3, weak: 1 },
+    { name: '정심결', strength: 3 },
+  ],
+  phase2: {
+    at: 0.5,
+    title: '위선을 벗은 부맹주',
+    text: '백리현의 미소가 사라진다 — "백 일 전부터 짜 둔 판이다. 이름 없는 떠돌이 따위가!"',
+    traits: ['drain', 'killer'],
+    strength: 3,
+    pattern: [
+      { name: '백학참', damage: 7, hits: 3 },
+      { name: '청명 일섬 · 기를 모은다', strength: 2 },
+      { name: '천지청명', damage: 38, charge: true, breakAt: 30, vulnerable: 2 },
+      { name: '흡정검', damage: 14 },
+    ],
+  },
+};
+export const TRUE_BOSS = 'baekri';
+
 for (const [id, e] of Object.entries(ENEMIES)) e.id = id;
 
 export const ENEMY_IDS = Object.keys(ENEMIES);

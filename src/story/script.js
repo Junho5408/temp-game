@@ -31,6 +31,7 @@ export const SPEAKERS = {
   patrolCaptain: { name: '한소', art: 'orthodox-assassin' },
   gangBro: { name: '흑도 졸개', glyph: '卒' },
   rival: { name: '연화', art: 'boss-rival', glyph: '華' },
+  baekri: { name: '백리현', art: 'boss-baekri', glyph: '鶴' },
   cultElder: { name: '혈공 장로', glyph: '魔' },
   cultHerald: { name: '마교 집사', glyph: '令' },
 };
@@ -137,6 +138,7 @@ export const CLUES = {
   innkeeper: { title: '객잔 주인이 돈을 받았다', text: '청운객잔 주인은 "그날 밤 문을 잠그면 큰돈을 준다"는 말에 넘어갔다. 습격은 안에서부터 준비되어 있었다.' },
   payer: { title: '돈을 준 쪽은 정파', text: '무림맹 장로의 품에서 흰 학 문양 전낭과 "청운객잔 주인에게 은자 오백 냥" 이라 적힌 장부가 나왔다. 흰 학은 무림맹 수뇌부의 문양이다.' },
   request: { title: '혈영대를 부른 것은 무림맹', text: '혈영대 막사의 서찰: "백 일 뒤 청운객잔, 흰 옷의 밀사. 밀서를 회수해 주면 약조대로 관문을 열겠소." 찍힌 인장은 흰 학 — 무림맹이었다.' },
+  traitorName: { title: '배신자는 부맹주 백리현', text: '밀서의 첩자 명단 맨 위에 적힌 이름 — 무림맹 부맹주 백리현. 그날 밤 객잔의 문, 혈영대, 밀사의 길은 모두 그의 손에서 나왔다.' },
   sender: { title: '귀면을 보낸 자', text: '귀면은 죽기 전에 "누가 우리를 보냈는지 아느냐"고 물었다. 혈영대를 움직인 것은 교주가 아니다.' },
 };
 
@@ -298,6 +300,34 @@ export const FINAL_INTRO = [
   { who: 'me', text: '백 일을 기다렸다. 이번엔 앞에서 와라.' },
 ];
 
+// ── 진엔딩 ─────────────────────────
+// 귀면이 쓰러진 뒤 (세 길의 단서를 모두 모은 판)
+export const TRUE_BRIDGE = [
+  { who: 'gwimyeon', text: '크윽… 어리석은 놈. 누가 우리를 보냈는지… 아느냐…' },
+  { who: 'me', text: '안다.' },
+  { who: 'narr', text: '빗소리 사이로, 느린 박수 소리가 들려왔다.\n문간에 흰 학 문양의 도포를 입은 사내가 서 있었다.' },
+  { who: 'baekri', text: '수고했네, 귀면. …아니, 이젠 쓸모가 없겠군.' },
+  { who: 'soohaNamed', text: '부맹주님…? 어째서 여기에…' },
+  { who: 'me', text: '흰 학 문양 전낭. 객잔 주인에게 건넨 은자 오백 냥. 혈영대를 부른 서찰의 인장.' },
+  { who: 'me', text: '그리고 맹의 높은 자리. 백 일을 몇 번이나 다시 살면서 모은 조각이다.' },
+  { who: 'baekri', text: '…재미있는 떠돌이로군. 밀서만 조용히 넘어왔으면 아무도 다치지 않았을 텐데.' },
+  { who: 'baekri', text: '좋네. 오늘 밤 이 객잔에서 일어난 일은, 마교의 습격으로 기록될 걸세. 자네들 모두의 이름과 함께.' },
+];
+
+export const TRUE_ENDING = [
+  { who: 'baekri', text: '크헉… 백 일… 백 일 전부터 짠 판이… 이름 없는 놈에게…' },
+  { who: 'narr', text: '진소하가 떨리는 손으로 밀서를 펼쳤다.\n마교가 맹에 심어 둔 첩자 명단. 그 맨 위에 적힌 이름.' },
+  { who: 'soohaNamed', text: '…백리현. 부맹주가 첩자의 우두머리였다니.' },
+  { who: 'soohaNamed', text: '당신이 아니었으면 이 밀서는 오늘 밤 사라졌을 거요. 대체 당신은 누구요?' },
+  { who: 'me', text: '국수 먹던 떠돌이.' },
+  { who: 'boki', text: '소, 손님…! 국수가 아직 따뜻해요! 한 그릇 더 하실래요?' },
+  { who: 'me', text: '…그래. 이번엔 다 먹고 가지.' },
+  { who: 'juno', text: '(딸꾹) 백 일이란 건 말이야… 이번엔 술이 잘 익었군.' },
+  { who: 'me', text: '(…역시 알고 있었던 건가, 이 노인네.)', thought: true },
+  { who: 'narr', text: '비가 그쳤다.\n그리고 나는 처음으로, 백 일 뒤의 아침을 맞았다.' },
+  { who: 'narr', text: '― 진엔딩 · 백일회귀 ―' },
+];
+
 export const ENDING = [
   { who: 'gwimyeon', text: '크윽… 이름도 없는 놈에게…' },
   { who: 'gwimyeon', text: '…어리석은 놈. 누가 우리를 보냈는지… 아느냐…' },
@@ -447,6 +477,8 @@ export function battleIntro(enemyId, known) {
         { who: 'me', text: '맹의 이름이라. 그 맹이 혈영대를 불렀다는 건 아나?' },
         { who: 'allianceElder', text: '…무슨 헛소리를!' },
       ];
+    case 'baekri':
+      return [{ who: 'baekri', text: '청명검이 무엇인지 보여 주지. 맹의 이름으로.' }];
     case 'gwimyeon':
       return FINAL_INTRO;
     default:
@@ -544,6 +576,8 @@ export function battleOutro(enemyId, known) {
         { who: 'allianceElder', text: '크헉… 마교가… 맹의 요청으로 움직였다고…? 그런 일은… 부맹주께서 허락하실 리가…' },
         { who: 'me', text: '(부맹주…)', thought: true },
       ];
+    case 'baekri':
+      return TRUE_ENDING;
     case 'gwimyeon':
       return ENDING;
     default:

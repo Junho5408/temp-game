@@ -19,7 +19,7 @@ import {
 import {
   PROLOGUE_INTRO, PROLOGUE_AFTER_THUG, PROLOGUE_DEATH, TUTORIAL_1_HINTS, TUTORIAL_2_HINTS,
   wakeLines, deathLines, CLUES, zone1Start, battleIntro, battleOutro, npcIntro,
-  zoneIntro, zoneClearLines, zoneName, zoneBackground,
+  zoneIntro, zoneClearLines, zoneName, zoneBackground, TRUE_BRIDGE,
 } from './story/script.js';
 import { playDialogue } from './ui/dialogue.js';
 import {
@@ -338,8 +338,20 @@ async function showStep() {
         saveMeta();
         run.recorded = true;
       }
-      const outro = result === 'won' ? battleOutro(enemyId, known) : null;
-      if (outro) {
+      // 진엔딩 판: 귀면이 쓰러지면 일반 엔딩 대신 백리현이 나타나는 장면
+      const outro = result !== 'won' ? null
+        : enemyId === 'gwimyeon' && run.trueEnding ? TRUE_BRIDGE
+          : battleOutro(enemyId, known);
+      if (outro === TRUE_BRIDGE) {
+        // 귀면이 쓰러진 자리에 백리현이 걸어 들어옴
+        setScreen('story');
+        const enter = TRUE_BRIDGE.findIndex((l) => l.who === 'narr');
+        await playDialogue(TRUE_BRIDGE.slice(0, enter + 1));
+        await scene.setEnemy(ENEMIES.baekri.art);
+        scene.reset();
+        sfx('door');
+        await playDialogue(TRUE_BRIDGE.slice(enter + 1));
+      } else if (outro) {
         setScreen('story');
         await playDialogue(outro);
       }
@@ -399,7 +411,7 @@ async function showStep() {
       // 구역 돌파 → 다음 구역 (마지막 구역 뒤에는 그날 밤의 객잔)
       setScreen('story');
       await playDialogue(zoneClearLines(run.zone, run.faction));
-      advanceZone(run);
+      advanceZone(run, meta); // 세 길의 핵심 단서를 모두 모았으면 진엔딩 판
       applyZoneLook();
       saveRun();
       if (run.phase === 'map') {

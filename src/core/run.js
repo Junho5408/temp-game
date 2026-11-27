@@ -2,8 +2,8 @@
 // 전투 자체는 battle.js 가 맡고, 여기서는 전투 전후만 다룸.
 import { createBattle, PLAYER_MAX_HP } from './battle.js';
 import { CARDS, STARTER_DECK, canUpgrade, cardsByRarity } from './cards.js';
-import { ENEMIES } from './enemies.js';
-import { FACTION_IDS, ROUTES, routeOf } from './routes.js';
+import { ENEMIES, TRUE_BOSS } from './enemies.js';
+import { FACTION_IDS, ROUTES, routeOf, hasTrueClues } from './routes.js';
 import { EVENTS, EVENT_IDS } from './events.js';
 import { findNode, generateMap } from './map.js';
 import {
@@ -138,6 +138,8 @@ export function parseRun(text) {
     run.bag = run.bag.filter((id) => CONSUMABLES[id]).slice(0, BAG_SIZE);
     run.treasures = run.treasures.filter((id) => TREASURES[id]);
     if (!Number.isInteger(run.rngCount) || run.rngCount < 0) run.rngCount = 0;
+    run.trueEnding = run.trueEnding === true;
+    run.trueWin = run.trueWin === true;
     // 단계별로 꼭 필요한 데이터
     const need = {
       battle: () => ENEMIES[run.encounter?.enemyId],
@@ -320,10 +322,19 @@ export function finishBattle(run, battle) {
   run.battlesWon += 1;
   const tier = run.encounter.tier;
   const final = !!run.encounter.final;
+  const beaten = run.encounter.enemyId;
   const clue = ENEMIES[run.encounter.enemyId].clue;
   if (clue && !run.cluesFound.includes(clue)) run.cluesFound.push(clue);
   run.encounter = null;
   if (final) {
+    // 진엔딩 조건을 갖춘 판: 귀면 뒤에 백리현이 나타남 (잃은 체력 절반 회복)
+    if (run.trueEnding && beaten !== TRUE_BOSS) {
+      run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * 0.5));
+      run.encounter = { enemyId: TRUE_BOSS, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
+      run.phase = 'battle';
+      return;
+    }
+    run.trueWin = beaten === TRUE_BOSS;
     run.phase = 'victory';
     return;
   }
@@ -398,7 +409,8 @@ export function chooseReward(run, index) {
 }
 
 // 다음 구역으로 (마지막 구역 뒤에는 그날 밤의 최종 결전)
-export function advanceZone(run) {
+// meta 를 주면: 세 길의 핵심 단서를 모두 모은 회귀라면 진엔딩 판이 됨
+export function advanceZone(run, meta = null) {
   if (run.phase !== 'zoneClear') return false;
   run.pendingAdvance = false;
   run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * ZONE_HEAL_RATIO));
@@ -408,6 +420,7 @@ export function advanceZone(run) {
   run.lastEnemy = null;
   if (run.zone >= ZONE_COUNT) {
     run.encounter = { enemyId: routeOf(run).finalBoss, tier: 'boss', final: true, scale: { hp: 1, strength: 0 } };
+    run.trueEnding = !!meta && hasTrueClues(meta.clues ?? []);
     run.phase = 'battle';
     return true;
   }

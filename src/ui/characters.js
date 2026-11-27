@@ -68,18 +68,26 @@ export const DESIGN_IDS = Object.keys(DESIGNS);
 // ── 이야기 인물 (세력·계열 밖) ─────────────────────────
 // 그림 원본: docs/reference/npc-*-raw.webp → tools/prepare_sprite.py <원본> npc-<id>
 const NPCS = {
-  // 그림 대기 중 (sprite: null → 전투는 실루엣, 대사는 한자 인장)
+  // sprite: null 이면 그림 대기 중 (전투는 실루엣, 대사는 한자 인장)
   'boss-gang': {
-    title: '흑도 맹주 조광', note: '사파 1구역 두목. 곰방대와 대감도, 금니', cls: 'sword', color: '#8e7050', sprite: null,
+    title: '흑도 맹주 조광', note: '사파 1구역 두목. 곰방대와 대감도, 금니', cls: 'sword', color: '#8e7050',
+    sprite: { image: 'assets/characters/boss-gang.webp', footX: 0.4409 },
   },
   'boss-elder': {
-    title: '무림맹 장로 우문혁', note: '사파·마교 3구역 두목. 쇠지팡이와 호신강기', cls: 'fist', color: '#3e7cc8', sprite: null,
+    title: '무림맹 장로 우문혁', note: '사파·마교 3구역 두목. 쇠지팡이와 호신강기', cls: 'fist', color: '#3e7cc8',
+    sprite: { image: 'assets/characters/boss-elder.webp', footX: 0.4883 },
+  },
+  'boss-baekri': {
+    title: '무림맹 부맹주 백리현', note: '진엔딩 최종 두목. 청명검이라 불리는 존경받는 고수, 흰 학 문양', cls: 'sword', color: '#d8dde4',
+    sprite: { image: 'assets/characters/boss-baekri.webp', footX: 0.6488 },
   },
   'boss-rival': {
-    title: '마교 서열 1위 연화', note: '마교 1구역 두목. 붉은 곡도를 쓰는 젊은 천재', cls: 'sword', color: '#c22a36', sprite: null,
+    title: '마교 서열 1위 연화', note: '마교 1구역 두목. 붉은 곡도를 쓰는 젊은 천재', cls: 'sword', color: '#c22a36',
+    sprite: { image: 'assets/characters/boss-rival.webp', footX: 0.5391 },
   },
   'npc-innkeeper': {
-    title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a', sprite: null,
+    title: '청운객잔 주인', note: '사파 단서 인물. 주판을 끌어안은 소심한 주인장', cls: 'fist', color: '#a08a6a',
+    sprite: { image: 'assets/characters/npc-innkeeper.webp', footX: 0.4919 },
   },
   'boss-nokrim': {
     title: '녹림 총채주 곽패', note: '2구역 두목. 개산부를 휘두르는 산군',

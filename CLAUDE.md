@@ -5,9 +5,10 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 6단계 — 6-A·6-B 사파·6-C 마교 완료 → 6-D 진엔딩 (그림 요청 중: 백리현·흑도 맹주(boss-gang)·마교 경쟁자(boss-rival)·무림맹 장로(boss-elder)·객잔 주인(npc-innkeeper))
+- 진행 중: 6단계 — 6-A·6-B 사파·6-C 마교·6-D 진엔딩 완료 → 마지막: 밸런스 + /qa
 - QA 티켓: BUG-001~025 모두 처리 (BUG-018 보류) — docs/qa/tickets/INDEX.md
-- 다음 할 일: 6-B 사파 → 6-C 마교 → 6-D 진엔딩 → 밸런스 + /qa (계획 docs/PLAN.md 6단계, 승인됨)
+- 다음 할 일: 밸런스(세 루트 + 진엔딩 판, tools/qa/balance.mjs --faction= --true=1) → /qa 한 회차 (계획 docs/PLAN.md 6단계)
+- 진엔딩: routes.js TRUE_CLUES(세 길 핵심 단서) → advanceZone(run, meta) 가 run.trueEnding → 귀면 뒤 백리현(enemies.js TRUE_BOSS) → script.js TRUE_BRIDGE/TRUE_ENDING, 기록 clears.trueEnd
 - 세력 루트: src/core/routes.js (ROUTES[세력].pools/finalBoss/unlock/passive/starter/ready), 대사 script.js ROUTE_TEXT
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 

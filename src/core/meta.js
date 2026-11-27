@@ -14,7 +14,7 @@ export function createMeta() {
     prologueDone: false,
     runs: 0, // 회귀 후 시작한 판 수
     deaths: 0,
-    clears: { zone1: 0, zone2: 0, zone3: 0, final: 0 },
+    clears: { zone1: 0, zone2: 0, zone3: 0, final: 0, trueEnd: 0 },
     memories: [], // 기억한 무공 id (중복 없음)
     clues: [], // 알아낸 단서 id
     bestFloor: 0,
@@ -108,6 +108,7 @@ export function recordRunEnd(meta, run) {
   if (run.phase === 'defeat') meta.deaths += 1;
   for (let z = 1; z <= Math.min(3, run.zonesCleared ?? 0); z++) meta.clears[`zone${z}`] += 1;
   if (run.phase === 'victory') meta.clears.final += 1;
+  if (run.phase === 'victory' && run.trueWin) meta.clears.trueEnd += 1;
   const f = run.faction ?? 'orthodox';
   const st = meta.routeStats[f] ?? { runs: 0, bestZone: 0, wins: 0 };
   st.runs += 1;
