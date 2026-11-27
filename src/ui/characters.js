@@ -20,12 +20,12 @@ export const CLASSES = {
 // 주인공 한 사람(회귀자)을 세력 × 계열로 — 같은 얼굴, 흰 옷 + 세력 색 (8단계, docs/art/prompts-hero.md)
 const NOTES = {
   'orthodox-sword': '깔끔하게 올린 상투(도관), 잡티 없는 피부, 좌우 대칭이 반듯한 이목구비',
-  'orthodox-fist': '굵은 눈썹, 다부진 턱선, 이마를 드러낸 머리띠(말액)',
-  'orthodox-assassin': '푸른 복면·두건으로 하관을 가리고 차분한 눈빛만 강조한 정파 밀정',
+  'orthodox-fist': '같은 얼굴(주인공) · 흰 도포에 푸른 깃·띠, 은빛 팔목 보호대, 장법 자세',
+  'orthodox-assassin': '같은 얼굴(주인공) · 푸른 복면을 목에 내리고 단검 두 자루, 허리에 은침',
   'demonic-sword': '같은 얼굴(주인공) · 흰 도포에 붉은 깃·검은 띠, 검붉은 기운이 서린 검',
   'demonic-fist': '같은 얼굴(주인공) · 붉은 천을 감은 팔에 검은 쇠 권갑, 주먹에 검붉은 기운',
   'demonic-assassin': '같은 얼굴(주인공) · 검붉은 복면을 목에 내리고 검은 단검 두 자루',
-  'unorthodox-sword': '흐트러진 잔머리, 거친 수염 자국, 챙 넓은 삿갓',
+  'unorthodox-sword': '같은 얼굴(주인공) · 낡은 흰 도포에 황토 깃, 외날 도 (임시: 얼굴 시트의 서 있는 그림)',
   'unorthodox-fist': '같은 얼굴(주인공) · 소매를 뜯은 흰 옷, 붕대 감은 주먹, 새끼줄 띠',
   'unorthodox-assassin': '같은 얼굴(주인공) · 갈색 복면을 목에 내리고 가슴에 비도 띠, 곡단검 두 자루',
 };
@@ -33,11 +33,11 @@ const NOTES = {
 // 전신 그림 등록 (prepare_sprite.py 가 출력한 footX 값)
 const SPRITES = {
   'orthodox-sword': { image: 'assets/characters/orthodox-sword.webp', footX: 0.4073 },
-  'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.5286 },
-  'orthodox-assassin': { image: 'assets/characters/orthodox-assassin.webp', footX: 0.5028 },
+  'orthodox-fist': { image: 'assets/characters/orthodox-fist.webp', footX: 0.4856 },
+  'orthodox-assassin': { image: 'assets/characters/orthodox-assassin.webp', footX: 0.508 },
   'demonic-sword': { image: 'assets/characters/demonic-sword.webp', footX: 0.6196 },
   'demonic-assassin': { image: 'assets/characters/demonic-assassin.webp', footX: 0.5228 },
-  'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
+  'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.6678 },
   'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
   'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.4988 },
   'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.4562 },
@@ -218,8 +218,8 @@ for (const [key, f] of Object.entries(FOES)) {
   };
 }
 
-// 주인공 그림: 같은 얼굴로 새로 그린 것만 (아직 안 그린 세력×계열은 정파 검객 그림)
-export const HERO_READY = new Set(['orthodox-sword', 'unorthodox-fist', 'unorthodox-assassin', 'demonic-sword', 'demonic-fist', 'demonic-assassin']);
+// 주인공 그림: 같은 얼굴로 새로 그린 것 (9칸 모두. 사파 검객은 얼굴 시트에서 자른 임시 그림)
+export const HERO_READY = new Set(['orthodox-sword', 'orthodox-fist', 'orthodox-assassin', 'unorthodox-sword', 'unorthodox-fist', 'unorthodox-assassin', 'demonic-sword', 'demonic-fist', 'demonic-assassin']);
 export function heroArt(faction, cls) {
   const key = `${faction}-${cls}`;
   return HERO_READY.has(key) ? key : 'orthodox-sword';
