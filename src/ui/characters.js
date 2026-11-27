@@ -39,7 +39,7 @@ const SPRITES = {
   'unorthodox-sword': { image: 'assets/characters/unorthodox-sword.webp', footX: 0.5138 },
   'unorthodox-fist': { image: 'assets/characters/unorthodox-fist.webp', footX: 0.4995 },
   'unorthodox-assassin': { image: 'assets/characters/unorthodox-assassin.webp', footX: 0.5143 },
-  'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.5332 },
+  'demonic-fist': { image: 'assets/characters/demonic-fist.webp', footX: 0.5332, face: { x: 0.5, y: 0.1 } },
 };
 
 // 공격 이펙트 색 (검기/권경/암기)
@@ -119,11 +119,11 @@ const NPCS = {
   },
   'elite-masked': {
     title: '정체불명의 복면객 무명', note: '정파 1구역 고수. 그날 밤 자객들과 같은 귀면 가면', cls: 'assassin', color: '#b83040',
-    sprite: { image: 'assets/characters/elite-masked.webp', footX: 0.5301 },
+    sprite: { image: 'assets/characters/elite-masked.webp', footX: 0.5301, face: { x: 0.56, y: 0.12 } },
   },
   'elite-one-eye': {
     title: '외눈 살수 독안귀', note: '꿰맨 흉터 눈, 독 바른 비도', cls: 'assassin', color: '#6a5a48',
-    sprite: { image: 'assets/characters/elite-one-eye.webp', footX: 0.4381 },
+    sprite: { image: 'assets/characters/elite-one-eye.webp', footX: 0.4381, face: { x: 0.46, y: 0.1 } },
   },
   'elite-axe-lord': {
     title: '도끼파 두목 마삼', note: '사파 1구역 고수. 배불뚝이, 손도끼 두 자루', cls: 'fist', color: '#a0603a',
@@ -135,7 +135,7 @@ const NPCS = {
   },
   'elite-blood-wolf': {
     title: '혈영대 부대주 혈랑', note: '3구역 고수. 늑대 털 깃, 귀면 가면을 허리에 참', cls: 'assassin', color: '#7a2a30',
-    sprite: { image: 'assets/characters/elite-blood-wolf.webp', footX: 0.4823 },
+    sprite: { image: 'assets/characters/elite-blood-wolf.webp', footX: 0.4823, face: { x: 0.64, y: 0.1 } },
   },
   'elite-poison-king': {
     title: '만독수 당철', note: '2구역 고수. 보라색으로 물든 독 손, 약병 주머니', cls: 'fist', color: '#7a5aa0',
@@ -143,7 +143,7 @@ const NPCS = {
   },
   'elite-twin-blade': {
     title: '녹림 행동대장 쌍도귀', note: '2구역 고수. 흉터투성이 팔, 대도 두 자루', cls: 'sword', color: '#8a6040',
-    sprite: { image: 'assets/characters/elite-twin-blade.webp', footX: 0.4996 },
+    sprite: { image: 'assets/characters/elite-twin-blade.webp', footX: 0.4996, face: { x: 0.47, y: 0.05 } },
   },
   'elite-patrol-captain': {
     title: '무림맹 순찰대장 한소', note: '사파 3구역 고수. 흰 학 견장, 은빛 비도와 승표', cls: 'assassin', color: '#6f8fb8',
@@ -155,7 +155,7 @@ const NPCS = {
   },
   'elite-twin-fang': {
     title: '혈영대 견습 살수 쌍아', note: '마교 1구역 고수. 쌍상투 소녀, 송곳니 단검 두 자루', cls: 'assassin', color: '#7a1a28',
-    sprite: { image: 'assets/characters/elite-twin-fang.webp', footX: 0.4904 },
+    sprite: { image: 'assets/characters/elite-twin-fang.webp', footX: 0.4904, face: { x: 0.47, y: 0.02 } },
   },
   'elite-red-lash': {
     title: '마교 검각 제자 적편', note: '마교 1구역 고수. 붉은 기운의 채찍검', cls: 'sword', color: '#c22a36',
@@ -171,7 +171,7 @@ const NPCS = {
   },
   'boss-nokrim': {
     title: '녹림 총채주 곽패', note: '2구역 두목. 개산부를 휘두르는 산군',
-    cls: 'fist', color: '#8e7050', sprite: { image: 'assets/characters/boss-nokrim.webp', footX: 0.4055 },
+    cls: 'fist', color: '#8e7050', sprite: { image: 'assets/characters/boss-nokrim.webp', footX: 0.4055, face: { x: 0.33, y: 0.1 } },
   },
   'boss-gwimyeon': {
     title: '혈영대주 귀면', note: '그날 밤 나를 벤 자. 뿔 달린 귀면 가면과 쌍도',
