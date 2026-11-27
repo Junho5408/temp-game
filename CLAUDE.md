@@ -5,8 +5,8 @@
 - 상세 기획: docs/SPEC.md / 스토리: docs/STORY.md / 계획: docs/PLAN.md / 일지: docs/PROGRESS.md
 
 ## 현재 상태
-- 진행 중: 5단계 다듬기·배포 준비 완료, 최종 QA → 사용자가 GitHub Pages 켜면 공개
-- QA 티켓: 첫 회차 19건 모두 처리 (docs/qa/tickets/INDEX.md)
+- 진행 중: 최종 QA(qa-20261127-0035) 완료 — 배포 가능, 새 티켓 6건(BUG-020 보통, 021~025 낮음) → 사용자 확인 대기
+- QA 티켓: 첫 회차 19건 처리, 최종 QA 새 티켓 6건 열림 (docs/qa/tickets/INDEX.md)
 - 다음 할 일: 최종 QA 결과 반영 → 배포 뒤 추가 콘텐츠(사파·마교 루트, 진엔딩) 계획 보여주고 승인받기
 - 소리: src/ui/audio.js (Web Audio 합성, sfx(이름) / playMusic(분위기))
 
