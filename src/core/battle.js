@@ -527,6 +527,12 @@ export function runEnemyTurn(s) {
   return true;
 }
 
+// 반격 자세 한 번에 실제로 되받는 피해 (적 기세·흐트러짐, 내 내상 반영) — BUG-023
+// counter 를 주지 않으면 지금 걸려 있는 반격 자세 기준
+export function counterDamage(s, counter = s.enemy.status.counter) {
+  return counter > 0 ? computeDamage(s.enemy, s.player, counter) : 0;
+}
+
 // 화면에 보여줄 적의 다음 행동 (상태 효과 반영한 실제 피해)
 export function intentPreview(s) {
   const e = s.enemy;
@@ -539,6 +545,7 @@ export function intentPreview(s) {
     hits: it.hits ?? 1,
     hitChance: it.damage ? enemyHitChance(s, it) : 0,
     breakProgress: it.charge ? e.turnDamage : 0,
+    counter: it.counter ? counterDamage(s, it.counter) : 0,
   };
 }
 

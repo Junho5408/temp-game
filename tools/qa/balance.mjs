@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   createRun, availableNodes, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure,
-  restHeal, restUpgrade, buyCard, canBuy, leaveShop, chooseEventOption, leaveEvent, advanceZone,
+  restHeal, restUpgrade, leaveRest, buyCard, canBuy, leaveShop, chooseEventOption, leaveEvent, advanceZone,
 } from '../../src/core/run.js';
 import {
   startPlayerTurn, playCard, endPlayerTurn, runEnemyTurn, intentPreview, useItem,
@@ -114,7 +114,9 @@ for (let seed = 1; seed <= N; seed++) {
       chooseReward(run, 0);
     } else if (run.phase === 'rest') {
       const up = run.deck.find((c) => !c.upgraded);
-      if (run.hp < run.maxHp * 0.75 || !up) restHeal(run); else restUpgrade(run, up.uid);
+      if (run.hp < run.maxHp && (run.hp < run.maxHp * 0.75 || !up)) restHeal(run);
+      else if (up) restUpgrade(run, up.uid);
+      else leaveRest(run);
     } else if (run.phase === 'shop') {
       const i = run.shop.items.findIndex((_, k) => canBuy(run, k));
       if (i >= 0) buyCard(run, i);

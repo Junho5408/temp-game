@@ -3,12 +3,15 @@
 // - 설정(음악·효과음 음량)은 localStorage temp-game.settings.v1
 // 배경음: 오음계(궁상각치우) 현을 뜯는 소리 + 낮은 지속음 + 분위기별 북·빗소리
 
+import { cleanSettings, cleanVolume } from '../core/settings.js';
+
 const SETTINGS_KEY = 'temp-game.settings.v1';
-const settings = { music: 0.5, sfx: 0.7 };
+let settings = cleanSettings(null);
 try {
-  Object.assign(settings, JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || '{}'));
+  // 깨진 값은 기본값, 범위 밖은 0~1 로 — BUG-022
+  settings = cleanSettings(JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || 'null'));
 } catch {
-  // 저장 막힘 → 기본값
+  // 저장 막힘·깨진 JSON → 기본값
 }
 
 let ctx = null;
@@ -30,29 +33,41 @@ export function getVolume(kind) {
 }
 
 export function setVolume(kind, v) {
-  settings[kind] = Math.max(0, Math.min(1, v));
+  settings[kind] = cleanVolume(v, settings[kind]);
   saveSettings();
   if (kind === 'music' && musicBus) musicBus.gain.setTargetAtTime(settings.music * 0.55, ctx.currentTime, 0.05);
   if (kind === 'sfx' && sfxBus) sfxBus.gain.setTargetAtTime(settings.sfx, ctx.currentTime, 0.05);
 }
 
+// 모든 재료를 만든 뒤에야 ctx 를 확정 (중간에 실패해도 반쯤 켜진 상태로 남지 않게) — BUG-022
 function init() {
   if (ctx) return true;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return false;
-  ctx = new AC();
-  master = ctx.createDynamicsCompressor();
-  master.connect(ctx.destination);
-  musicBus = ctx.createGain();
-  musicBus.gain.value = settings.music * 0.55;
-  musicBus.connect(master);
-  sfxBus = ctx.createGain();
-  sfxBus.gain.value = settings.sfx;
-  sfxBus.connect(master);
-  noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const d = noiseBuf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  return true;
+  let c = null;
+  try {
+    c = new AC();
+    const m = c.createDynamicsCompressor();
+    m.connect(c.destination);
+    const mb = c.createGain();
+    mb.gain.value = settings.music * 0.55;
+    mb.connect(m);
+    const sb = c.createGain();
+    sb.gain.value = settings.sfx;
+    sb.connect(m);
+    const nb = c.createBuffer(1, c.sampleRate, c.sampleRate);
+    const d = nb.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    ctx = c;
+    master = m;
+    musicBus = mb;
+    sfxBus = sb;
+    noiseBuf = nb;
+    return true;
+  } catch {
+    c?.close?.();
+    return false;
+  }
 }
 
 // 첫 사용자 입력에서 소리 켜기

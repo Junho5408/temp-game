@@ -4,7 +4,7 @@ import { generateMap, ROWS, allNodes } from '../src/core/map.js';
 import {
   createRun, availableNodes, enterNode, startEncounter, finishBattle, chooseReward,
   restHeal, restUpgrade, buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, chooseTreasure,
-  advanceZone, serializeRun, parseRun,
+  advanceZone, serializeRun, parseRun, leaveRest,
   START_GOLD,
 } from '../src/core/run.js';
 import {
@@ -205,8 +205,9 @@ function autoRun(seed) {
       chooseReward(run, 0);
     } else if (run.phase === 'rest') {
       const up = run.deck.find((c) => !c.upgraded);
-      if (run.hp < run.maxHp * 0.75 || !up) restHeal(run);
-      else restUpgrade(run, up.uid);
+      if (run.hp < run.maxHp && (run.hp < run.maxHp * 0.75 || !up)) restHeal(run);
+      else if (up) restUpgrade(run, up.uid);
+      else leaveRest(run);
     } else if (run.phase === 'shop') {
       const i = run.shop.items.findIndex((it) => it.price <= run.gold);
       if (i >= 0) buyCard(run, i);

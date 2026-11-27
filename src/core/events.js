@@ -1,6 +1,7 @@
 // 기연 (지도의 ? 칸): 선택지가 있는 짧은 사건
 // option.effect(run, rng) 는 run 상태를 바꾸고 결과 문장을 돌려줌
 import { CARDS, canUpgrade, cardsByRarity } from './cards.js';
+import { josa } from './josa.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES } from './items.js';
 
 // 관문의 주노가 가르쳐 주는 보물 (아직 없는 것부터)
@@ -58,7 +59,7 @@ export const EVENTS = {
           if (options.length === 0) return '노인은 술만 마시고 코를 골았다.';
           const card = options[Math.floor(rng() * options.length)];
           card.upgraded = true;
-          return `"검끝이 너무 정직해. 한 번 속이고 들어가게." 취중에 한 말이었지만, 『${CARDS[card.id].name}』이(가) 연마되었다.`;
+          return `"검끝이 너무 정직해. 한 번 속이고 들어가게." 취중에 한 말이었지만, ${josa(`『${CARDS[card.id].name}』`, '이/가')} 연마되었다.`;
         },
       },
       {
@@ -172,7 +173,7 @@ export const EVENTS = {
           const id = JUNO_TEACHES.find((t) => !run.treasures.includes(t));
           if (!id) return '"자네한테 더 가르칠 게 없구먼." 노인은 술값만 받아 갔다.';
           api.addTreasure(id);
-          return `"잘 봐 두게. 두 번은 안 보여 줘." — 보물 『${TREASURES[id].name}』을(를) 얻었다.`;
+          return `"잘 봐 두게. 두 번은 안 보여 줘." — 보물 ${josa(`『${TREASURES[id].name}』`, '을/를')} 얻었다.`;
         },
       },
     ],
@@ -225,7 +226,7 @@ export const EVENTS = {
             const id = api.randomItem();
             if (api.addItem(id)) names.push(CONSUMABLES[id].name);
           }
-          let text = names.length ? `${names.join(', ')}을(를) 챙겼다.` : '쓸 만한 게 있었지만 행낭이 가득 찼다.';
+          let text = names.length ? `${josa(names.join(', '), '을/를')} 챙겼다.` : '쓸 만한 게 있었지만 행낭이 가득 찼다.';
           if (rng() < 0.35) {
             damage(run, 7);
             text = `매듭에 숨겨진 독침에 찔렸다! 체력 -7.\n그래도 ${text}`;
@@ -271,7 +272,7 @@ export const EVENTS = {
             names.push(CARDS[card.id].name);
           }
           return names.length
-            ? `몸이 부서질 듯했지만 『${names.join('』, 『')}』을(를) 연마했다.`
+            ? `몸이 부서질 듯했지만 ${josa(`『${names.join('』, 『')}』`, '을/를')} 연마했다.`
             : '더 연마할 것이 없었다. 체력만 잃었다.';
         },
       },

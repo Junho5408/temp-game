@@ -2,7 +2,7 @@
 // 규칙은 src/core 에만 있고, 여기서는 상태를 그리고 입력을 전달함.
 import {
   createBattle, startPlayerTurn, playCard, canPlay, endPlayerTurn, runEnemyTurn, takeEvents, intentPreview,
-  playerHitChance, playerEvasion, comboActive, useItem, cardPreviewDamage, cardHits,
+  playerHitChance, playerEvasion, comboActive, useItem, cardPreviewDamage, cardHits, counterDamage,
 } from './core/battle.js';
 import { BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND } from './core/items.js';
 import { cardStats } from './core/cards.js';
@@ -13,7 +13,7 @@ import {
 import { ENEMIES, TRAITS } from './core/enemies.js';
 import { EVENTS } from './core/events.js';
 import {
-  createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade, swapRewardItem,
+  createRun, enterNode, startEncounter, finishBattle, chooseReward, chooseTreasure, restHeal, restUpgrade, swapRewardItem, leaveRest,
   buyCard, removeCard, leaveShop, chooseEventOption, leaveEvent, advanceZone, serializeRun, parseRun, meetEventNpc,
 } from './core/run.js';
 import {
@@ -29,6 +29,7 @@ import { createScene, CHEST, FEET, HEAD_Y } from './ui/scene.js';
 import { sfx, playMusic, getVolume, setVolume } from './ui/audio.js';
 import { DESIGNS } from './ui/characters.js';
 import { installTouchTips } from './ui/touch.js';
+import { josa } from './core/josa.js';
 import {
   cardFace, renderMap, hideMap, renderReward, renderTreasure, renderRest, renderShop, renderEvent, renderEnd,
   openDeck, closePanel,
@@ -282,6 +283,7 @@ async function show() {
 }
 
 async function showStep() {
+  closeFloating();
   collectClues();
   saveRun();
   applyZoneLook();
@@ -355,6 +357,7 @@ async function showStep() {
       setScreen('panel');
       renderRest(run, {
         onHeal: () => { restHeal(run); show(); },
+        onLeave: () => { leaveRest(run); show(); },
         onUpgrade: (uid) => { restUpgrade(run, uid); show(); },
       });
       break;
@@ -533,6 +536,7 @@ function endBattle(result) {
   const ctx = battleCtx;
   if (!ctx) return;
   battleCtx = null;
+  closeFloating(); // 연출 중에 연 덱 창이 대사·다음 화면까지 따라가지 않게 — BUG-020
   busy = true;
   ctx.resolve(result);
 }
@@ -588,7 +592,8 @@ function renderUnit(el, name, title, u, who) {
     .filter(([k, v]) => v > 0 && STATUS_INFO[k])
     .map(([k, v]) => {
       const label = k === 'evasion' ? `${playerEvasion(battle)}%` : k === 'stun' || k === 'insight' ? '' : v;
-      return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${k === 'stun' ? '' : v}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
+      const tipValue = k === 'stun' ? '' : k === 'counter' && who === 'enemy' ? counterDamage(battle) : v;
+      return `<span class="st ${k}" title="${STATUS_INFO[k].name}: ${STATUS_INFO[k].tip}${tipValue}">${STATUS_INFO[k].glyph}<b>${label}</b></span>`;
     });
   if (who === 'enemy') {
     // 점혈 게이지와 타고난 특성
@@ -778,14 +783,21 @@ async function onEndTurn() {
 
 $('end-turn').addEventListener('click', onEndTurn);
 
-// 창·대사가 떠 있으면 전투 키 입력을 막음 (Esc 는 덱 창 닫기) — BUG-006
+// 떠 있는 작은 창 (덱 보기·음량). 새 창을 만들면 여기에 추가 — BUG-020·021
+const FLOATING = ['deck-modal', 'sound-panel'];
+
+function closeFloating() {
+  for (const id of FLOATING) $(id).hidden = true;
+}
+
+// 창·대사가 떠 있으면 전투 키 입력을 막음 (Esc 는 떠 있는 창 닫기) — BUG-006·021
 function inputBlocked() {
-  return !$('deck-modal').hidden || !$('dialogue').hidden || !$('panel').hidden || !$('flow').hidden;
+  return FLOATING.some((id) => !$(id).hidden) || !$('dialogue').hidden || !$('panel').hidden || !$('flow').hidden;
 }
 
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !$('deck-modal').hidden) {
-    $('deck-modal').hidden = true;
+  if (e.key === 'Escape' && FLOATING.some((id) => !$(id).hidden)) {
+    closeFloating();
     return;
   }
   if (inputBlocked()) return;
@@ -882,7 +894,7 @@ async function playEvents(events) {
       case 'break':
         sfx('gong');
         scene.shake(10);
-        showBanner(`파기(破氣)! ${ev.name}이(가) 끊겼다`, '#9cd7ff', 1300);
+        showBanner(`파기(破氣)! ${josa(ev.name, '이/가')} 끊겼다`, '#9cd7ff', 1300);
         renderStatus();
         await wait(500);
         break;

@@ -4,6 +4,7 @@ import { cardStats, canUpgrade, RARITY_LABEL, TYPE_LABEL, CARDS } from '../core/
 import { EVENTS } from '../core/events.js';
 import { NODE_TYPES, ROWS } from '../core/map.js';
 import { availableNodes, canBuy, canRestHeal } from '../core/run.js';
+import { josa } from '../core/josa.js';
 import { runFloor } from '../core/meta.js';
 import {
   BAG_SIZE, CONSUMABLES, TREASURES, TREASURE_KIND,
@@ -145,8 +146,8 @@ export function renderReward(run, onChoose, onSwap) {
   let itemLine = '';
   if (r.item) {
     itemLine = r.itemKept
-      ? ` · 행낭에 <b class="item-name">${CONSUMABLES[r.item].name}</b>을(를) 챙겼다`
-      : ` · <b class="item-name">${CONSUMABLES[r.item].name}</b>이(가) 있었지만 행낭이 가득 찼다`;
+      ? ` · 행낭에 <b class="item-name">${josa(CONSUMABLES[r.item].name, '을/를')}</b> 챙겼다`
+      : ` · <b class="item-name">${josa(CONSUMABLES[r.item].name, '이/가')}</b> 있었지만 행낭이 가득 찼다`;
   }
   const { body, actions } = openPanel('승리', `은자 <b class="gold">+${r.gold}냥</b>${itemLine}<br>무공 하나를 골라 익히시오`);
   body.classList.add('card-row');
@@ -154,8 +155,9 @@ export function renderReward(run, onChoose, onSwap) {
   if (r.item && !r.itemKept && onSwap) {
     const swap = document.createElement('div');
     swap.className = 'bag-swap';
-    swap.innerHTML = `<span>버리고 <b>${CONSUMABLES[r.item].name}</b> 챙기기:</span>`;
+    swap.innerHTML = `<span>버리고 <b>${josa(CONSUMABLES[r.item].name, '을/를')}</b> 챙기기:</span>`;
     run.bag.forEach((id, i) => {
+      if (id === r.item) return; // 같은 물품 칸은 바꿀 의미가 없음 — BUG-025
       const b = button(`${CONSUMABLES[id].glyph} ${CONSUMABLES[id].name}`, () => onSwap(i), 'ghost small');
       swap.appendChild(b);
     });
@@ -182,7 +184,7 @@ export function renderTreasure(run, onPick) {
 }
 
 // ── 운기조식 ─────────────────────────
-export function renderRest(run, { onHeal, onUpgrade }) {
+export function renderRest(run, { onHeal, onUpgrade, onLeave }) {
   const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * 0.3));
   const { body } = openPanel('운기조식', '조용한 곳에서 기혈을 고른다. 한 가지만 할 수 있다.');
   body.classList.add('choice-row');
@@ -192,13 +194,13 @@ export function renderRest(run, { onHeal, onUpgrade }) {
   a.disabled = full;
   const upgradable = run.deck.filter(canUpgrade);
   const b = button('<b>鍊</b><span>초식 연마</span><small>카드 1장을 강화(+)</small>', () => {
-    pickCard(run, '연마할 초식을 고르시오', upgradable, { preview: true }, onUpgrade, () => renderRest(run, { onHeal, onUpgrade }));
+    pickCard(run, '연마할 초식을 고르시오', upgradable, { preview: true }, onUpgrade, () => renderRest(run, { onHeal, onUpgrade, onLeave }));
   }, 'choice');
   b.disabled = upgradable.length === 0;
   body.append(a, b);
   // 휴식도 연마도 못 하면 그냥 지나가기 (막다른 화면 방지)
   if (a.disabled && b.disabled) {
-    $('panel').querySelector('.panel-actions').appendChild(button('지나간다', onHeal, 'ghost'));
+    $('panel').querySelector('.panel-actions').appendChild(button('지나간다', onLeave, 'ghost'));
   }
 }
 

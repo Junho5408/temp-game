@@ -389,6 +389,7 @@ export function swapRewardItem(run, bagIndex) {
   const r = run.reward;
   if (run.phase !== 'reward' || !r?.item || r.itemKept) return false;
   if (bagIndex < 0 || bagIndex >= run.bag.length) return false;
+  if (run.bag[bagIndex] === r.item) return false; // 같은 물품끼리는 바꿀 의미가 없음 — BUG-025
   run.bag[bagIndex] = r.item;
   r.itemKept = true;
   return true;
@@ -399,12 +400,20 @@ export function canRestHeal(run) {
   return run.hp < run.maxHp;
 }
 
+// 체력이 가득하면 아무것도 바꾸지 않고 false (휴식 대신 leaveRest) — BUG-025
 export function restHeal(run) {
-  if (run.phase !== 'rest') return 0;
+  if (run.phase !== 'rest' || !canRestHeal(run)) return false;
   const before = run.hp;
   run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * REST_HEAL_RATIO));
   run.phase = 'map';
   return run.hp - before;
+}
+
+// 휴식도 연마도 하지 않고 지나감
+export function leaveRest(run) {
+  if (run.phase !== 'rest') return false;
+  run.phase = 'map';
+  return true;
 }
 
 export function restUpgrade(run, uid) {

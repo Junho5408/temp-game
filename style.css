@@ -1152,3 +1152,14 @@ html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparen
 .card .desc .dmg-now.down { color: #9fb4c8; }
 .bag-swap { display: flex; align-items: center; justify-content: center; gap: 6px; margin: -4px 0 8px; font-size: 13px; color: #d9cfbd; }
 .bag-swap .btn.small { padding: 3px 9px; font-size: 12px; }
+
+/* ── BUG-024 터치 기기에서 작은 버튼의 누르는 영역 넓히기 ─────────────────── */
+@media (pointer: coarse) {
+  /* 音·덱: 보이는 크기는 그대로, 투명한 누름 영역을 사방으로 넓힘 (무대 기준 약 56px → 휴대폰 가로에서 약 40px) */
+  #sound-button::after, #deck-button::after { content: ''; position: absolute; inset: -14px; }
+  #deck-button { position: relative; }
+  /* 행낭 칸은 실제로 크게 */
+  #bag { bottom: 150px; gap: 6px; }
+  .bag-slot { width: 56px; height: 56px; }
+  .bag-slot span { font-size: 22px; }
+}
