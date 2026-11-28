@@ -934,21 +934,20 @@ async function playEvents(events) {
         // 큰 초식(내공 2 이상·희귀): 필살 연출 — 화면이 어두워지고 이름이 크게
         const c = cardStats({ id: ev.card });
         if (ev.attack && (c.cost >= 2 || c.rarity === 'rare')) {
-          sfx('buff');
-          scene.finisher('player');
-          showBanner(`— ${c.name} —`, '#ffd88a', 700);
-          await wait(380);
+          // 컷신: 큰 그림이 띠 안으로 들어오고 기술 이름 (10단계)
+          sfx('gong');
+          await wait(scene.cutin('player', c.name) - 120);
         }
         break;
       }
       case 'enemyAct':
         if (ev.charge) {
           sfx('gong');
-          scene.finisher('enemy');
+          await wait(scene.cutin('enemy', ev.name) - 120);
+          break;
         }
         showBanner(ev.name, ev.stunned ? '#9cd7ff' : '#ffb0a0', ev.stunned ? 1100 : 800);
         if (ev.stunned) await wait(700);
-        if (ev.charge) await wait(380);
         break;
       case 'damage': {
         if (ev.thrown || ev.riposte) {

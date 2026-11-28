@@ -128,6 +128,13 @@ export async function createScene(canvas, { player }) {
   function finisher(who) {
     fin = { at: performance.now(), who };
   }
+  // 컷신(컷인): 큰 초식·적 필살 — 화면이 멈추고 큰 그림이 띠 안으로 미끄러져 들어온 뒤 한 줄로 갈라짐
+  const CUTIN_MS = 900;
+  let cut = { at: -1e9, who: 'player', name: '' };
+  function cutin(who, name) {
+    cut = { at: performance.now(), who, name };
+    return CUTIN_MS;
+  }
 
   const fallbackImg = await loadImage(DESIGNS[player].sprite.image);
   const units = {
@@ -290,6 +297,113 @@ export async function createScene(canvas, { player }) {
     ctx.restore();
     ctx.restore();
     if (mode !== 'inn') drawEmbers(ctx, now);
+    drawCutin(ctx, now);
+  }
+
+  function drawCutin(g, now) {
+    const t = now - cut.at;
+    if (t < 0 || t > CUTIN_MS) return;
+    const u = units[cut.who];
+    if (!u) return;
+    const p = t / CUTIN_MS;
+    const left = cut.who === 'player';
+    const inK = ease.out(clamp01(t / 180)); // 띠가 열림
+    const outK = ease.in(clamp01((t - 700) / 200)); // 띠가 닫힘
+    const open = inK * (1 - outK);
+    // 뒤 화면 어둡게
+    g.save();
+    g.fillStyle = `rgba(0, 0, 0, ${0.55 * open})`;
+    g.fillRect(0, 0, W, H);
+    // 기울어진 띠
+    const cy = H * 0.46;
+    const bh = 210 * open;
+    const skew = 70;
+    g.beginPath();
+    g.moveTo(0, cy - bh / 2 + skew);
+    g.lineTo(W, cy - bh / 2 - skew);
+    g.lineTo(W, cy + bh / 2 - skew);
+    g.lineTo(0, cy + bh / 2 + skew);
+    g.closePath();
+    g.save();
+    g.clip();
+    const grad = g.createLinearGradient(0, 0, W, 0);
+    const tint = u.fxColor ?? '#bcd6ff';
+    grad.addColorStop(0, '#0b0a10');
+    grad.addColorStop(left ? 0.35 : 0.65, '#1b1620');
+    grad.addColorStop(1, '#0b0a10');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    // 속도선 (띠 안, 반대 방향으로 흐름)
+    g.globalCompositeOperation = 'lighter';
+    const dir = left ? 1 : -1;
+    for (let i = 0; i < 40; i++) {
+      const yy = cy - 160 + ((i * 47) % 320);
+      const len = 120 + ((i * 53) % 260);
+      const xx = ((i * 97 + t * 2.4) % (W + 400)) - 200;
+      const x0 = left ? W - xx : xx;
+      g.strokeStyle = i % 3 ? 'rgba(255,255,255,0.18)' : `${tint}`;
+      g.globalAlpha = i % 3 ? 1 : 0.35;
+      g.lineWidth = 1 + (i % 4);
+      g.beginPath();
+      g.moveTo(x0, yy);
+      g.lineTo(x0 + dir * len, yy);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+    // 큰 그림: 공격 자세(있으면) 상반신을 크게, 옆에서 미끄러져 들어와 천천히 밀림
+    const fr = u.attack ?? u;
+    const img = u.attack ? u.attack.image : u.image;
+    const scale = 2.0;
+    const iw = fr.w * scale;
+    const ih = fr.h * scale;
+    const slide = ease.out(clamp01(t / 260));
+    const drift = t * 0.03;
+    const baseX = left ? W * 0.33 : W * 0.67; // 발 기준점 (몸 가운데)
+    const ix = left ? baseX - (1 - slide) * W * 0.6 + drift : baseX + (1 - slide) * W * 0.6 - drift;
+    const iy = cy - ih * 0.17 + (left ? 20 : -20); // 머리~가슴이 띠 안에 (띠가 기울어 있어 좌우 보정)
+    g.save();
+    g.translate(ix, iy);
+    g.scale(u.dir, 1);
+    g.shadowColor = tint;
+    g.shadowBlur = 30;
+    g.drawImage(img, -fr.footX * iw, 0, iw, ih);
+    g.restore();
+    g.restore();
+    // 띠 테두리
+    g.strokeStyle = `rgba(255, 230, 190, ${0.9 * open})`;
+    g.lineWidth = 3;
+    g.stroke();
+    // 기술 이름
+    if (cut.name) {
+      const tt = clamp01((t - 140) / 200);
+      g.globalAlpha = tt * (1 - outK);
+      g.font = '900 54px "Noto Serif KR", "Nanum Myeongjo", serif';
+      g.textAlign = left ? 'right' : 'left';
+      g.textBaseline = 'middle';
+      const tx = left ? W - 70 + (1 - tt) * 40 : 70 - (1 - tt) * 40;
+      const ty = cy + (left ? -30 : -30);
+      g.lineWidth = 8;
+      g.strokeStyle = '#2a0b0b';
+      g.strokeText(cut.name, tx, ty);
+      g.fillStyle = '#fff3dc';
+      g.fillText(cut.name, tx, ty);
+      g.globalAlpha = 1;
+    }
+    // 마지막: 화면을 가르는 한 줄
+    const sl = clamp01((t - 620) / 140);
+    if (sl > 0 && sl < 1) {
+      g.globalCompositeOperation = 'lighter';
+      g.strokeStyle = `rgba(255, 255, 255, ${1 - sl})`;
+      g.shadowColor = tint;
+      g.shadowBlur = 24;
+      g.lineWidth = 10 * (1 - sl) + 2;
+      g.beginPath();
+      g.moveTo(left ? -50 : W + 50, H * 0.8);
+      g.lineTo(left ? -50 + (W + 100) * ease.out(sl) : W + 50 - (W + 100) * ease.out(sl), H * 0.2);
+      g.stroke();
+    }
+    g.restore();
   }
 
   // 필살: 0.5초 동안 배경이 어두워지고, 쓰는 쪽 뒤로 속도선
@@ -330,6 +444,7 @@ export async function createScene(canvas, { player }) {
     let alpha = 1;
     let flash = null;
     let flashA = 1;
+    let frame = null; // 공격 자세 그림
     let ghost = 0;
 
     // 대기: 숨쉬기
@@ -348,6 +463,12 @@ export async function createScene(canvas, { player }) {
       scaleY *= pose.sy;
       alpha *= pose.alpha;
       if (pose.ghost) ghost = pose.ghost;
+      // 맞는 순간엔 공격 자세 그림으로 (그림이 있으면) — 자세가 바뀌니 기울임은 덜
+      if (pose.strikeFrame && u.attack) {
+        frame = u.attack;
+        rot -= u.dir * pose.rot * 0.7;
+        scaleX /= Math.max(1, pose.sx);
+      }
     }
 
     // 피격: 세기만큼 뒤로 밀림 + 젖혀짐 + 번쩍임
@@ -413,10 +534,11 @@ export async function createScene(canvas, { player }) {
 
     g.save();
     g.globalAlpha = alpha;
-    drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, u.image);
+    drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, frame ? frame.image : u.image, frame);
     if (flash) {
       g.globalAlpha = alpha * flashA;
-      drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, flash);
+      const fl = frame ? (flash === u.flashWhite ? frame.flashWhite : frame.flashRed) : flash;
+      drawBody(g, u, feet.x + x, feet.y + y, rot, scaleX, scaleY, fl, frame);
     }
     g.restore();
 
@@ -493,6 +615,9 @@ export async function createScene(canvas, { player }) {
         if (r < 100) { P.k = 1.12; P.alpha = 1 - r / 100; } else { P.k = 0; P.alpha = clamp01((r - 100) / (RETURN_MS.assassin - 100)); }
       }
     }
+    // 공격 자세 그림을 보여 줄 때: 닿기 직전부터 머무는 동안(살수는 나타나 있을 때)
+    const vis = cls !== 'assassin' || P.alpha > 0.3;
+    P.strikeFrame = vis && at >= IMPACT_MS - 45 && at < stayEnd + 70;
     // 연타: 머문 채 짧게 내지름
     const st = now - (a.strike ?? -1e9);
     if (st >= 0 && st < 170) {
@@ -500,16 +625,18 @@ export async function createScene(canvas, { player }) {
       P.k += 0.07 * j;
       P.rot += 0.1 * j * (cls === 'sword' ? (Math.floor(a.strike) % 2 ? 1 : -1) : 1);
       P.sx *= 1 + 0.08 * j;
+      if (st < 150) P.strikeFrame = true;
     }
     return P;
   }
 
-  function drawBody(g, u, x, y, rot, sx, sy, img) {
+  function drawBody(g, u, x, y, rot, sx, sy, img, frame = null) {
+    const f = frame ?? u;
     g.save();
     g.translate(x, y);
     g.rotate(rot);
     g.scale(u.dir * sx, sy);
-    g.drawImage(img, -u.footX * u.w, -u.h, u.w, u.h);
+    g.drawImage(img, -f.footX * f.w, -f.h, f.w, f.h);
     g.restore();
   }
 
@@ -774,7 +901,7 @@ export async function createScene(canvas, { player }) {
   }
 
   return {
-    setPlayer, setEnemy, clearEnemy, reset, attack, strike, release, hit, hitstop, punch, finisher, dodge, buff, die, shake, draw, setBackground,
+    setPlayer, setEnemy, clearEnemy, reset, attack, strike, release, hit, hitstop, punch, finisher, cutin, dodge, buff, die, shake, draw, setBackground,
   };
 }
 
@@ -798,8 +925,22 @@ async function makeUnit(artKey, dir, fallbackImg) {
     g.drawImage(body, 0, 0);
     image = c;
   }
+  // 공격 자세 그림 (있으면 맞는 순간 바꿔 끼움 — 10단계)
+  let attack = null;
+  if (hasArt && d.sprite.attack) {
+    const ai = await loadImage(d.sprite.attack.image).catch(() => null);
+    if (ai) {
+      const ah = h * (d.sprite.attack.scale ?? 1);
+      const aw = (ah * ai.width) / ai.height;
+      attack = {
+        image: ai, w: aw, h: ah, footX: d.sprite.attack.footX ?? 0.5,
+        flashWhite: tinted(ai, aw, ah, '#ffffff', 0.85), flashRed: tinted(ai, aw, ah, '#ff2a2a', 0.45),
+      };
+    }
+  }
   return {
     key: artKey,
+    attack,
     cls: d.cls,
     dir,
     image,
